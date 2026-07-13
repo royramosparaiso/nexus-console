@@ -30,6 +30,7 @@ from app.services.bootstrap_client import (
 )
 from app.services.cloud_deployers import provision_fly, provision_hetzner
 from app.services.handoff_playbook import write_playbook
+from app.services.stack_provisioning import merge_into_playbook_inputs
 from app.services.deployer import (
     DeployerError, provision_local, start_compose,
 )
@@ -234,6 +235,10 @@ async def wizard_submit(
             row.id, sub.instance_name,
             region=sub.deployment.region, domain=sub.deployment.domain,
         )
+        # Fold in stack-service handoff steps + required secrets, if the
+        # operator picked a stack in Step 7. Legacy submissions (stack=None)
+        # keep the exact same playbook they had before.
+        merge_into_playbook_inputs(playbook_inputs, sub.stack)
         playbook_path, secrets_path = write_playbook(playbook_inputs, token)
         row.bootstrap_token = token
         row.compose_dir = str(compose_dir)
