@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY vendor/nexus-core /nexus-core
 RUN pip install --no-cache-dir -e /nexus-core/python
 
-COPY pyproject.toml ./
+COPY pyproject.toml README.md ./
 RUN pip install --no-cache-dir -e .
 
 COPY app ./app
