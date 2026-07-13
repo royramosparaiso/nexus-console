@@ -35,13 +35,20 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
 
+  kokoro:
+    image: ghcr.io/remsky/kokoro-fastapi-cpu:latest
+    restart: unless-stopped
+    # No published port — only Platform talks to Kokoro. Voice reaches the user
+    # via Platform's /_voice/stream WebSocket, not directly.
+
   platform:
     image: {image}
     restart: unless-stopped
-    depends_on: [postgres]
+    depends_on: [postgres, kokoro]
     environment:
       PLATFORM_DATABASE_URL: postgresql+psycopg://nexus:nexus@postgres:5432/nexus
       PLATFORM_BOOTSTRAP_TOKEN: ${{PLATFORM_BOOTSTRAP_TOKEN}}
+      KOKORO_URL: http://kokoro:8880
     ports:
       - "{port}:8000"
 
