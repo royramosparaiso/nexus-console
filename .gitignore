@@ -53,3 +53,4 @@ data/
 # Runtime
 console/instance/
 console/deploy_state/
+*.tsbuildinfo
