@@ -145,7 +145,12 @@ def test_stack_config_never_drops_the_kernel_field():
 
 
 def test_hermes_handoff_returns_a_fragment_for_every_engine():
-    for engine in ("in_process", "temporal_cloud", "temporal_selfhost"):
+    for engine in (
+        "in_process",
+        "temporal_cloud",
+        "temporal_selfhost",
+        "temporal_selfhost_postgres",
+    ):
         h = hermes_handoff(engine)
         assert h.role == "kernel"
         assert h.steps
@@ -182,13 +187,59 @@ def test_hermes_selfhost_boots_docker_compose():
     joined = " ".join(step["cmd"] for step in h.steps)
     assert "docker compose" in joined
     assert "docker-compose.temporal.yml" in joined
+    # Cassandra variant — must NOT be the postgres file.
+    assert "docker-compose.temporal-postgres.yml" not in joined
+
+
+def test_hermes_postgres_declares_pg_credentials():
+    h = hermes_handoff("temporal_selfhost_postgres")
+    assert set(h.secrets) == {
+        "TEMPORAL_HOST",
+        "TEMPORAL_NAMESPACE",
+        "TEMPORAL_PG_USER",
+        "TEMPORAL_PG_PASSWORD",
+    }
+    joined = " ".join(step["cmd"] for step in h.steps)
+    for var in h.secrets:
+        assert f"${{{var}}}" in joined
+
+
+def test_hermes_postgres_references_the_postgres_compose_file():
+    h = hermes_handoff("temporal_selfhost_postgres")
+    joined = " ".join(step["cmd"] for step in h.steps)
+    assert "docker-compose.temporal-postgres.yml" in joined
+
+
+def test_hermes_engines_all_use_only_declared_placeholders():
+    _placeholder = re.compile(r"\$\{([A-Z][A-Z0-9_]*)\}")
+    cross_handoff = {"DATABASE_URL"}  # base playbook provides this
+    for engine in (
+        "in_process",
+        "temporal_cloud",
+        "temporal_selfhost",
+        "temporal_selfhost_postgres",
+    ):
+        h = hermes_handoff(engine)
+        declared = set(h.secrets)
+        for step in h.steps:
+            referenced = set(_placeholder.findall(step["cmd"]))
+            undeclared = referenced - declared - cross_handoff
+            assert not undeclared, (
+                f"{engine} step {step['title']!r} references undeclared: "
+                f"{sorted(undeclared)}"
+            )
 
 
 def test_hermes_steps_never_inline_secrets():
     inline = re.compile(
         r"(?:token|key|secret|password)\s*[=:]\s*[a-zA-Z0-9]{16,}", re.IGNORECASE
     )
-    for engine in ("in_process", "temporal_cloud", "temporal_selfhost"):
+    for engine in (
+        "in_process",
+        "temporal_cloud",
+        "temporal_selfhost",
+        "temporal_selfhost_postgres",
+    ):
         for step in hermes_handoff(engine).steps:
             # Strip ${VAR} placeholders \u2014 they're not inline secrets.
             cmd = re.sub(r"\$\{[A-Z_][A-Z0-9_]*\}", "", step["cmd"])
@@ -358,10 +409,12 @@ def test_endpoint_reports_tier_allowed_matrix(client):
     matrix = r.json()["tier_allowed"]
     assert matrix["hobby"] == ["in_process"]
     assert set(matrix["standard"]) == {
-        "in_process", "temporal_cloud", "temporal_selfhost"
+        "in_process", "temporal_cloud",
+        "temporal_selfhost", "temporal_selfhost_postgres",
     }
     assert set(matrix["scale"]) == {
-        "temporal_cloud", "temporal_selfhost", "in_process"
+        "temporal_cloud", "temporal_selfhost",
+        "temporal_selfhost_postgres", "in_process",
     }
     # First entry is the recommended default — order matters.
     assert matrix["scale"][0] == "temporal_cloud"
@@ -461,3 +514,58 @@ def test_temporal_compose_referenced_by_selfhost_builder():
     h = hermes_handoff("temporal_selfhost")
     cmds = " ".join(step["cmd"] for step in h.steps)
     assert "console/deploy/hermes/docker-compose.temporal.yml" in cmds
+
+
+def test_temporal_postgres_compose_file_exists_and_is_valid_yaml():
+    import yaml as pyyaml
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    compose_path = root / "deploy" / "hermes" / "docker-compose.temporal-postgres.yml"
+    assert compose_path.exists(), f"missing {compose_path}"
+
+    data = pyyaml.safe_load(compose_path.read_text())
+    services = data["services"]
+    assert {"postgres", "temporal", "temporal-ui", "temporal-init"} <= set(services)
+    assert "cassandra" not in services
+    assert data["x-temporal-env"]["DB"] == "postgres12"
+    assert data["x-temporal-env"]["POSTGRES_SEEDS"] == "postgres"
+    assert any("8080:8080" in p for p in services["temporal-ui"]["ports"])
+    assert any("7233:7233" in p for p in services["temporal"]["ports"])
+    assert any("5433:5432" in p for p in services["postgres"]["ports"])
+
+
+def test_postgres_compose_referenced_by_selfhost_postgres_builder():
+    h = hermes_handoff("temporal_selfhost_postgres")
+    cmds = " ".join(step["cmd"] for step in h.steps)
+    assert "console/deploy/hermes/docker-compose.temporal-postgres.yml" in cmds
+
+
+def test_endpoint_accepts_postgres_selfhost_on_standard(client):
+    r = client.get("/wizard/kernel",
+                   params={"tier": "standard",
+                           "engine": "temporal_selfhost_postgres"})
+    assert r.status_code == 200
+    assert r.json()["kernel"]["hermes"]["engine"] == "temporal_selfhost_postgres"
+
+
+def test_endpoint_accepts_postgres_selfhost_on_scale(client):
+    r = client.get("/wizard/kernel",
+                   params={"tier": "scale",
+                           "engine": "temporal_selfhost_postgres"})
+    assert r.status_code == 200
+
+
+def test_endpoint_rejects_postgres_selfhost_on_hobby(client):
+    r = client.get("/wizard/kernel",
+                   params={"tier": "hobby",
+                           "engine": "temporal_selfhost_postgres"})
+    assert r.status_code == 400
+    assert r.json()["detail"]["engine"] == "temporal_selfhost_postgres"
+
+
+def test_endpoint_reports_postgres_engine_in_matrix(client):
+    matrix = client.get("/wizard/kernel").json()["tier_allowed"]
+    assert "temporal_selfhost_postgres" in matrix["standard"]
+    assert "temporal_selfhost_postgres" in matrix["scale"]
+    assert "temporal_selfhost_postgres" not in matrix["hobby"]

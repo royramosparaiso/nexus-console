@@ -1487,10 +1487,53 @@ def _hermes_temporal_selfhost() -> ServiceHandoff:
     )
 
 
+def _hermes_temporal_selfhost_postgres() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="hermes_temporal_selfhost_postgres",
+        role="kernel",
+        secrets=[
+            "TEMPORAL_HOST",
+            "TEMPORAL_NAMESPACE",
+            "TEMPORAL_PG_USER",
+            "TEMPORAL_PG_PASSWORD",
+        ],
+        steps=[
+            {
+                "title": "Boot Temporal + Postgres (docker compose, Postgres backend)",
+                "cmd": (
+                    "TEMPORAL_PG_USER=${TEMPORAL_PG_USER} "
+                    "TEMPORAL_PG_PASSWORD=${TEMPORAL_PG_PASSWORD} "
+                    "TEMPORAL_NAMESPACE=${TEMPORAL_NAMESPACE} "
+                    "docker compose -f console/deploy/hermes/docker-compose.temporal-postgres.yml "
+                    "up -d --wait"
+                ),
+            },
+            {
+                "title": "Create the Hermes namespace on the Postgres-backed cluster (idempotent)",
+                "cmd": (
+                    "temporal --address ${TEMPORAL_HOST} operator namespace create "
+                    "--namespace ${TEMPORAL_NAMESPACE} "
+                    "--retention 72h 2>/dev/null || true"
+                ),
+            },
+            {
+                "title": "Set Hermes engine env vars on the platform service",
+                "cmd": (
+                    "{ echo 'export HERMES_ENGINE=temporal_selfhost_postgres'; "
+                    "echo 'export TEMPORAL_HOST='${TEMPORAL_HOST}; "
+                    "echo 'export TEMPORAL_NAMESPACE='${TEMPORAL_NAMESPACE}; } "
+                    ">> nexus.env"
+                ),
+            },
+        ],
+    )
+
+
 _HERMES_BUILDERS: dict[str, Callable[[], ServiceHandoff]] = {
-    "in_process":         _hermes_in_process,
-    "temporal_cloud":     _hermes_temporal_cloud,
-    "temporal_selfhost":  _hermes_temporal_selfhost,
+    "in_process":                  _hermes_in_process,
+    "temporal_cloud":              _hermes_temporal_cloud,
+    "temporal_selfhost":           _hermes_temporal_selfhost,
+    "temporal_selfhost_postgres":  _hermes_temporal_selfhost_postgres,
 }
 
 

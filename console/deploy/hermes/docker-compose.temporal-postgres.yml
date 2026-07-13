@@ -1,0 +1,107 @@
+# Hermes — Temporal self-host bundle (Postgres backend).
+#
+# Same shape as docker-compose.temporal.yml (Cassandra variant) but
+# uses Postgres 16 as the durable store. Preferred when the operator
+# already runs Postgres in their stack and doesn't want to add
+# Cassandra just for Temporal.
+#
+# Bring it up with:
+#   docker compose -f console/deploy/hermes/docker-compose.temporal-postgres.yml up -d --wait
+#
+# All ports are bound to 127.0.0.1 by default. Override with
+# TEMPORAL_BIND / TEMPORAL_UI_BIND / TEMPORAL_PG_BIND if you need
+# remote access.
+
+name: nexus-hermes-pg
+
+x-temporal-env: &temporal_env
+  DB: postgres12
+  DB_PORT: 5432
+  POSTGRES_SEEDS: postgres
+  POSTGRES_USER: ${TEMPORAL_PG_USER:-temporal}
+  POSTGRES_PWD: ${TEMPORAL_PG_PASSWORD:-temporal}
+  # Advertise address reachable by workers on the compose network.
+  TEMPORAL_ADDRESS: temporal:7233
+  TEMPORAL_CLI_ADDRESS: temporal:7233
+  DEFAULT_NAMESPACE: ${TEMPORAL_NAMESPACE:-hermes}
+  DEFAULT_NAMESPACE_RETENTION: 72h
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: nexus-hermes-postgres
+    environment:
+      POSTGRES_USER: ${TEMPORAL_PG_USER:-temporal}
+      POSTGRES_PASSWORD: ${TEMPORAL_PG_PASSWORD:-temporal}
+      # auto-setup creates temporal + temporal_visibility DBs on boot,
+      # but Postgres needs the role to exist first — this DB is just a
+      # placeholder so the server can log in.
+      POSTGRES_DB: temporal
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TEMPORAL_PG_USER:-temporal} -d temporal"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+    ports:
+      - "${TEMPORAL_PG_BIND:-127.0.0.1}:5433:5432"
+    restart: unless-stopped
+
+  temporal:
+    image: temporalio/auto-setup:1.25.2
+    container_name: nexus-hermes-temporal
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *temporal_env
+    ports:
+      - "${TEMPORAL_BIND:-127.0.0.1}:7233:7233"
+    healthcheck:
+      test: ["CMD", "tctl", "--address", "temporal:7233", "cluster", "health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+    restart: unless-stopped
+
+  temporal-ui:
+    image: temporalio/ui:2.31.2
+    container_name: nexus-hermes-ui
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: http://localhost:8080
+    ports:
+      - "${TEMPORAL_UI_BIND:-127.0.0.1}:8080:8080"
+    restart: unless-stopped
+
+  temporal-init:
+    image: temporalio/admin-tools:1.25.2
+    container_name: nexus-hermes-init
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      NEXUS_NAMESPACE: ${TEMPORAL_NAMESPACE:-hermes}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        echo "Ensuring namespace ${NEXUS_NAMESPACE:-hermes} exists..."
+        tctl --address temporal:7233 --namespace "${NEXUS_NAMESPACE:-hermes}" \
+          namespace describe > /dev/null 2>&1 \
+          || tctl --address temporal:7233 --namespace "${NEXUS_NAMESPACE:-hermes}" \
+               namespace register --retention 72 \
+               --description "Nexus Hermes kernel (Postgres backend)"
+        echo "Namespace ready."
+    restart: "no"
+
+volumes:
+  postgres-data:
+    name: nexus-hermes-postgres-data

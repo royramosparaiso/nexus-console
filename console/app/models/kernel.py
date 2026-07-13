@@ -30,7 +30,12 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-HermesEngine = Literal["in_process", "temporal_cloud", "temporal_selfhost"]
+HermesEngine = Literal[
+    "in_process",
+    "temporal_cloud",
+    "temporal_selfhost",           # self-host with Cassandra backend
+    "temporal_selfhost_postgres",  # self-host with Postgres backend
+]
 
 # Which engine we auto-pick for each stack tier when the operator
 # doesn't override. In hobby and standard we stay embedded \u2014 the
@@ -50,8 +55,18 @@ HERMES_ENGINE_BY_TIER: dict[str, HermesEngine] = {
 HERMES_ENGINES_BY_TIER: dict[str, tuple[HermesEngine, ...]] = {
     "free":     ("in_process",),
     "hobby":    ("in_process",),
-    "standard": ("in_process", "temporal_cloud", "temporal_selfhost"),
-    "scale":    ("temporal_cloud", "temporal_selfhost", "in_process"),
+    "standard": (
+        "in_process",
+        "temporal_cloud",
+        "temporal_selfhost_postgres",  # cheaper than Cassandra for standard
+        "temporal_selfhost",
+    ),
+    "scale":    (
+        "temporal_cloud",
+        "temporal_selfhost",
+        "temporal_selfhost_postgres",
+        "in_process",
+    ),
 }
 
 
@@ -129,7 +144,7 @@ class HermesConfig(BaseModel):
     def required_secrets(self) -> list[str]:
         # Env vars needed to bring this engine online.
         if self.engine == "in_process":
-            # Reuses the platform's DATABASE_URL \u2014 no extra secret.
+            # Reuses the platform's DATABASE_URL — no extra secret.
             return []
         if self.engine == "temporal_cloud":
             return [
@@ -137,7 +152,14 @@ class HermesConfig(BaseModel):
                 "TEMPORAL_CLOUD_API_KEY",
                 "TEMPORAL_CLOUD_ADDRESS",
             ]
-        # self-host
+        if self.engine == "temporal_selfhost_postgres":
+            return [
+                "TEMPORAL_HOST",
+                "TEMPORAL_NAMESPACE",
+                "TEMPORAL_PG_USER",
+                "TEMPORAL_PG_PASSWORD",
+            ]
+        # Cassandra self-host
         return ["TEMPORAL_HOST", "TEMPORAL_NAMESPACE"]
 
 
