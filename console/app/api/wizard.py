@@ -12,6 +12,8 @@ from app.db import SessionLocal, get_db
 from app.models.db import InstanceRow
 from app.models.wizard import (
     AVAILABLE_AREAS,
+    CompleteRemoteRequest,
+    CompleteRemoteResult,
     WizardPreview,
     WizardSubmission,
     WizardSubmitResult,
@@ -243,6 +245,92 @@ async def wizard_submit(
     return WizardSubmitResult(
         instance_id=row.id, status=row.status,
         yaml_path=str(yaml_path), next_steps=next_steps,
+    )
+
+
+@router.post("/{instance_id}/complete-remote", response_model=CompleteRemoteResult)
+async def wizard_complete_remote(
+    instance_id: str,
+    req: CompleteRemoteRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Finish the handshake for a cloud instance that the operator just deployed.
+
+    Preconditions:
+      * Row exists and is in status ``handoff-pending`` (or ``bootstrap-failed``
+        so operators can retry after fixing the deploy).
+      * Row still has a ``bootstrap_token`` (never burned).
+
+    Behaviour:
+      * If ``req.endpoint`` is provided, overwrite ``row.endpoint``.
+      * Poll ``/_health`` until healthy or timeout.
+      * POST ``/_bootstrap`` with the manifest + token.
+      * On success the row moves to ``running`` and the token is burned.
+    """
+    from uuid import UUID
+    try:
+        iid = UUID(instance_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="invalid instance_id")
+
+    row = await db.get(InstanceRow, iid)
+    if row is None:
+        raise HTTPException(status_code=404, detail="instance not found")
+    if row.status not in ("handoff-pending", "bootstrap-failed"):
+        raise HTTPException(
+            status_code=409,
+            detail=f"cannot complete-remote from status '{row.status}'",
+        )
+    if not row.bootstrap_token:
+        raise HTTPException(
+            status_code=409,
+            detail="bootstrap token already burned; instance cannot be re-bootstrapped",
+        )
+
+    if req.endpoint:
+        row.endpoint = req.endpoint
+        await db.commit()
+
+    if not row.endpoint:
+        raise HTTPException(status_code=400, detail="row has no endpoint set")
+
+    try:
+        await wait_healthy(row.endpoint, timeout_s=req.wait_timeout_s)
+    except BootstrapError as e:
+        row.status = "bootstrap-failed"
+        row.error_detail = str(e)
+        await db.commit()
+        return CompleteRemoteResult(
+            instance_id=row.id, status=row.status,
+            endpoint=row.endpoint, error_detail=str(e),
+        )
+
+    kp = await get_or_create_keypair(db)
+    from nexus_core.models import InstanceManifest
+    manifest = InstanceManifest.model_validate(row.manifest_json)
+    # For cloud deploys, Platform reaches Console at the operator-provided URL
+    # (falls back to the container-local hostname if not configured).
+    webhook = settings.console_webhook_url or "http://console:7000/_platform/notify"
+
+    try:
+        await dispatch_bootstrap(
+            db=db, row=row, endpoint=row.endpoint,
+            token=row.bootstrap_token,
+            console_kp=kp, manifest=manifest, webhook_url=webhook,
+        )
+    except BootstrapError as e:
+        row.status = "bootstrap-failed"
+        row.error_detail = str(e)
+        await db.commit()
+        return CompleteRemoteResult(
+            instance_id=row.id, status=row.status,
+            endpoint=row.endpoint, error_detail=str(e),
+        )
+
+    # dispatch_bootstrap already committed status="running" on success
+    return CompleteRemoteResult(
+        instance_id=row.id, status=row.status,
+        endpoint=row.endpoint, platform_version=row.platform_version,
     )
 
 

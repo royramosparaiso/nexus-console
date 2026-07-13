@@ -1,10 +1,11 @@
 import { Link, useLocation } from "wouter";
-import { Boxes, Cpu, Key, Settings, Sparkles } from "lucide-react";
+import { Boxes, Cpu, Key, Mic, Settings, Sparkles } from "lucide-react";
 
 const items = [
   { href: "/", label: "Instances", icon: Boxes, testid: "nav-instances" },
   { href: "/providers", label: "LLM Providers", icon: Key, testid: "nav-providers" },
   { href: "/agents", label: "Agents", icon: Cpu, testid: "nav-agents" },
+  { href: "/voice", label: "Voice", icon: Mic, testid: "nav-voice" },
   { href: "/jarvis", label: "Jarvis-Console", icon: Sparkles, testid: "nav-jarvis" },
   { href: "/settings", label: "Settings", icon: Settings, testid: "nav-settings" },
 ];

@@ -117,22 +117,29 @@ def render_playbook(p: PlaybookInputs, bootstrap_token: str) -> str:
     lines.append("## Handing back to Console")
     lines.append("")
     lines.append(
-        "Once the Platform is up and reachable, tell Console to complete the "
-        "bootstrap handshake by POSTing to its own `/wizard/complete-remote` "
-        "endpoint with the endpoint URL and bootstrap token. Console will "
-        "sign a bootstrap request, call `/_bootstrap` on the Platform, and "
-        "flip the instance status from `bootstrap-pending` to `running`."
+        "Once Platform is up and reachable, tell Console to complete the "
+        "bootstrap handshake by POSTing to `/wizard/{instance_id}/complete-remote`. "
+        "Console already holds the bootstrap token and the manifest \u2014 it "
+        "only needs to know the real endpoint (in case the domain differs from "
+        "what the wizard predicted). Console will sign the bootstrap request, "
+        "call `/_bootstrap` on Platform, burn the token, and flip the instance "
+        "status to `running`."
     )
     lines.append("")
     lines.append("```bash")
     lines.append(
-        "curl -X POST http://localhost:7000/wizard/complete-remote \\\n"
+        f"curl -X POST http://localhost:7000/wizard/{p.instance_id}/complete-remote \\\n"
         "     -H 'Content-Type: application/json' \\\n"
-        f"     -d '{{\"instance_id\":\"{p.instance_id}\",\n"
-        f"          \"endpoint\":\"{p.endpoint_hint}\",\n"
-        f"          \"bootstrap_token\":\"${{PLATFORM_BOOTSTRAP_TOKEN}}\"}}'"
+        f"     -d '{{\"endpoint\":\"{p.endpoint_hint}\"}}'"
     )
     lines.append("```")
+    lines.append("")
+    lines.append(
+        "If the real domain differs from the placeholder above, replace it in "
+        "the `endpoint` field. To retry after a failed bootstrap (e.g. Platform "
+        "was not healthy yet), simply POST again \u2014 the token remains valid "
+        "until the handshake succeeds."
+    )
     lines.append("")
 
     lines.append("## Safety notes")

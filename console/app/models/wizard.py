@@ -9,7 +9,7 @@ Six sections, matching Nexus OS Specs v0.6 §2quater bootstrap payload:
   6. governance
 """
 
-from typing import Literal
+from typing import Literal, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
@@ -37,6 +37,29 @@ class PersonaConfig(BaseModel):
 # ---------- Section 2: Deployment ----------
 
 Modality = Literal["local", "fly", "hetzner", "k8s", "onprem", "saas"]
+
+
+# ---------- Complete-remote payloads ----------
+
+class CompleteRemoteRequest(BaseModel):
+    """Sent by the operator after the handoff playbook finished running.
+
+    The operator (or Cloud Cowork / OpenClaw) has already deployed Platform
+    at some public endpoint and needs Console to complete the bootstrap
+    handshake. If ``endpoint`` is provided, it overrides the endpoint
+    stored at wizard-submit time (useful when the real domain differs from
+    the placeholder used in the playbook).
+    """
+    endpoint: Optional[str] = None
+    wait_timeout_s: float = 120.0
+
+
+class CompleteRemoteResult(BaseModel):
+    instance_id: UUID
+    status: str
+    endpoint: str
+    platform_version: Optional[str] = None
+    error_detail: Optional[str] = None
 
 
 class DeploymentConfig(BaseModel):

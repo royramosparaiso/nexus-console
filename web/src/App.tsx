@@ -6,6 +6,7 @@ import Wizard from "./pages/Wizard";
 import Providers from "./pages/Providers";
 import Agents from "./pages/Agents";
 import Jarvis from "./pages/Jarvis";
+import Voice from "./pages/Voice";
 import SettingsPage from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -21,6 +22,7 @@ export default function App() {
             <Route path="/providers" component={Providers} />
             <Route path="/agents" component={Agents} />
             <Route path="/jarvis" component={Jarvis} />
+            <Route path="/voice" component={Voice} />
             <Route path="/settings" component={SettingsPage} />
             <Route component={NotFound} />
           </Switch>

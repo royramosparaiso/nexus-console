@@ -22,12 +22,17 @@ class Settings(BaseSettings):
     jwt_ttl_seconds: int = 300
 
     # Local single-tenant deployer
-    local_platform_image: str = "ghcr.io/royramosparaiso/nexus-platform:0.6.0"
+    local_platform_image: str = "ghcr.io/royramosparaiso/nexus-platform:0.7.0"
     local_platform_port: int = 7100
     local_platform_host: str = "http://localhost"
 
     # Bootstrap deliverable — where to write compose files
     deployments_dir: Path = Path("./console_data/deployments")
+
+    # Public URL Platform uses to reach Console back after bootstrap. Only
+    # needed for cloud deploys where Platform is not co-located with Console.
+    # If unset, defaults to the container-local hostname (fine for local mode).
+    console_webhook_url: str | None = None
 
     # CORS
     cors_origins: list[str] = [
