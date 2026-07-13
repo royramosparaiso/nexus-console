@@ -112,9 +112,63 @@ def test_stack_handoffs_respects_overrides():
     slugs = {h.slug for h in handoffs}
     # Neon (canonical) should NOT appear when overridden with Supabase.
     assert "neon" not in slugs
-    # Supabase has no handoff builder yet \u2014 it silently drops out
-    # (only the canonical preset ships with playbook fragments).
-    assert "supabase" not in slugs
+    # Supabase now has a builder, so the override is reflected in the playbook.
+    assert "supabase" in slugs
+
+
+def test_stack_handoffs_drops_self_host_only_services_silently():
+    # loki_self_host runs inside the operator's compute and does not emit
+    # playbook steps. Confirm it silently drops out without breaking the merge.
+    prefs = StackPreferences(monthly_budget_eur=100, deployment_mode="cloud")
+    sel = recommend_stack(prefs)
+    cfg = StackConfig(
+        preferences=prefs,
+        selection=sel,
+        overrides={"log_platform": "loki_self_host"},
+    )
+    handoffs = stack_handoffs(cfg)
+    slugs = {h.slug for h in handoffs}
+    assert "loki_self_host" not in slugs
+    # Other roles still generate handoffs.
+    assert len(handoffs) >= 15
+
+
+def test_every_alternative_builder_role_matches_catalogue():
+    from app.models.stack import CATALOGUE_BY_SLUG
+    alternative_slugs = [
+        "fly", "render", "cloudflare_pages", "netlify",
+        "supabase", "memgraph_cloud",
+        "turbopuffer", "pinecone", "pgvector",
+        "redis_cloud",
+        "runpod_serverless", "replicate", "fly_gpu",
+        "backblaze_b2", "aws_s3",
+        "workos", "better_auth",
+        "glitchtip",
+        "better_stack", "grafana_cloud",
+        "plausible", "langsmith",
+        "postmark", "inngest",
+    ]
+    for slug in alternative_slugs:
+        fragment = handoff_for(slug)
+        assert fragment is not None, f"missing builder for alternative {slug}"
+        assert fragment.slug == slug
+        assert CATALOGUE_BY_SLUG[slug].role == fragment.role
+        assert fragment.steps, f"{slug} returned no steps"
+        for step in fragment.steps:
+            assert step.get("title") and step.get("cmd")
+
+
+def test_pgvector_reuses_database_url_only():
+    fragment = handoff_for("pgvector")
+    assert fragment.secrets == ["DATABASE_URL"]
+
+
+def test_grafana_cloud_covers_logs_metrics_traces():
+    fragment = handoff_for("grafana_cloud")
+    secret_set = set(fragment.secrets)
+    assert "GRAFANA_LOKI_URL" in secret_set
+    assert "GRAFANA_PROM_URL" in secret_set
+    assert "GRAFANA_TEMPO_URL" in secret_set
 
 
 def test_stack_handoffs_empty_when_stack_none():

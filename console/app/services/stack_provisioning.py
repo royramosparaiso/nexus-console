@@ -552,6 +552,778 @@ def _github_actions() -> ServiceHandoff:
 
 
 # ---------------------------------------------------------------------------
+# Alternatives — free-tier and lower-cost swaps for the standard preset.
+# Only services with a real free tier + a scriptable/API-driven onboarding
+# get a builder. Self-host-only picks (loki_self_host, kuzu_embedded,
+# local_postgres, local_redis, litellm_proxy, fly_postgres) are documented
+# in the catalogue but do not emit playbook steps — the operator runs them
+# inside their own compute.
+# ---------------------------------------------------------------------------
+
+
+# ---- app_compute alternatives ----
+
+def _fly() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="fly",
+        role="app_compute",
+        secrets=["FLY_API_TOKEN", "FLY_APP_NAME"],
+        steps=[
+            {
+                "title": "Authenticate flyctl",
+                "cmd": "fly auth token ${FLY_API_TOKEN}",
+            },
+            {
+                "title": "Launch the Platform app (idempotent — skip if fly.toml already deployed)",
+                "cmd": "fly launch --name ${FLY_APP_NAME} --copy-config --no-deploy",
+            },
+            {
+                "title": "Set Platform secrets from nexus.secrets.env",
+                "cmd": (
+                    "fly secrets set --app ${FLY_APP_NAME} "
+                    "PLATFORM_BOOTSTRAP_TOKEN=${PLATFORM_BOOTSTRAP_TOKEN} "
+                    "ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}"
+                ),
+            },
+            {
+                "title": "Deploy",
+                "cmd": "fly deploy --app ${FLY_APP_NAME}",
+            },
+        ],
+        notes=(
+            "Same Fly.io flow as the built-in cloud modality — use this when "
+            "you want Fly as the compute layer but keep the rest of the "
+            "stack managed elsewhere."
+        ),
+    )
+
+
+def _render() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="render",
+        role="app_compute",
+        secrets=["RENDER_API_KEY", "RENDER_OWNER_ID"],
+        steps=[
+            {
+                "title": "Create a web service from the repo (idempotent — 409 if exists)",
+                "cmd": (
+                    "curl -fsSL -X POST https://api.render.com/v1/services "
+                    "-H 'Authorization: Bearer ${RENDER_API_KEY}' "
+                    "-H 'Content-Type: application/json' "
+                    "-d '{\"type\":\"web_service\",\"name\":\"nexus-platform\",\"ownerId\":\"${RENDER_OWNER_ID}\",\"repo\":\"https://github.com/${GITHUB_ORG}/nexus-platform\",\"branch\":\"main\",\"serviceDetails\":{\"env\":\"docker\",\"plan\":\"starter\"}}'"
+                ),
+            },
+            {
+                "title": "List services to grab the service id (paste into RENDER_SERVICE_ID)",
+                "cmd": (
+                    "curl -fsSL https://api.render.com/v1/services "
+                    "-H 'Authorization: Bearer ${RENDER_API_KEY}'"
+                ),
+            },
+            {
+                "title": "Push env vars",
+                "cmd": (
+                    "curl -fsSL -X PUT "
+                    "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/env-vars "
+                    "-H 'Authorization: Bearer ${RENDER_API_KEY}' "
+                    "-H 'Content-Type: application/json' "
+                    "-d '[{\"key\":\"PLATFORM_BOOTSTRAP_TOKEN\",\"value\":\"${PLATFORM_BOOTSTRAP_TOKEN}\"}]'"
+                ),
+            },
+        ],
+    )
+
+
+# ---- frontend_hosting alternatives ----
+
+def _cloudflare_pages() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="cloudflare_pages",
+        role="frontend_hosting",
+        secrets=[
+            "CLOUDFLARE_ACCOUNT_ID",
+            "CLOUDFLARE_API_TOKEN",
+            "CF_PAGES_PROJECT",
+        ],
+        steps=[
+            {
+                "title": "Create the Pages project (idempotent — 409 if exists)",
+                "cmd": (
+                    "curl -fsSL -X POST "
+                    "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/pages/projects "
+                    "-H 'Authorization: Bearer ${CLOUDFLARE_API_TOKEN}' "
+                    "-H 'Content-Type: application/json' "
+                    "-d '{\"name\":\"${CF_PAGES_PROJECT}\",\"production_branch\":\"main\"}'"
+                ),
+            },
+            {
+                "title": "Build the frontend and deploy with wrangler",
+                "cmd": (
+                    "cd web && npm run build && "
+                    "CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN} "
+                    "CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID} "
+                    "npx wrangler pages deploy dist --project-name ${CF_PAGES_PROJECT}"
+                ),
+            },
+        ],
+    )
+
+
+def _netlify() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="netlify",
+        role="frontend_hosting",
+        secrets=["NETLIFY_AUTH_TOKEN", "NETLIFY_SITE_ID"],
+        steps=[
+            {
+                "title": "Log in and link the site",
+                "cmd": (
+                    "cd web && netlify login --auth-token ${NETLIFY_AUTH_TOKEN} && "
+                    "netlify link --id ${NETLIFY_SITE_ID}"
+                ),
+            },
+            {
+                "title": "Build + deploy to production",
+                "cmd": "cd web && npm run build && netlify deploy --prod --dir dist",
+            },
+        ],
+    )
+
+
+# ---- postgres alternatives ----
+
+def _supabase() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="supabase",
+        role="postgres",
+        secrets=[
+            "SUPABASE_ACCESS_TOKEN",
+            "SUPABASE_ORG_ID",
+            "SUPABASE_PROJECT_REF",
+            "SUPABASE_DB_PASSWORD",
+            "DATABASE_URL",
+        ],
+        steps=[
+            {
+                "title": "Create the Supabase project (idempotent — 409 if the ref exists)",
+                "cmd": (
+                    "curl -fsSL -X POST https://api.supabase.com/v1/projects "
+                    "-H 'Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}' "
+                    "-H 'Content-Type: application/json' "
+                    "-d '{\"name\":\"nexus\",\"organization_id\":\"${SUPABASE_ORG_ID}\",\"region\":\"eu-west-1\",\"db_pass\":\"${SUPABASE_DB_PASSWORD}\",\"plan\":\"free\"}'"
+                ),
+            },
+            {
+                "title": "Fetch the connection string (paste into DATABASE_URL)",
+                "cmd": (
+                    "curl -fsSL "
+                    "https://api.supabase.com/v1/projects/${SUPABASE_PROJECT_REF}/config/database "
+                    "-H 'Authorization: Bearer ${SUPABASE_ACCESS_TOKEN}'"
+                ),
+            },
+            {
+                "title": "Enable pgvector",
+                "cmd": "psql ${DATABASE_URL} -c 'CREATE EXTENSION IF NOT EXISTS vector;'",
+            },
+        ],
+        notes=(
+            "Supabase free tier: 500 MB Postgres + 1 GB storage + pgvector "
+            "built in. Drop-in replacement for Neon when you also want "
+            "row-level auth or storage in the same project."
+        ),
+    )
+
+
+# ---- graph_db alternatives ----
+
+def _memgraph_cloud() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="memgraph_cloud",
+        role="graph_db",
+        secrets=[
+            "MEMGRAPH_HOST",
+            "MEMGRAPH_PORT",
+            "MEMGRAPH_USER",
+            "MEMGRAPH_PASSWORD",
+        ],
+        steps=[
+            {
+                "title": "Create a Memgraph Cloud project from the dashboard",
+                "cmd": (
+                    "# https://cloud.memgraph.com → New Project → 'nexus-graph'. "
+                    "# Copy host + port + credentials into nexus.secrets.env."
+                ),
+            },
+            {
+                "title": "Smoke-test with the Bolt endpoint",
+                "cmd": (
+                    "mgconsole --host ${MEMGRAPH_HOST} --port ${MEMGRAPH_PORT} "
+                    "--username ${MEMGRAPH_USER} --password ${MEMGRAPH_PASSWORD} "
+                    "--execute 'RETURN 1 AS ok;'"
+                ),
+            },
+        ],
+        notes=(
+            "Bolt-compatible with Neo4j drivers — change the URI and the "
+            "application code keeps working. Faster on write-heavy graphs."
+        ),
+    )
+
+
+# ---- vector_db alternatives ----
+
+def _turbopuffer() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="turbopuffer",
+        role="vector_db",
+        secrets=["TURBOPUFFER_API_KEY", "TURBOPUFFER_REGION"],
+        steps=[
+            {
+                "title": "Grab an API key from the dashboard",
+                "cmd": (
+                    "# https://turbopuffer.com/dashboard → New API Key → paste into "
+                    "# nexus.secrets.env as TURBOPUFFER_API_KEY. "
+                    "# TURBOPUFFER_REGION defaults to gcp-us-east4."
+                ),
+            },
+            {
+                "title": "Probe the API",
+                "cmd": (
+                    "curl -fsSL https://api.turbopuffer.com/v1/namespaces "
+                    "-H 'Authorization: Bearer ${TURBOPUFFER_API_KEY}'"
+                ),
+            },
+        ],
+        notes="Object-storage-backed vectors — pennies per million at rest.",
+    )
+
+
+def _pinecone() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="pinecone",
+        role="vector_db",
+        secrets=["PINECONE_API_KEY", "PINECONE_INDEX", "PINECONE_HOST"],
+        steps=[
+            {
+                "title": "Create the serverless index (idempotent — 409 if exists)",
+                "cmd": (
+                    "curl -fsSL -X POST https://api.pinecone.io/indexes "
+                    "-H 'Api-Key: ${PINECONE_API_KEY}' "
+                    "-H 'Content-Type: application/json' "
+                    "-d '{\"name\":\"${PINECONE_INDEX}\",\"dimension\":1536,\"metric\":\"cosine\",\"spec\":{\"serverless\":{\"cloud\":\"aws\",\"region\":\"us-east-1\"}}}'"
+                ),
+            },
+            {
+                "title": "Fetch the index host (paste into PINECONE_HOST)",
+                "cmd": (
+                    "curl -fsSL https://api.pinecone.io/indexes/${PINECONE_INDEX} "
+                    "-H 'Api-Key: ${PINECONE_API_KEY}'"
+                ),
+            },
+        ],
+    )
+
+
+def _pgvector() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="pgvector",
+        role="vector_db",
+        secrets=["DATABASE_URL"],
+        steps=[
+            {
+                "title": "Enable the pgvector extension in the app database",
+                "cmd": "psql ${DATABASE_URL} -c 'CREATE EXTENSION IF NOT EXISTS vector;'",
+            },
+            {
+                "title": "Create the embeddings table (safe to re-run)",
+                "cmd": (
+                    "psql ${DATABASE_URL} -c \"CREATE TABLE IF NOT EXISTS "
+                    "nexus_embeddings (id UUID PRIMARY KEY, embedding vector(1536), "
+                    "metadata JSONB);\""
+                ),
+            },
+        ],
+        notes=(
+            "Zero-extra-cost: reuses the Postgres you already picked. Fine "
+            "until ~1M vectors; graduate to Qdrant Cloud or Turbopuffer past that."
+        ),
+    )
+
+
+# ---- cache_queue alternatives ----
+
+def _redis_cloud() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="redis_cloud",
+        role="cache_queue",
+        secrets=[
+            "REDIS_CLOUD_API_KEY",
+            "REDIS_CLOUD_ACCOUNT_KEY",
+            "REDIS_URL",
+        ],
+        steps=[
+            {
+                "title": "Create a free Redis Cloud subscription",
+                "cmd": (
+                    "curl -fsSL -X POST https://api.redislabs.com/v1/subscriptions "
+                    "-H 'x-api-key: ${REDIS_CLOUD_ACCOUNT_KEY}' "
+                    "-H 'x-api-secret-key: ${REDIS_CLOUD_API_KEY}' "
+                    "-H 'Content-Type: application/json' "
+                    "-d '{\"name\":\"nexus-redis\",\"paymentMethod\":\"credit-card\",\"cloudProviders\":[{\"provider\":\"AWS\",\"regions\":[{\"region\":\"eu-west-1\",\"networking\":{\"deploymentCIDR\":\"10.0.0.0/24\"}}]}],\"databases\":[{\"name\":\"nexus\",\"memoryLimitInGb\":0.03}]}'"
+                ),
+            },
+            {
+                "title": "Copy the private endpoint into REDIS_URL",
+                "cmd": (
+                    "# The response contains 'publicEndpoint' — paste as "
+                    "# REDIS_URL=redis://default:PASSWORD@host:port in nexus.secrets.env."
+                ),
+            },
+        ],
+    )
+
+
+# ---- gpu_serverless alternatives ----
+
+def _runpod_serverless() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="runpod_serverless",
+        role="gpu_serverless",
+        secrets=["RUNPOD_API_KEY", "RUNPOD_ENDPOINT_ID"],
+        steps=[
+            {
+                "title": "Create a serverless endpoint from the Kokoro template",
+                "cmd": (
+                    "curl -fsSL -X POST https://api.runpod.io/graphql "
+                    "-H 'Authorization: Bearer ${RUNPOD_API_KEY}' "
+                    "-H 'Content-Type: application/json' "
+                    "-d '{\"query\":\"mutation { saveEndpoint(input: {name: \\\"nexus-kokoro\\\", templateId: \\\"runpod-kokoro\\\", gpuIds: \\\"NVIDIA GeForce RTX 4090\\\"}) { id } }\"}'"
+                ),
+            },
+            {
+                "title": "Copy the endpoint URL into KOKORO_URL",
+                "cmd": (
+                    "# RunPod prints https://api.runpod.ai/v2/${RUNPOD_ENDPOINT_ID}/run — "
+                    "# paste as KOKORO_URL in nexus.secrets.env."
+                ),
+            },
+        ],
+    )
+
+
+def _replicate() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="replicate",
+        role="gpu_serverless",
+        secrets=["REPLICATE_API_TOKEN"],
+        steps=[
+            {
+                "title": "Verify the API token",
+                "cmd": (
+                    "curl -fsSL https://api.replicate.com/v1/account "
+                    "-H 'Authorization: Token ${REPLICATE_API_TOKEN}'"
+                ),
+            },
+            {
+                "title": "Point Platform at Replicate as the TTS backend",
+                "cmd": (
+                    "# Set VOICE_BACKEND=replicate and VOICE_MODEL=<owner/model:version> "
+                    "# in nexus.secrets.env — Platform reads them at boot."
+                ),
+            },
+        ],
+        notes=(
+            "Pay-per-second inference on hosted models. Cheapest option when "
+            "traffic is bursty and you don't want to keep a container warm."
+        ),
+    )
+
+
+def _fly_gpu() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="fly_gpu",
+        role="gpu_serverless",
+        secrets=["FLY_API_TOKEN", "FLY_GPU_APP_NAME"],
+        steps=[
+            {
+                "title": "Authenticate flyctl",
+                "cmd": "fly auth token ${FLY_API_TOKEN}",
+            },
+            {
+                "title": "Launch a GPU machine for Kokoro",
+                "cmd": (
+                    "fly launch --name ${FLY_GPU_APP_NAME} "
+                    "--image ghcr.io/remsky/kokoro-fastapi-gpu:latest "
+                    "--vm-gpu-kind a10 --no-deploy --copy-config"
+                ),
+            },
+            {
+                "title": "Deploy and paste the URL into KOKORO_URL",
+                "cmd": "fly deploy --app ${FLY_GPU_APP_NAME}",
+            },
+        ],
+    )
+
+
+# ---- object_storage alternatives ----
+
+def _backblaze_b2() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="backblaze_b2",
+        role="object_storage",
+        secrets=[
+            "B2_APPLICATION_KEY_ID",
+            "B2_APPLICATION_KEY",
+            "B2_BUCKET",
+            "B2_ENDPOINT",
+        ],
+        steps=[
+            {
+                "title": "Authorise the B2 CLI",
+                "cmd": (
+                    "b2 authorize-account ${B2_APPLICATION_KEY_ID} ${B2_APPLICATION_KEY}"
+                ),
+            },
+            {
+                "title": "Create the bucket (idempotent — exits 1 if it exists, which is fine)",
+                "cmd": "b2 create-bucket ${B2_BUCKET} allPrivate || true",
+            },
+            {
+                "title": "Copy the S3-compatible endpoint into B2_ENDPOINT",
+                "cmd": "b2 get-account-info | grep s3endpoint",
+            },
+        ],
+        notes="S3-compatible; 10 GB free forever. Egress cheaper than S3.",
+    )
+
+
+def _aws_s3() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="aws_s3",
+        role="object_storage",
+        secrets=[
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "AWS_REGION",
+            "S3_BUCKET",
+        ],
+        steps=[
+            {
+                "title": "Create the S3 bucket (idempotent — BucketAlreadyOwnedByYou is fine)",
+                "cmd": (
+                    "aws s3api create-bucket "
+                    "--bucket ${S3_BUCKET} --region ${AWS_REGION} "
+                    "--create-bucket-configuration LocationConstraint=${AWS_REGION}"
+                ),
+            },
+            {
+                "title": "Block public access",
+                "cmd": (
+                    "aws s3api put-public-access-block "
+                    "--bucket ${S3_BUCKET} "
+                    "--public-access-block-configuration "
+                    "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
+                ),
+            },
+        ],
+    )
+
+
+# ---- auth alternatives ----
+
+def _workos() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="workos",
+        role="auth",
+        secrets=["WORKOS_API_KEY", "WORKOS_CLIENT_ID"],
+        steps=[
+            {
+                "title": "Grab the API key + client id from the WorkOS dashboard",
+                "cmd": (
+                    "# https://dashboard.workos.com → API Keys. Paste both into "
+                    "# nexus.secrets.env. Turn on SSO + Directory Sync connectors "
+                    "# per customer from the same dashboard."
+                ),
+            },
+            {
+                "title": "Verify the key with the API",
+                "cmd": (
+                    "curl -fsSL https://api.workos.com/user_management/users "
+                    "-H 'Authorization: Bearer ${WORKOS_API_KEY}'"
+                ),
+            },
+        ],
+        notes="Best pick when you need SSO/SAML for enterprise customers.",
+    )
+
+
+def _better_auth() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="better_auth",
+        role="auth",
+        secrets=["BETTER_AUTH_SECRET", "BETTER_AUTH_URL"],
+        steps=[
+            {
+                "title": "Generate a signing secret",
+                "cmd": (
+                    "# Run once locally: `openssl rand -base64 32` and paste the "
+                    "# output into nexus.secrets.env as BETTER_AUTH_SECRET. "
+                    "# BETTER_AUTH_URL is the public Platform URL."
+                ),
+            },
+            {
+                "title": "Run migrations against DATABASE_URL",
+                "cmd": "npx @better-auth/cli migrate --database ${DATABASE_URL}",
+            },
+        ],
+        notes=(
+            "Self-hosted — no external vendor. Auth data lives inside the "
+            "Platform Postgres. Zero recurring cost."
+        ),
+    )
+
+
+# ---- error_monitoring alternatives ----
+
+def _glitchtip() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="glitchtip",
+        role="error_monitoring",
+        secrets=["GLITCHTIP_HOST", "GLITCHTIP_DSN", "GLITCHTIP_AUTH_TOKEN"],
+        steps=[
+            {
+                "title": "Create the GlitchTip project (managed or self-hosted — same API as Sentry)",
+                "cmd": (
+                    "curl -fsSL -X POST "
+                    "https://${GLITCHTIP_HOST}/api/0/teams/nexus/nexus/projects/ "
+                    "-H 'Authorization: Bearer ${GLITCHTIP_AUTH_TOKEN}' "
+                    "-H 'Content-Type: application/json' "
+                    "-d '{\"name\":\"nexus-platform\",\"platform\":\"python\"}'"
+                ),
+            },
+            {
+                "title": "Fetch the DSN and paste it into GLITCHTIP_DSN",
+                "cmd": (
+                    "curl -fsSL "
+                    "https://${GLITCHTIP_HOST}/api/0/projects/nexus/nexus-platform/keys/ "
+                    "-H 'Authorization: Bearer ${GLITCHTIP_AUTH_TOKEN}'"
+                ),
+            },
+        ],
+        notes=(
+            "Sentry-compatible SDK — flip SENTRY_DSN to the GlitchTip DSN and "
+            "the application code is unchanged."
+        ),
+    )
+
+
+# ---- log_platform alternatives ----
+
+def _better_stack() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="better_stack",
+        role="log_platform",
+        secrets=[
+            "BETTERSTACK_TEAM_TOKEN",
+            "BETTERSTACK_SOURCE_TOKEN",
+            "BETTERSTACK_INGEST_HOST",
+        ],
+        steps=[
+            {
+                "title": "Create the log source (idempotent — 409 if exists)",
+                "cmd": (
+                    "curl -fsSL -X POST https://logs.betterstack.com/api/v1/sources "
+                    "-H 'Authorization: Bearer ${BETTERSTACK_TEAM_TOKEN}' "
+                    "-H 'Content-Type: application/json' "
+                    "-d '{\"name\":\"nexus-platform\",\"platform\":\"vector\"}'"
+                ),
+            },
+            {
+                "title": "Copy the ingest host + source token into nexus.secrets.env",
+                "cmd": (
+                    "curl -fsSL https://logs.betterstack.com/api/v1/sources "
+                    "-H 'Authorization: Bearer ${BETTERSTACK_TEAM_TOKEN}'"
+                ),
+            },
+        ],
+    )
+
+
+def _grafana_cloud() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="grafana_cloud",
+        role="log_platform",
+        secrets=[
+            "GRAFANA_CLOUD_STACK_ID",
+            "GRAFANA_CLOUD_API_KEY",
+            "GRAFANA_LOKI_URL",
+            "GRAFANA_LOKI_USER",
+            "GRAFANA_PROM_URL",
+            "GRAFANA_PROM_USER",
+            "GRAFANA_TEMPO_URL",
+        ],
+        steps=[
+            {
+                "title": "Create a Grafana Cloud stack (skip if you already have one)",
+                "cmd": (
+                    "curl -fsSL -X POST https://grafana.com/api/instances "
+                    "-H 'Authorization: Bearer ${GRAFANA_CLOUD_API_KEY}' "
+                    "-H 'Content-Type: application/json' "
+                    "-d '{\"name\":\"nexus\",\"slug\":\"nexus\",\"region\":\"eu\"}'"
+                ),
+            },
+            {
+                "title": "Fetch the Loki / Prometheus / Tempo endpoints",
+                "cmd": (
+                    "curl -fsSL https://grafana.com/api/instances/${GRAFANA_CLOUD_STACK_ID} "
+                    "-H 'Authorization: Bearer ${GRAFANA_CLOUD_API_KEY}'"
+                ),
+            },
+            {
+                "title": "Push logs via Vector or Promtail (see notes)",
+                "cmd": (
+                    "# Configure the Platform's log shipper with the Loki URL "
+                    "# and basic-auth user — both come from the response above."
+                ),
+            },
+        ],
+        notes=(
+            "Free tier bundles 50 GB logs + 10k metrics series + 50 GB traces. "
+            "Better than Axiom if you also want Prometheus metrics + Tempo "
+            "traces in the same pane."
+        ),
+    )
+
+
+# ---- product_analytics alternatives ----
+
+def _plausible() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="plausible",
+        role="product_analytics",
+        secrets=["PLAUSIBLE_API_KEY", "PLAUSIBLE_SITE_ID"],
+        steps=[
+            {
+                "title": "Create the site (idempotent — 409 if the domain exists)",
+                "cmd": (
+                    "curl -fsSL -X POST https://plausible.io/api/v1/sites "
+                    "-H 'Authorization: Bearer ${PLAUSIBLE_API_KEY}' "
+                    "-H 'Content-Type: application/x-www-form-urlencoded' "
+                    "-d 'domain=${PLAUSIBLE_SITE_ID}&timezone=Europe/Madrid'"
+                ),
+            },
+            {
+                "title": "Verify with the health endpoint",
+                "cmd": (
+                    "curl -fsSL https://plausible.io/api/v1/sites/${PLAUSIBLE_SITE_ID} "
+                    "-H 'Authorization: Bearer ${PLAUSIBLE_API_KEY}'"
+                ),
+            },
+        ],
+        notes=(
+            "Cookieless, GDPR-friendly, single script tag. Drop-in when you "
+            "don't need PostHog's session replay or feature flags."
+        ),
+    )
+
+
+# ---- llm_observability alternatives ----
+
+def _langsmith() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="langsmith",
+        role="llm_observability",
+        secrets=["LANGSMITH_API_KEY", "LANGSMITH_PROJECT", "LANGSMITH_ENDPOINT"],
+        steps=[
+            {
+                "title": "Create an API key from the LangSmith dashboard",
+                "cmd": (
+                    "# https://smith.langchain.com → Settings → API Keys. Paste into "
+                    "# nexus.secrets.env. LANGSMITH_ENDPOINT is "
+                    "# https://api.smith.langchain.com by default."
+                ),
+            },
+            {
+                "title": "Create the project on first trace (idempotent)",
+                "cmd": (
+                    "curl -fsSL -X POST "
+                    "${LANGSMITH_ENDPOINT}/api/v1/sessions "
+                    "-H 'x-api-key: ${LANGSMITH_API_KEY}' "
+                    "-H 'Content-Type: application/json' "
+                    "-d '{\"name\":\"${LANGSMITH_PROJECT}\"}'"
+                ),
+            },
+        ],
+    )
+
+
+# ---- email_transactional alternatives ----
+
+def _postmark() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="postmark",
+        role="email_transactional",
+        secrets=[
+            "POSTMARK_ACCOUNT_TOKEN",
+            "POSTMARK_SERVER_TOKEN",
+            "POSTMARK_FROM_ADDRESS",
+        ],
+        steps=[
+            {
+                "title": "Create a transactional server (idempotent — 409 if the name exists)",
+                "cmd": (
+                    "curl -fsSL -X POST https://api.postmarkapp.com/servers "
+                    "-H 'X-Postmark-Account-Token: ${POSTMARK_ACCOUNT_TOKEN}' "
+                    "-H 'Content-Type: application/json' "
+                    "-d '{\"Name\":\"nexus\",\"Color\":\"Blue\"}'"
+                ),
+            },
+            {
+                "title": "Copy the server token into POSTMARK_SERVER_TOKEN",
+                "cmd": (
+                    "curl -fsSL https://api.postmarkapp.com/servers "
+                    "-H 'X-Postmark-Account-Token: ${POSTMARK_ACCOUNT_TOKEN}'"
+                ),
+            },
+        ],
+    )
+
+
+# ---- background_jobs alternatives ----
+
+def _inngest() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="inngest",
+        role="background_jobs",
+        secrets=[
+            "INNGEST_EVENT_KEY",
+            "INNGEST_SIGNING_KEY",
+            "INNGEST_APP_ID",
+        ],
+        steps=[
+            {
+                "title": "Create the Inngest app from the dashboard",
+                "cmd": (
+                    "# https://app.inngest.com → New App. Copy the event key + "
+                    "# signing key into nexus.secrets.env."
+                ),
+            },
+            {
+                "title": "Register the served endpoint with Inngest",
+                "cmd": (
+                    "curl -fsSL -X PUT ${PLATFORM_PUBLIC_URL}/api/inngest "
+                    "-H 'Content-Type: application/json'"
+                ),
+            },
+        ],
+        notes=(
+            "Serverless-native background jobs with automatic retries + "
+            "replay. Free tier is generous — 25k steps/month."
+        ),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Registry.
 # ---------------------------------------------------------------------------
 
@@ -576,6 +1348,31 @@ _BUILDERS: dict[str, Callable[[], ServiceHandoff]] = {
     "resend": _resend,
     "trigger_dev": _trigger_dev,
     "github_actions": _github_actions,
+    # Alternatives (free-tier / lower-cost swaps).
+    "fly": _fly,
+    "render": _render,
+    "cloudflare_pages": _cloudflare_pages,
+    "netlify": _netlify,
+    "supabase": _supabase,
+    "memgraph_cloud": _memgraph_cloud,
+    "turbopuffer": _turbopuffer,
+    "pinecone": _pinecone,
+    "pgvector": _pgvector,
+    "redis_cloud": _redis_cloud,
+    "runpod_serverless": _runpod_serverless,
+    "replicate": _replicate,
+    "fly_gpu": _fly_gpu,
+    "backblaze_b2": _backblaze_b2,
+    "aws_s3": _aws_s3,
+    "workos": _workos,
+    "better_auth": _better_auth,
+    "glitchtip": _glitchtip,
+    "better_stack": _better_stack,
+    "grafana_cloud": _grafana_cloud,
+    "plausible": _plausible,
+    "langsmith": _langsmith,
+    "postmark": _postmark,
+    "inngest": _inngest,
 }
 
 

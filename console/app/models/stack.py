@@ -594,6 +594,18 @@ CATALOGUE: list[StackService] = [
         open_source=True,
         homepage="https://grafana.com/oss/loki/",
     ),
+    StackService(
+        slug="grafana_cloud",
+        name="Grafana Cloud",
+        vendor="Grafana Labs",
+        role="log_platform",
+        tiers=["free", "hobby", "standard"],
+        price_entry_usd=0.0,
+        price_scale_usd=29.0,
+        homepage="https://grafana.com/products/cloud/",
+        notes="50 GB logs + 10k series metrics + 50 GB traces on the free tier.",
+        handoff_playbook="grafana-cloud-stack",
+    ),
 
     # ---- Product analytics ----
     StackService(
