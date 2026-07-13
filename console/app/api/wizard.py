@@ -10,6 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.db import SessionLocal, get_db
 from app.models.db import InstanceRow
+from app.models.host_capabilities import (
+    DISCOVERY_INSTRUCTIONS,
+    HostAssessment,
+    HostCapabilities,
+    OperatingSystem,
+    assess_host,
+    discovery_command,
+    parse_discovery_output,
+)
 from app.models.stack import (
     CATALOGUE,
     STANDARD_100_EUR_STACK,
@@ -166,6 +175,47 @@ async def wizard_stack_catalog():
 async def wizard_stack_recommend(prefs: StackPreferences):
     """Recommend a concrete stack given operator preferences."""
     return recommend_stack(prefs)
+
+
+# ---------------------------------------------------------------------------
+# Host capability discovery — gates local deployment.
+# ---------------------------------------------------------------------------
+
+
+from pydantic import BaseModel  # noqa: E402
+
+
+class HostDiscoveryPrompt(BaseModel):
+    os: OperatingSystem
+    instructions: str
+    command: str
+
+
+class HostParseRequest(BaseModel):
+    os: OperatingSystem
+    raw_output: str
+
+
+class HostAssessmentResponse(BaseModel):
+    capabilities: HostCapabilities
+    assessment: HostAssessment
+
+
+@router.get("/host/discovery-prompt", response_model=HostDiscoveryPrompt)
+async def wizard_host_discovery_prompt(os: OperatingSystem):
+    """Give the operator the exact command to run for their OS."""
+    return HostDiscoveryPrompt(
+        os=os,
+        instructions=DISCOVERY_INSTRUCTIONS[os],
+        command=discovery_command(os),
+    )
+
+
+@router.post("/host/assess", response_model=HostAssessmentResponse)
+async def wizard_host_assess(req: HostParseRequest):
+    """Parse the discovery output and return the local-vs-cloud verdict."""
+    caps = parse_discovery_output(req.os, req.raw_output)
+    return HostAssessmentResponse(capabilities=caps, assessment=assess_host(caps))
 
 
 @router.post("/preview", response_model=WizardPreview)

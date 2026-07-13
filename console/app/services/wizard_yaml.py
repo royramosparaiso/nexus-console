@@ -82,6 +82,7 @@ def render_instance_yaml(sub: WizardSubmission) -> str:
     if sub.stack is not None:
         # Import here so the yaml module doesn't hard-depend on the
         # provisioning layer for its own tests.
+        from app.models.host_capabilities import assess_host
         from app.services.stack_provisioning import handoff_for
 
         lines.append(f"  stack:")
@@ -89,6 +90,36 @@ def render_instance_yaml(sub: WizardSubmission) -> str:
         lines.append(f"    monthly_budget_eur: {sub.stack.preferences.monthly_budget_eur}")
         lines.append(f"    deployment_mode: {sub.stack.preferences.deployment_mode}")
         lines.append(f"    estimated_monthly_usd: {sub.stack.selection.estimated_monthly_usd}")
+
+        # Host capabilities — what laptop the operator is running from.
+        if sub.stack.host is not None:
+            host = sub.stack.host
+            lines.append(f"    host:")
+            lines.append(f"      os: {host.os}")
+            if host.os_version:
+                lines.append(f"      os_version: {_yaml_scalar(host.os_version)}")
+            lines.append(f"      arch: {host.arch}")
+            if host.cpu_cores is not None:
+                lines.append(f"      cpu_cores: {host.cpu_cores}")
+            if host.ram_gb is not None:
+                lines.append(f"      ram_gb: {host.ram_gb}")
+            if host.free_disk_gb is not None:
+                lines.append(f"      free_disk_gb: {host.free_disk_gb}")
+            lines.append(f"      has_gpu: {_yaml_scalar(host.has_gpu)}")
+            if host.gpu_model:
+                lines.append(f"      gpu_model: {_yaml_scalar(host.gpu_model)}")
+            lines.append(f"      docker_available: {_yaml_scalar(host.docker_available)}")
+
+            assessment = assess_host(host)
+            lines.append(f"      local_supported: {_yaml_scalar(assessment.local_supported)}")
+            if assessment.reasons:
+                lines.append(f"      local_blockers:")
+                for reason in assessment.reasons:
+                    lines.append(f"        - {_yaml_scalar(reason)}")
+            if assessment.warnings:
+                lines.append(f"      host_warnings:")
+                for w in assessment.warnings:
+                    lines.append(f"        - {_yaml_scalar(w)}")
         lines.append(f"    # handoff=builder: nexus.handoff.md will include "
                      f"scripted provisioning steps.")
         lines.append(f"    # handoff=manual : self-hosted or dashboard-only "
@@ -125,6 +156,19 @@ def render_instance_yaml(sub: WizardSubmission) -> str:
 
 def compute_warnings(sub: WizardSubmission) -> list[str]:
     warnings: list[str] = []
+    if (
+        sub.stack is not None
+        and sub.stack.host is not None
+        and sub.stack.preferences.deployment_mode == "local"
+    ):
+        from app.models.host_capabilities import assess_host
+        assessment = assess_host(sub.stack.host)
+        if not assessment.local_supported:
+            warnings.append(
+                "Host does not meet the local-deployment bar: "
+                + "; ".join(assessment.reasons)
+                + ". Consider switching deployment_mode to `cloud`."
+            )
     if sub.llms.monthly_budget_usd == 0:
         warnings.append("Budget is 0 USD — LLM calls will be blocked at ceiling. OK if you rely only on Ollama.")
     if "ollama" not in sub.llms.enabled_providers and sub.llms.monthly_budget_usd < 10:

@@ -18,6 +18,8 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.models.host_capabilities import HostCapabilities
+
 
 # ---------------------------------------------------------------------------
 # Roles — what a service *does* in the stack.
@@ -210,8 +212,8 @@ CATALOGUE: list[StackService] = [
         name="Supabase",
         vendor="Supabase",
         role="postgres",
-        tiers=["free", "standard", "scale"],
-        price_entry_usd=25.0,
+        tiers=["free", "hobby", "standard", "scale"],
+        price_entry_usd=0.0,
         price_scale_usd=125.0,
         open_source=True,
         homepage="https://supabase.com/pricing",
@@ -882,13 +884,20 @@ def _pick_for_role(
             return CATALOGUE_BY_SLUG[canonical]
 
     # Hobby tier: role-specific overrides that beat pure-price sorting.
-    # Grafana Cloud wins over Axiom for log_platform because its free
-    # tier bundles logs + metrics + traces in one pane — strictly more
-    # capability at the same 0-EUR entry price. Skip the override when
-    # the operator asked for open-source only (Grafana Cloud is managed).
+    #
+    # log_platform : Grafana Cloud wins over Axiom — same 0-EUR entry
+    #   price but bundles logs + metrics + traces in one pane.
+    # postgres     : Supabase wins over Neon — same 0-EUR entry price
+    #   but ships with pgvector, RLS auth and storage buckets, so a
+    #   hobby operator gets three roles worth of infrastructure from
+    #   one signup instead of three.
+    #
+    # All overrides are skipped when the operator asked for
+    # `prefer_open_source=True` — they're all managed services.
     if tier == "hobby":
         hobby_overrides: dict[StackRole, str] = {
             "log_platform": "grafana_cloud",
+            "postgres":     "supabase",
         }
         override_slug = hobby_overrides.get(role)
         if override_slug and not prefs.prefer_open_source:
@@ -996,6 +1005,10 @@ class StackConfig(BaseModel):
     overrides: dict[StackRole, str] = Field(
         default_factory=dict,
         description="Manual overrides applied on top of the recommender.",
+    )
+    host: "HostCapabilities | None" = Field(
+        default=None,
+        description="Operator's laptop specs — gates local deployment and shapes the handoff.",
     )
 
     def effective_services(self) -> dict[StackRole, str]:

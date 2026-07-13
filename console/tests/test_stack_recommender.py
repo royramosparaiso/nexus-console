@@ -117,6 +117,32 @@ def test_recommend_hobby_prefers_grafana_cloud_over_axiom():
     )
 
 
+def test_recommend_hobby_prefers_supabase_over_neon():
+    from app.models.stack import StackPreferences, recommend_stack
+
+    prefs = StackPreferences(
+        monthly_budget_eur=30,
+        deployment_mode="cloud",
+        prefer_open_source=False,
+    )
+    sel = recommend_stack(prefs)
+    assert sel.tier == "hobby"
+    assert sel.services.get("postgres") == "supabase", (
+        "hobby tier should prefer Supabase — same 0 EUR entry price but "
+        "bundles Postgres + pgvector + auth + storage in one project"
+    )
+
+
+def test_recommend_standard_still_uses_neon():
+    from app.models.stack import StackPreferences, recommend_stack
+
+    prefs = StackPreferences(monthly_budget_eur=100, deployment_mode="cloud")
+    sel = recommend_stack(prefs)
+    # Canonical 100 EUR stack keeps Neon — the hobby override is
+    # scoped to hobby tier only.
+    assert sel.services["postgres"] == "neon"
+
+
 def test_recommend_hobby_override_is_skipped_when_service_removed():
     """Sanity: if grafana_cloud lost its 'hobby' tier, the override
     should silently fall through instead of returning an invalid pick."""
@@ -239,6 +265,68 @@ def test_yaml_labels_services_as_builder_or_manual():
         assert f"{role}: {{ slug: {slug}," in yaml_text
     assert "handoff_summary:" in yaml_text
     assert "automated:" in yaml_text
+
+
+def test_yaml_handoff_summary_groups_every_standard_service():
+    """Standard 100 EUR stack: every role must land in exactly one of
+    handoff_summary.automated or handoff_summary.manual — no drops, no
+    duplicates. Guards against silent regressions when we add roles."""
+    from app.models.stack import (
+        STANDARD_100_EUR_STACK, StackConfig,
+    )
+    from app.services.stack_provisioning import handoff_for
+    from app.services.wizard_yaml import render_instance_yaml
+
+    prefs = StackPreferences(monthly_budget_eur=100, deployment_mode="cloud")
+    sel = recommend_stack(prefs)
+    cfg = StackConfig(preferences=prefs, selection=sel)
+    effective = cfg.effective_services()
+    yaml_text = render_instance_yaml(_make_submission(cfg))
+
+    # Pull the automated/manual lines out of the YAML.
+    def _extract(prefix: str) -> set[str]:
+        for line in yaml_text.splitlines():
+            stripped = line.strip()
+            if stripped.startswith(prefix):
+                # 'automated: "app_compute=railway, postgres=neon, ..."'
+                _, _, value = stripped.partition(":")
+                value = value.strip().strip('"')
+                if value in ("(none)", ""):
+                    return set()
+                return {item.strip() for item in value.split(",")}
+        raise AssertionError(f"prefix {prefix!r} not found in YAML")
+
+    automated = _extract("automated:")
+    manual = _extract("manual:")
+
+    # No overlap between groups.
+    assert automated.isdisjoint(manual), (
+        f"role appears in both groups: {automated & manual}"
+    )
+
+    # Union covers every role in the effective stack — nothing dropped.
+    grouped_roles = {item.split("=", 1)[0] for item in automated | manual}
+    assert grouped_roles == set(effective.keys()), (
+        f"missing: {set(effective) - grouped_roles}, "
+        f"extra: {grouped_roles - set(effective)}"
+    )
+
+    # And each grouped role points at the same slug the wizard chose.
+    grouped_map = {
+        item.split("=", 1)[0]: item.split("=", 1)[1]
+        for item in automated | manual
+    }
+    assert grouped_map == effective
+
+    # Each canonical standard-stack service that HAS a builder must be
+    # in `automated`; each one without must be in `manual`.
+    for role, slug in STANDARD_100_EUR_STACK.items():
+        if role not in effective:
+            continue
+        if effective[role] != slug:
+            continue  # override kicked in — covered by the other tests
+        expected_group = automated if handoff_for(slug) else manual
+        assert f"{role}={slug}" in expected_group
 
 
 def test_yaml_labels_self_host_only_service_as_manual():
