@@ -1,10 +1,4 @@
-"""Wizard smoke tests."""
-
-import pytest
-from httpx import ASGITransport, AsyncClient
-
-from app.main import app
-
+"""Wizard tests — preview, submit (dry_run), rejections."""
 
 SAMPLE_SUBMISSION = {
     "instance_name": "acme",
@@ -15,9 +9,9 @@ SAMPLE_SUBMISSION = {
         "default_locale": "en-US",
     },
     "deployment": {
-        "modality": "fly",
-        "domain": "nexus.acme.example",
-        "region": "ams",
+        "modality": "local",
+        "domain": None,
+        "region": None,
         "tls": True,
         "autoscale": False,
     },
@@ -49,57 +43,60 @@ SAMPLE_SUBMISSION = {
 }
 
 
-@pytest.mark.asyncio
-async def test_wizard_schema_has_six_steps():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        r = await client.get("/wizard/schema")
+async def test_wizard_schema_has_six_steps(client):
+    r = await client.get("/wizard/schema")
     assert r.status_code == 200
     body = r.json()
     assert len(body["steps"]) == 6
     assert {s["id"] for s in body["steps"]} == {
         "persona", "deployment", "llms", "memory", "areas", "governance"
     }
+    # New fields exposed to the frontend
+    assert any(x["value"] == "in_process" for x in body["agent_runtimes"])
+    assert any(x["value"] == "clerk" for x in body["auth_providers"])
 
 
-@pytest.mark.asyncio
-async def test_wizard_preview_renders_yaml():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        r = await client.post("/wizard/preview", json=SAMPLE_SUBMISSION)
+async def test_wizard_preview_renders_yaml(client):
+    r = await client.post("/wizard/preview", json=SAMPLE_SUBMISSION)
     assert r.status_code == 200, r.text
     body = r.json()
     assert "apiVersion: nexus.v0.6" in body["yaml"]
     assert "kind: Instance" in body["yaml"]
-    assert "modality: fly" in body["yaml"]
+    assert "modality: local" in body["yaml"]
     assert "- personal_organization" in body["yaml"]
     assert isinstance(body["warnings"], list)
 
 
-@pytest.mark.asyncio
-async def test_wizard_submit_registers_instance(tmp_path, monkeypatch):
-    monkeypatch.chdir(tmp_path)
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        r = await client.post("/wizard/submit", json=SAMPLE_SUBMISSION)
-        assert r.status_code == 200, r.text
-        result = r.json()
-        assert result["status"] == "bootstrap-pending"
-        iid = result["instance_id"]
+async def test_wizard_submit_local_provisions_and_registers(client):
+    r = await client.post(
+        "/wizard/submit?dry_run=true",
+        json=SAMPLE_SUBMISSION,
+    )
+    assert r.status_code == 200, r.text
+    result = r.json()
+    assert result["status"] == "bootstrap-pending"
+    iid = result["instance_id"]
 
-        # Registered in the in-memory registry
-        r2 = await client.get(f"/instances/{iid}")
-        assert r2.status_code == 200
-        assert r2.json()["name"] == "acme"
+    # Registered
+    r2 = await client.get(f"/instances/{iid}")
+    assert r2.status_code == 200
+    detail = r2.json()
+    assert detail["name"] == "acme"
+    assert detail["persona_kind"] == "company"
+    assert detail["modality"] == "local"
+    assert detail["agent_runtime"] == "in_process"
+    assert detail["auth_provider"] == "password_totp"
+    assert detail["endpoint"].startswith("http://localhost:")
 
-    # YAML file was written
-    yaml_file = tmp_path / "console" / "instance" / iid / "nexus.instance.yaml"
-    assert yaml_file.exists()
-    content = yaml_file.read_text()
-    assert "persona:" in content
-    assert "kind: company" in content
 
-
-@pytest.mark.asyncio
-async def test_wizard_rejects_unknown_area():
+async def test_wizard_rejects_unknown_area(client):
     bad = {**SAMPLE_SUBMISSION, "areas": {"enabled": ["not_a_real_area"]}}
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        r = await client.post("/wizard/preview", json=bad)
+    r = await client.post("/wizard/preview", json=bad)
     assert r.status_code == 422
+
+
+async def test_wizard_non_local_modality_marked_unsupported(client):
+    body = {**SAMPLE_SUBMISSION, "deployment": {**SAMPLE_SUBMISSION["deployment"], "modality": "fly", "region": "ams", "domain": "nexus.acme.example"}}
+    r = await client.post("/wizard/submit?dry_run=true", json=body)
+    assert r.status_code == 200, r.text
+    assert r.json()["status"] == "unsupported"

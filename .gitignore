@@ -54,3 +54,6 @@ data/
 console/instance/
 console/deploy_state/
 *.tsbuildinfo
+
+console/vendor/
+

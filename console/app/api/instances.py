@@ -1,73 +1,125 @@
-"""Instances endpoints — CRUD stub for the Instance Registry."""
+"""Instances endpoints — persistent registry backed by SQLAlchemy."""
 
-from datetime import datetime, timezone
-from uuid import UUID, uuid4
+from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, Field
+import time
+from datetime import datetime
+from uuid import UUID
+
+import httpx
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from nexus_core.contracts.commands import (
+    Command, CommandEnvelope, CommandKind,
+)
+from nexus_core.jwt import sign_command
+
+from app.db import get_db
+from app.models.db import InstanceRow
+from app.services.keypair import get_or_create_keypair
 
 router = APIRouter()
-
-
-# ---------- Schemas (stub — will move to nexus-core) ----------
-
-class InstanceCreate(BaseModel):
-    name: str = Field(..., min_length=1, max_length=100)
-    persona_display_name: str
-    modality: str = Field(..., description="local | fly | k8s | onprem | saas")
-    llm_providers: list[str] = Field(default_factory=list)
-    areas: list[str] = Field(default_factory=list)
 
 
 class InstanceOut(BaseModel):
     instance_id: UUID
     name: str
     persona_display_name: str
+    persona_kind: str
     modality: str
+    agent_runtime: str
+    auth_provider: str
     endpoint: str | None
     version: str | None
     status: str
+    error_detail: str | None = None
     created_at: datetime
+    bootstrapped_at: datetime | None = None
 
 
-# ---------- In-memory stub registry (TODO: replace with Postgres) ----------
-
-_REGISTRY: dict[UUID, InstanceOut] = {}
+def _to_out(row: InstanceRow) -> InstanceOut:
+    return InstanceOut(
+        instance_id=row.id,
+        name=row.name,
+        persona_display_name=row.persona_display_name,
+        persona_kind=row.persona_kind,
+        modality=row.modality,
+        agent_runtime=row.agent_runtime,
+        auth_provider=row.auth_provider,
+        endpoint=row.endpoint,
+        version=row.platform_version,
+        status=row.status,
+        error_detail=row.error_detail,
+        created_at=row.created_at,
+        bootstrapped_at=row.bootstrapped_at,
+    )
 
 
 @router.get("", response_model=list[InstanceOut])
-async def list_instances():
-    return list(_REGISTRY.values())
-
-
-@router.post("", response_model=InstanceOut, status_code=status.HTTP_201_CREATED)
-async def create_instance(body: InstanceCreate):
-    iid = uuid4()
-    instance = InstanceOut(
-        instance_id=iid,
-        name=body.name,
-        persona_display_name=body.persona_display_name,
-        modality=body.modality,
-        endpoint=None,
-        version=None,
-        status="bootstrap-pending",
-        created_at=datetime.now(timezone.utc),
-    )
-    _REGISTRY[iid] = instance
-    # TODO: dispatch wizard + deployer
-    return instance
+async def list_instances(db: AsyncSession = Depends(get_db)):
+    rows = (await db.execute(select(InstanceRow).order_by(InstanceRow.created_at.desc()))).scalars().all()
+    return [_to_out(r) for r in rows]
 
 
 @router.get("/{instance_id}", response_model=InstanceOut)
-async def get_instance(instance_id: UUID):
-    if instance_id not in _REGISTRY:
+async def get_instance(instance_id: UUID, db: AsyncSession = Depends(get_db)):
+    row = await db.get(InstanceRow, instance_id)
+    if row is None:
         raise HTTPException(status_code=404, detail="instance not found")
-    return _REGISTRY[instance_id]
+    return _to_out(row)
 
 
-@router.post("/{instance_id}/command", status_code=status.HTTP_202_ACCEPTED)
-async def send_command(instance_id: UUID, payload: dict):
-    if instance_id not in _REGISTRY:
+class CommandRequest(BaseModel):
+    kind: CommandKind
+    payload: dict = {}
+
+
+class CommandResponse(BaseModel):
+    accepted: bool
+    cmd_id: UUID
+    status: str
+    detail: str | None = None
+
+
+@router.post("/{instance_id}/command", response_model=CommandResponse)
+async def send_command(
+    instance_id: UUID, body: CommandRequest, db: AsyncSession = Depends(get_db),
+):
+    """Sign a JWT command and POST it to the Platform's /_commands."""
+    row = await db.get(InstanceRow, instance_id)
+    if row is None:
         raise HTTPException(status_code=404, detail="instance not found")
-    # TODO: sign JWT with console key, POST to platform /_console/command
-    return {"accepted": True, "command": payload.get("cmd"), "instance_id": str(instance_id)}
+    if row.status != "running" or not row.endpoint:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"instance not running (status={row.status})",
+        )
+    kp = await get_or_create_keypair(db)
+
+    now = int(time.time())
+    env = CommandEnvelope(
+        instance_id=row.id,
+        issued_at=now,
+        expires_at=now + 300,
+        command=Command(kind=body.kind, payload=body.payload),
+    )
+    token = sign_command(kp, env)
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        r = await client.post(
+            f"{row.endpoint}/_commands",
+            content=token,
+            headers={"Content-Type": "application/jwt"},
+        )
+    if r.status_code >= 500:
+        raise HTTPException(status_code=502, detail=f"platform error: {r.text[:200]}")
+    result = r.json()
+    return CommandResponse(
+        accepted=r.status_code < 400,
+        cmd_id=env.cmd_id,
+        status=result.get("status", "unknown"),
+        detail=result.get("detail"),
+    )

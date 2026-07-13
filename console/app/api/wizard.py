@@ -1,18 +1,29 @@
-"""Wizard endpoints — emits nexus.instance.yaml and registers the instance."""
+"""Wizard endpoints — persists an Instance, provisions Platform, dispatches bootstrap."""
 
-from datetime import datetime, timezone
+from __future__ import annotations
+
 from pathlib import Path
-from uuid import uuid4
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.instances import InstanceOut, _REGISTRY
+from app.core.config import settings
+from app.db import SessionLocal, get_db
+from app.models.db import InstanceRow
 from app.models.wizard import (
     AVAILABLE_AREAS,
     WizardPreview,
     WizardSubmission,
     WizardSubmitResult,
 )
+from app.services.bootstrap_client import (
+    BootstrapError, dispatch_bootstrap, wait_healthy,
+)
+from app.services.deployer import (
+    DeployerError, provision_local, start_compose,
+)
+from app.services.keypair import get_or_create_keypair
+from app.services.manifest import submission_to_manifest
 from app.services.wizard_yaml import compute_warnings, default_areas, render_instance_yaml
 
 router = APIRouter()
@@ -20,10 +31,7 @@ router = APIRouter()
 
 @router.get("/schema")
 async def wizard_schema():
-    """Front-end fetches this once to render forms.
-
-    Returns metadata about steps, available options and sensible defaults.
-    """
+    """Front-end fetches this once to render forms."""
     return {
         "steps": [
             {"id": "persona", "label": "Persona"},
@@ -48,9 +56,22 @@ async def wizard_schema():
             {"value": "onprem", "label": "On-premise"},
             {"value": "saas", "label": "Managed SaaS (hosted by operator)"},
         ],
+        "agent_runtimes": [
+            {"value": "in_process", "label": "In-process (default; simplest)"},
+            {"value": "redis_workers", "label": "Redis workers (v0.7 — reserved)"},
+        ],
         "llm_providers": [
             "anthropic", "openai", "openrouter", "perplexity",
             "groq", "together", "mistral", "ollama",
+        ],
+        "auth_providers": [
+            {"value": "password_totp", "label": "Password + TOTP (offline)"},
+            {"value": "magic_link", "label": "Magic link (email)"},
+            {"value": "oauth_google", "label": "Google OAuth"},
+            {"value": "oauth_microsoft", "label": "Microsoft OAuth"},
+            {"value": "oauth_github", "label": "GitHub OAuth"},
+            {"value": "console_idp", "label": "Console IdP (cross-instance)"},
+            {"value": "clerk", "label": "Clerk (SaaS auth)"},
         ],
         "memory_drivers": [
             {"value": "sqlite", "label": "SQLite (single-file, local only)"},
@@ -82,6 +103,8 @@ async def wizard_schema():
                 "region": None,
                 "tls": True,
                 "autoscale": False,
+                "runtime": "in_process",
+                "worker_replicas": 1,
             },
             "llms": {
                 "enabled_providers": ["anthropic", "openai"],
@@ -107,6 +130,7 @@ async def wizard_schema():
                 "audit_retention_days": 730,
                 "monthly_budget_alert_pct": 80,
                 "require_2fa_for_superadmin": True,
+                "auth": {"provider": "password_totp"},
             },
         },
     }
@@ -120,41 +144,113 @@ async def wizard_preview(sub: WizardSubmission):
 
 
 @router.post("/submit", response_model=WizardSubmitResult)
-async def wizard_submit(sub: WizardSubmission):
-    # Compute warnings — do NOT block on warnings, only on validation errors (handled by Pydantic).
+async def wizard_submit(
+    sub: WizardSubmission,
+    background: BackgroundTasks,
+    dry_run: bool = False,
+    db: AsyncSession = Depends(get_db),
+):
+    """Persist the instance, provision Platform (compose files), dispatch bootstrap.
+
+    Parameters:
+      dry_run: if true, write compose files but do NOT start containers nor
+        call /_bootstrap. Used by tests and by the CLI preview flow.
+    """
+    manifest = submission_to_manifest(sub)
     yaml = render_instance_yaml(sub)
 
-    # Persist YAML to disk under console/instance/{iid}/nexus.instance.yaml
-    iid = uuid4()
-    root = Path("./console/instance") / str(iid)
-    try:
-        root.mkdir(parents=True, exist_ok=True)
-        yaml_path = root / "nexus.instance.yaml"
-        yaml_path.write_text(yaml, encoding="utf-8")
-    except OSError as e:
-        raise HTTPException(status_code=500, detail=f"failed to persist yaml: {e}")
-
-    # Register in in-memory registry (will move to Postgres)
-    instance = InstanceOut(
-        instance_id=iid,
+    row = InstanceRow(
         name=sub.instance_name,
+        persona_kind=sub.persona.kind,
         persona_display_name=sub.persona.display_name,
         modality=sub.deployment.modality,
-        endpoint=None,
-        version=None,
+        agent_runtime=manifest.deployment.runtime,
+        auth_provider=manifest.governance.auth.provider,
+        manifest_json=manifest.model_dump(mode="json"),
         status="bootstrap-pending",
-        created_at=datetime.now(timezone.utc),
     )
-    _REGISTRY[iid] = instance
+    db.add(row)
+    await db.flush()  # get id
 
-    next_steps = [
-        "Console will dispatch a signed `bootstrap` request to a fresh Platform.",
-        "Once Platform ACKs, it becomes 'running' in the registry.",
-        f"Configure secrets for {', '.join(sub.llms.enabled_providers)} in LLM Providers.",
-    ]
+    # Persist YAML on disk (nice for humans + operators)
+    yaml_dir = settings.data_dir / "instances" / str(row.id)
+    yaml_dir.mkdir(parents=True, exist_ok=True)
+    yaml_path = yaml_dir / "nexus.instance.yaml"
+    yaml_path.write_text(yaml, encoding="utf-8")
+    row.yaml_path = str(yaml_path)
+
+    # Provision Platform based on modality
+    if sub.deployment.modality == "local":
+        try:
+            compose_dir, token, endpoint = provision_local(row.id)
+        except DeployerError as e:
+            raise HTTPException(status_code=500, detail=str(e))
+        row.bootstrap_token = token
+        row.compose_dir = str(compose_dir)
+        row.endpoint = endpoint
+        next_steps = [
+            f"Compose files written to {compose_dir}",
+            f"docker compose up -d && wait for /_health at {endpoint}",
+            f"Console will POST /_bootstrap with the manifest and burn the token",
+        ]
+    else:
+        row.status = "unsupported"
+        row.error_detail = f"modality '{sub.deployment.modality}' not yet implemented in v0.6"
+        next_steps = [
+            f"Only 'local' modality is functional in v0.6. Requested: {sub.deployment.modality}",
+        ]
+        await db.commit()
+        return WizardSubmitResult(
+            instance_id=row.id, status=row.status,
+            yaml_path=str(yaml_path), next_steps=next_steps,
+        )
+
+    await db.commit()
+
+    if not dry_run:
+        # Fire-and-forget: start compose + wait health + dispatch bootstrap
+        background.add_task(_deploy_and_bootstrap, row.id)
+
     return WizardSubmitResult(
-        instance_id=iid,
-        status="bootstrap-pending",
-        yaml_path=str(yaml_path),
-        next_steps=next_steps,
+        instance_id=row.id, status=row.status,
+        yaml_path=str(yaml_path), next_steps=next_steps,
     )
+
+
+async def _deploy_and_bootstrap(instance_id) -> None:
+    """Background: start Compose, wait health, dispatch bootstrap. Own session."""
+    async with SessionLocal() as db:
+        row = await db.get(InstanceRow, instance_id)
+        if row is None:
+            return
+        try:
+            if row.compose_dir:
+                start_compose(Path(row.compose_dir))
+        except DeployerError as e:
+            row.status = "deploy-failed"
+            row.error_detail = str(e)
+            await db.commit()
+            return
+
+        try:
+            await wait_healthy(row.endpoint, timeout_s=120.0)
+        except BootstrapError as e:
+            row.status = "bootstrap-failed"
+            row.error_detail = str(e)
+            await db.commit()
+            return
+
+        kp = await get_or_create_keypair(db)
+        from nexus_core.models import InstanceManifest
+        manifest = InstanceManifest.model_validate(row.manifest_json)
+        webhook = f"http://console:7000/_platform/notify"  # Console container name
+        try:
+            await dispatch_bootstrap(
+                db=db, row=row, endpoint=row.endpoint,
+                token=row.bootstrap_token,
+                console_kp=kp, manifest=manifest, webhook_url=webhook,
+            )
+        except BootstrapError as e:
+            row.status = "bootstrap-failed"
+            row.error_detail = str(e)
+            await db.commit()

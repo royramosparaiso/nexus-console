@@ -16,34 +16,25 @@ services:
       timeout: 3s
       retries: 10
 
-  redis:
-    image: redis:7-alpine
-    container_name: nexus-console-redis
-    ports:
-      - "6380:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-
   console:
     build: ./console
     container_name: nexus-console-api
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
       CONSOLE_ENV: local
       CONSOLE_DATABASE_URL: postgresql+asyncpg://console:console@postgres:5432/nexus_console
-      CONSOLE_REDIS_URL: redis://redis:6379/0
       CONSOLE_LOCAL_MODE: "true"
+      CONSOLE_DATA_DIR: /var/lib/nexus-console
+      CONSOLE_DEPLOYMENTS_DIR: /var/lib/nexus-console/deployments
+      CONSOLE_LOCAL_PLATFORM_IMAGE: ghcr.io/royramosparaiso/nexus-platform:0.6.0
+      CONSOLE_WEBHOOK_URL: http://console:7000/_platform/notify
     ports:
       - "7000:7000"
     volumes:
-      - console_keys:/app/.console_keys
+      - console_data:/var/lib/nexus-console
+      - /var/run/docker.sock:/var/run/docker.sock
 
   web:
     build: ./web
@@ -51,11 +42,10 @@ services:
     depends_on:
       - console
     ports:
-      - "7000:80"
-    # Note: In dev, use `npm run dev` in ./web at port 5173 instead of this container.
+      - "7001:80"
     profiles:
       - production
 
 volumes:
   postgres_data:
-  console_keys:
+  console_data:

@@ -6,15 +6,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
-from app.api import instances, platform_notify, providers, health, wizard
+from app.api import health, instances, platform_notify, providers, wizard
 from app.core.config import settings
+from app.db import engine
+from app.models.db import Base
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: TODO — check DB, load console keys, warm registry cache
+    # Auto-create tables on startup so `python -m uvicorn app.main:app` works
+    # without a manual alembic step in local dev. Real deployments use Alembic.
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     yield
-    # Shutdown: TODO — close connections
 
 
 app = FastAPI(
@@ -32,7 +36,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routers
 app.include_router(health.router, tags=["health"])
 app.include_router(instances.router, prefix="/instances", tags=["instances"])
 app.include_router(providers.router, prefix="/providers", tags=["providers"])
@@ -42,8 +45,4 @@ app.include_router(platform_notify.router, prefix="/_platform", tags=["platform-
 
 @app.get("/", tags=["root"])
 async def root():
-    return {
-        "product": "Nexus Console",
-        "version": __version__,
-        "docs": "/docs",
-    }
+    return {"product": "Nexus Console", "version": __version__, "docs": "/docs"}
