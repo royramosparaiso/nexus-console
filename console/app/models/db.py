@@ -44,7 +44,9 @@ class _UUID(TypeDecorator):
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    # DB columns are TIMESTAMP WITHOUT TIME ZONE; return naive UTC so
+    # asyncpg doesn't reject tz-aware datetimes on Postgres.
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class Base(DeclarativeBase):

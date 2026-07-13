@@ -36,7 +36,7 @@ class PersonaConfig(BaseModel):
 
 # ---------- Section 2: Deployment ----------
 
-Modality = Literal["local", "fly", "k8s", "onprem", "saas"]
+Modality = Literal["local", "fly", "hetzner", "k8s", "onprem", "saas"]
 
 
 class DeploymentConfig(BaseModel):

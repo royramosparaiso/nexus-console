@@ -19,6 +19,8 @@ from app.models.wizard import (
 from app.services.bootstrap_client import (
     BootstrapError, dispatch_bootstrap, wait_healthy,
 )
+from app.services.cloud_deployers import provision_fly, provision_hetzner
+from app.services.handoff_playbook import write_playbook
 from app.services.deployer import (
     DeployerError, provision_local, start_compose,
 )
@@ -180,7 +182,8 @@ async def wizard_submit(
     row.yaml_path = str(yaml_path)
 
     # Provision Platform based on modality
-    if sub.deployment.modality == "local":
+    modality = sub.deployment.modality
+    if modality == "local":
         try:
             compose_dir, token, endpoint = provision_local(row.id)
         except DeployerError as e:
@@ -193,11 +196,37 @@ async def wizard_submit(
             f"docker compose up -d && wait for /_health at {endpoint}",
             f"Console will POST /_bootstrap with the manifest and burn the token",
         ]
+    elif modality in ("fly", "hetzner"):
+        # Cloud modalities: write compose + provider config + handoff playbook.
+        # Console does NOT execute the deploy — the user (or a setup-automation
+        # agent) runs it with their own cloud credentials.
+        provisioner = provision_fly if modality == "fly" else provision_hetzner
+        compose_dir, token, playbook_inputs = provisioner(
+            row.id, sub.instance_name,
+            region=sub.deployment.region, domain=sub.deployment.domain,
+        )
+        playbook_path, secrets_path = write_playbook(playbook_inputs, token)
+        row.bootstrap_token = token
+        row.compose_dir = str(compose_dir)
+        row.endpoint = playbook_inputs.endpoint_hint
+        row.status = "handoff-pending"  # waiting for external operator to deploy
+        next_steps = [
+            f"Compose + provider config written to {compose_dir}",
+            f"Handoff playbook: {playbook_path}",
+            f"Populate {secrets_path} with real secret values (0600).",
+            f"Run the playbook (or hand it to Cloud Cowork / OpenClaw).",
+            f"Once Platform is reachable at {playbook_inputs.endpoint_hint}, POST /wizard/complete-remote to finish bootstrap.",
+        ]
+        await db.commit()
+        return WizardSubmitResult(
+            instance_id=row.id, status=row.status,
+            yaml_path=str(yaml_path), next_steps=next_steps,
+        )
     else:
         row.status = "unsupported"
-        row.error_detail = f"modality '{sub.deployment.modality}' not yet implemented in v0.6"
+        row.error_detail = f"modality '{modality}' not yet implemented in v0.7"
         next_steps = [
-            f"Only 'local' modality is functional in v0.6. Requested: {sub.deployment.modality}",
+            f"Supported modalities in v0.7: local, fly, hetzner. Requested: {modality}",
         ]
         await db.commit()
         return WizardSubmitResult(
