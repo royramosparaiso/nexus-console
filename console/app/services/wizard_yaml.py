@@ -78,6 +78,17 @@ def render_instance_yaml(sub: WizardSubmission) -> str:
     for slug in sub.areas.enabled:
         lines.append(f"      - {slug}")
 
+    # stack (optional)
+    if sub.stack is not None:
+        lines.append(f"  stack:")
+        lines.append(f"    tier: {sub.stack.selection.tier}")
+        lines.append(f"    monthly_budget_eur: {sub.stack.preferences.monthly_budget_eur}")
+        lines.append(f"    deployment_mode: {sub.stack.preferences.deployment_mode}")
+        lines.append(f"    estimated_monthly_usd: {sub.stack.selection.estimated_monthly_usd}")
+        lines.append(f"    services:")
+        for role, slug in sorted(sub.stack.effective_services().items()):
+            lines.append(f"      {role}: {_yaml_scalar(slug)}")
+
     # governance
     lines.append(f"  governance:")
     lines.append(f"    default_autonomy: {sub.governance.default_autonomy}")

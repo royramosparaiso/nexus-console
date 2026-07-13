@@ -16,9 +16,10 @@ import Step3Llms from "@/components/wizard/Step3Llms";
 import Step4Memory from "@/components/wizard/Step4Memory";
 import Step5Areas from "@/components/wizard/Step5Areas";
 import Step6Governance from "@/components/wizard/Step6Governance";
+import Step7Stack from "@/components/wizard/Step7Stack";
 import Preview from "@/components/wizard/Preview";
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 
 export default function Wizard() {
   const [, setLocation] = useLocation();
@@ -183,6 +184,14 @@ export default function Wizard() {
               schema={schema}
               value={submission.governance}
               onChange={(delta) => patch("governance", delta)}
+            />
+          )}
+          {step === 7 && (
+            <Step7Stack
+              value={submission.stack ?? null}
+              onChange={(next) =>
+                setSubmission((prev) => (prev ? { ...prev, stack: next } : prev))
+              }
             />
           )}
 

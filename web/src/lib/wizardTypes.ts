@@ -57,6 +57,60 @@ export type GovernanceConfig = {
   require_2fa_for_superadmin: boolean;
 };
 
+export type StackRole =
+  | "app_compute" | "frontend_hosting" | "postgres" | "graph_db"
+  | "vector_db" | "cache_queue" | "gpu_serverless" | "llm_gateway"
+  | "object_storage" | "auth" | "dns_cdn" | "error_monitoring"
+  | "log_platform" | "product_analytics" | "llm_observability"
+  | "email_transactional" | "background_jobs" | "ci_cd";
+
+export type BudgetTier = "free" | "hobby" | "standard" | "scale";
+export type DeploymentMode = "local" | "cloud" | "hybrid";
+
+export type StackService = {
+  slug: string;
+  name: string;
+  vendor: string;
+  role: StackRole;
+  tiers: BudgetTier[];
+  price_free_usd: number;
+  price_entry_usd: number;
+  price_scale_usd: number;
+  self_hostable: boolean;
+  scale_to_zero: boolean;
+  open_source: boolean;
+  homepage: string;
+  notes: string;
+  handoff_playbook: string | null;
+};
+
+export type StackPreferences = {
+  monthly_budget_eur: number;
+  deployment_mode: DeploymentMode;
+  team_size: number;
+  needs_graph_db: boolean;
+  needs_voice_gpu: boolean;
+  needs_llm_observability: boolean;
+  needs_product_analytics: boolean;
+  needs_background_jobs: boolean;
+  prefer_open_source: boolean;
+  prefer_scale_to_zero: boolean;
+  region: string;
+};
+
+export type StackSelection = {
+  services: Partial<Record<StackRole, string>>;
+  estimated_monthly_usd: number;
+  tier: BudgetTier;
+  rationale: string;
+};
+
+export type StackConfig = {
+  preferences: StackPreferences;
+  selection: StackSelection;
+  overrides: Partial<Record<StackRole, string>>;
+};
+
 export type WizardSubmission = {
   instance_name: string;
   persona: PersonaConfig;
@@ -65,6 +119,7 @@ export type WizardSubmission = {
   memory: MemoryConfig;
   areas: AreasConfig;
   governance: GovernanceConfig;
+  stack?: StackConfig | null;
 };
 
 export type AvailableArea = {

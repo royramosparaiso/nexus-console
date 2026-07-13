@@ -43,13 +43,13 @@ SAMPLE_SUBMISSION = {
 }
 
 
-async def test_wizard_schema_has_six_steps(client):
+async def test_wizard_schema_has_seven_steps(client):
     r = await client.get("/wizard/schema")
     assert r.status_code == 200
     body = r.json()
-    assert len(body["steps"]) == 6
+    assert len(body["steps"]) == 7
     assert {s["id"] for s in body["steps"]} == {
-        "persona", "deployment", "llms", "memory", "areas", "governance"
+        "persona", "deployment", "llms", "memory", "areas", "governance", "stack"
     }
     # New fields exposed to the frontend
     assert any(x["value"] == "in_process" for x in body["agent_runtimes"])

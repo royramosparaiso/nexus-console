@@ -10,6 +10,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.db import SessionLocal, get_db
 from app.models.db import InstanceRow
+from app.models.stack import (
+    CATALOGUE,
+    STANDARD_100_EUR_STACK,
+    StackPreferences,
+    StackSelection,
+    recommend_stack,
+)
 from app.models.wizard import (
     AVAILABLE_AREAS,
     CompleteRemoteRequest,
@@ -44,6 +51,7 @@ async def wizard_schema():
             {"id": "memory", "label": "Memory & graph"},
             {"id": "areas", "label": "Active areas"},
             {"id": "governance", "label": "Governance"},
+            {"id": "stack", "label": "Stack"},
         ],
         "persona_kinds": [
             {"value": "personal", "label": "Personal (single user)"},
@@ -138,6 +146,25 @@ async def wizard_schema():
             },
         },
     }
+
+
+@router.get("/stack/catalog")
+async def wizard_stack_catalog():
+    """Return every service the wizard knows about, grouped by role."""
+    by_role: dict[str, list[dict]] = {}
+    for svc in CATALOGUE:
+        by_role.setdefault(svc.role, []).append(svc.model_dump())
+    return {
+        "services": [svc.model_dump() for svc in CATALOGUE],
+        "by_role": by_role,
+        "standard_100_eur_stack": STANDARD_100_EUR_STACK,
+    }
+
+
+@router.post("/stack/recommend", response_model=StackSelection)
+async def wizard_stack_recommend(prefs: StackPreferences):
+    """Recommend a concrete stack given operator preferences."""
+    return recommend_stack(prefs)
 
 
 @router.post("/preview", response_model=WizardPreview)

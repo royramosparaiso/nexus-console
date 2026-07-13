@@ -14,6 +14,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.models.stack import StackConfig
+
 
 # ---------- Section 1: Persona ----------
 
@@ -159,6 +161,8 @@ class WizardSubmission(BaseModel):
     memory: MemoryConfig
     areas: AreasConfig
     governance: GovernanceConfig
+    # Optional — legacy submissions without a stack section still validate.
+    stack: Optional[StackConfig] = None
 
 
 class WizardPreview(BaseModel):
