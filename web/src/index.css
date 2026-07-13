@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 45 21% 96%;
+  --surface: 45 20% 97%;
+  --surface-alt: 45 25% 98%;
+  --border: 40 10% 82%;
+  --text: 40 18% 13%;
+  --text-muted: 40 3% 47%;
+  --text-faint: 40 5% 72%;
+  --primary: 184 98% 22%;
+  --primary-hover: 186 74% 19%;
+  --error: 325 58% 40%;
+  --warning: 20 71% 34%;
+  --success: 100 56% 30%;
+}
+
+.dark {
+  --bg: 40 8% 8%;
+  --surface: 40 6% 10%;
+  --surface-alt: 40 6% 12%;
+  --border: 40 3% 22%;
+  --text: 45 4% 80%;
+  --text-muted: 40 1% 47%;
+  --text-faint: 40 2% 35%;
+  --primary: 188 34% 47%;
+  --primary-hover: 188 60% 34%;
+  --error: 325 55% 60%;
+  --warning: 22 51% 48%;
+  --success: 96 42% 47%;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-bg text-text font-sans antialiased;
+}
+
+* {
+  border-color: hsl(var(--border));
+}

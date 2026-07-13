@@ -1,0 +1,29 @@
+import { Route, Router, Switch } from "wouter";
+import { useHashLocation } from "wouter/use-hash-location";
+import Sidebar from "./components/Sidebar";
+import Instances from "./pages/Instances";
+import Providers from "./pages/Providers";
+import Agents from "./pages/Agents";
+import Jarvis from "./pages/Jarvis";
+import SettingsPage from "./pages/Settings";
+import NotFound from "./pages/NotFound";
+
+export default function App() {
+  return (
+    <Router hook={useHashLocation}>
+      <div className="flex h-full min-h-screen bg-bg">
+        <Sidebar />
+        <main className="flex-1 overflow-auto">
+          <Switch>
+            <Route path="/" component={Instances} />
+            <Route path="/providers" component={Providers} />
+            <Route path="/agents" component={Agents} />
+            <Route path="/jarvis" component={Jarvis} />
+            <Route path="/settings" component={SettingsPage} />
+            <Route component={NotFound} />
+          </Switch>
+        </main>
+      </div>
+    </Router>
+  );
+}

@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: nexus-console-postgres
+    environment:
+      POSTGRES_USER: console
+      POSTGRES_PASSWORD: console
+      POSTGRES_DB: nexus_console
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U console -d nexus_console"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: nexus-console-redis
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  console:
+    build: ./console
+    container_name: nexus-console-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      CONSOLE_ENV: local
+      CONSOLE_DATABASE_URL: postgresql+asyncpg://console:console@postgres:5432/nexus_console
+      CONSOLE_REDIS_URL: redis://redis:6379/0
+      CONSOLE_LOCAL_MODE: "true"
+    ports:
+      - "7000:7000"
+    volumes:
+      - console_keys:/app/.console_keys
+
+  web:
+    build: ./web
+    container_name: nexus-console-web
+    depends_on:
+      - console
+    ports:
+      - "7000:80"
+    # Note: In dev, use `npm run dev` in ./web at port 5173 instead of this container.
+    profiles:
+      - production
+
+volumes:
+  postgres_data:
+  console_keys:
