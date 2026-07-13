@@ -2,7 +2,7 @@
 name = "nexus-console"
 version = "0.6.0"
 description = "Nexus Console — control plane for Nexus OS"
-readme = "../README.md"
+readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [
