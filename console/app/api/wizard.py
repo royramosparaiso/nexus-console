@@ -20,9 +20,15 @@ from app.models.host_capabilities import (
     parse_discovery_output,
 )
 from app.models.kernel import (
+    DEFAULT_HERMES_AGENTS,
     HERMES_ENGINE_BY_TIER,
+    HERMES_ENGINES_BY_TIER,
+    EngineIncompatibleWithTierError,
+    HermesConfig,
+    HermesEngine,
     KernelServices,
     default_kernel_for_tier,
+    validate_engine_for_tier,
 )
 from app.models.stack import (
     CATALOGUE,
@@ -230,29 +236,63 @@ async def wizard_host_assess(req: HostParseRequest):
 
 class KernelInfoResponse(BaseModel):
     kernel: KernelServices
-    tier_defaults: dict[str, str]  # tier -> hermes engine
+    tier_defaults: dict[str, str]        # tier -> recommended engine
+    tier_allowed: dict[str, list[str]]   # tier -> allowed engines
+    default_agents: list[dict[str, str]]  # seed agents on hermes-agents queue
+    engine_source: str                    # "default" | "override"
     rationale: str
 
 
 @router.get("/kernel", response_model=KernelInfoResponse)
-async def wizard_kernel(tier: str = "standard"):
-    """Return the kernel services for a given stack tier.
+async def wizard_kernel(
+    tier: str = "standard",
+    engine: HermesEngine | None = None,
+):
+    """Return the kernel services for a given tier, optionally with an
+    explicit engine override.
 
     Hermes is always present — the wizard cannot toggle it off. Only
-    the engine changes with tier: in_process (embedded, uses the
-    platform's Postgres) for free/hobby/standard, temporal_cloud for
-    scale.
+    the engine varies. When ``engine`` is omitted, we pick the tier's
+    recommended default (see HERMES_ENGINE_BY_TIER). When ``engine`` is
+    supplied we validate it against HERMES_ENGINES_BY_TIER; incompatible
+    combinations return 400 with a machine-readable list of the engines
+    the tier actually allows.
     """
-    kernel = default_kernel_for_tier(tier)
+    if engine is None:
+        kernel = default_kernel_for_tier(tier)
+        engine_source = "default"
+    else:
+        try:
+            validate_engine_for_tier(engine, tier)
+        except EngineIncompatibleWithTierError as err:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error": "engine_incompatible_with_tier",
+                    "engine": err.engine,
+                    "tier": err.tier,
+                    "allowed": list(err.allowed),
+                    "message": str(err),
+                },
+            )
+        kernel = KernelServices(hermes=HermesConfig(engine=engine))
+        engine_source = "override"
+
     return KernelInfoResponse(
         kernel=kernel,
         tier_defaults={t: e for t, e in HERMES_ENGINE_BY_TIER.items()},
+        tier_allowed={t: list(engines)
+                      for t, engines in HERMES_ENGINES_BY_TIER.items()},
+        default_agents=[dict(a) for a in DEFAULT_HERMES_AGENTS],
+        engine_source=engine_source,
         rationale=(
             "Hermes is a Nexus kernel service: agent registry, durable "
             "job dispatch, hot-deploy of new agents, and the event bus. "
-            "It is always deployed. Only its engine is configurable and "
-            "the default tracks the stack tier so the operator gets a "
-            "working setup without extra choices."
+            "It is always deployed. The engine defaults to the tier's "
+            "recommendation but can be overridden as long as the pair "
+            "(tier, engine) is allowed. The four default agents in "
+            "`default_agents` are registered on the `hermes-agents` "
+            "queue at boot."
         ),
     )
 

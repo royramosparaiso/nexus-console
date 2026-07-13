@@ -1462,7 +1462,7 @@ def _hermes_temporal_selfhost() -> ServiceHandoff:
             {
                 "title": "Boot the Temporal single-node stack (docker compose)",
                 "cmd": (
-                    "docker compose -f nexus-platform/hermes/docker-compose.temporal.yml "
+                    "docker compose -f console/deploy/hermes/docker-compose.temporal.yml "
                     "up -d --wait"
                 ),
             },

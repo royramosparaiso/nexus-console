@@ -310,4 +310,154 @@ def test_wizard_kernel_endpoint_returns_engine_for_tier(client):
 def test_wizard_kernel_endpoint_defaults_to_standard(client):
     r = client.get("/wizard/kernel")
     assert r.status_code == 200
-    assert r.json()["kernel"]["hermes"]["engine"] == "in_process"
+    body = r.json()
+    assert body["kernel"]["hermes"]["engine"] == "in_process"
+    assert body["engine_source"] == "default"
+
+
+# ---------------------------------------------------------------------------
+# Engine override + tier compatibility.
+# ---------------------------------------------------------------------------
+
+
+def test_endpoint_accepts_valid_override_on_standard(client):
+    r = client.get("/wizard/kernel",
+                   params={"tier": "standard", "engine": "temporal_cloud"})
+    assert r.status_code == 200
+    body = r.json()
+    assert body["kernel"]["hermes"]["engine"] == "temporal_cloud"
+    assert body["engine_source"] == "override"
+
+
+def test_endpoint_accepts_selfhost_on_scale(client):
+    r = client.get("/wizard/kernel",
+                   params={"tier": "scale", "engine": "temporal_selfhost"})
+    assert r.status_code == 200
+    assert r.json()["kernel"]["hermes"]["engine"] == "temporal_selfhost"
+
+
+def test_endpoint_rejects_temporal_cloud_on_hobby(client):
+    r = client.get("/wizard/kernel",
+                   params={"tier": "hobby", "engine": "temporal_cloud"})
+    assert r.status_code == 400
+    detail = r.json()["detail"]
+    assert detail["error"] == "engine_incompatible_with_tier"
+    assert detail["tier"] == "hobby"
+    assert detail["engine"] == "temporal_cloud"
+    assert detail["allowed"] == ["in_process"]
+
+
+def test_endpoint_rejects_selfhost_on_hobby(client):
+    r = client.get("/wizard/kernel",
+                   params={"tier": "hobby", "engine": "temporal_selfhost"})
+    assert r.status_code == 400
+
+
+def test_endpoint_reports_tier_allowed_matrix(client):
+    r = client.get("/wizard/kernel")
+    matrix = r.json()["tier_allowed"]
+    assert matrix["hobby"] == ["in_process"]
+    assert set(matrix["standard"]) == {
+        "in_process", "temporal_cloud", "temporal_selfhost"
+    }
+    assert set(matrix["scale"]) == {
+        "temporal_cloud", "temporal_selfhost", "in_process"
+    }
+    # First entry is the recommended default — order matters.
+    assert matrix["scale"][0] == "temporal_cloud"
+
+
+def test_validate_engine_for_tier_helper():
+    from app.models.kernel import (
+        EngineIncompatibleWithTierError,
+        validate_engine_for_tier,
+    )
+    # Valid pairs — no raise.
+    validate_engine_for_tier("in_process", "hobby")
+    validate_engine_for_tier("temporal_cloud", "scale")
+    validate_engine_for_tier("temporal_selfhost", "standard")
+    # Invalid pair — raises with an actionable payload.
+    with pytest.raises(EngineIncompatibleWithTierError) as exc:
+        validate_engine_for_tier("temporal_cloud", "hobby")
+    assert exc.value.engine == "temporal_cloud"
+    assert exc.value.tier == "hobby"
+    assert "in_process" in exc.value.allowed
+
+
+# ---------------------------------------------------------------------------
+# Default agents seed appears in the wizard endpoint and in YAML.
+# ---------------------------------------------------------------------------
+
+
+def test_endpoint_returns_default_agents(client):
+    r = client.get("/wizard/kernel")
+    agents = r.json()["default_agents"]
+    names = [a["name"] for a in agents]
+    assert names == ["planner", "coordinator", "worker", "embeddings"]
+    for a in agents:
+        assert a["queue"] == "hermes-agents"
+        assert a["role"]
+        assert a["note"]
+
+
+def test_yaml_emits_default_agents_block():
+    from app.services.wizard_yaml import render_instance_yaml
+
+    prefs = StackPreferences(monthly_budget_eur=100, deployment_mode="cloud")
+    cfg = StackConfig(preferences=prefs, selection=recommend_stack(prefs))
+    yaml_text = render_instance_yaml(_make_submission(cfg))
+
+    assert "default_agents:" in yaml_text
+    # All four seed agents surface with name + queue.
+    for expected in ("planner", "coordinator", "worker", "embeddings"):
+        assert f"- name: {expected}" in yaml_text
+    assert "queue: hermes-agents" in yaml_text
+
+
+def test_yaml_default_agents_block_parses_as_yaml():
+    import yaml as pyyaml
+    from app.services.wizard_yaml import render_instance_yaml
+
+    prefs = StackPreferences(monthly_budget_eur=100, deployment_mode="cloud")
+    cfg = StackConfig(preferences=prefs, selection=recommend_stack(prefs))
+    yaml_text = render_instance_yaml(_make_submission(cfg))
+
+    parsed = pyyaml.safe_load(yaml_text)
+    agents = parsed["spec"]["stack"]["kernel"]["hermes"]["default_agents"]
+    assert len(agents) == 4
+    assert {a["name"] for a in agents} == {
+        "planner", "coordinator", "worker", "embeddings"
+    }
+
+
+# ---------------------------------------------------------------------------
+# docker-compose.temporal.yml is real and parses.
+# ---------------------------------------------------------------------------
+
+
+def test_temporal_compose_file_exists_and_is_valid_yaml():
+    import yaml as pyyaml
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    compose_path = root / "deploy" / "hermes" / "docker-compose.temporal.yml"
+    assert compose_path.exists(), f"missing {compose_path}"
+
+    data = pyyaml.safe_load(compose_path.read_text())
+    services = data["services"]
+    # Cassandra, Temporal server, UI and namespace initializer.
+    assert {"cassandra", "temporal", "temporal-ui", "temporal-init"} <= set(services)
+    # UI is exposed on 8080 (bound to loopback by default).
+    ui_ports = services["temporal-ui"]["ports"]
+    assert any("8080:8080" in p for p in ui_ports)
+    # Temporal server exposes gRPC on 7233.
+    tp_ports = services["temporal"]["ports"]
+    assert any("7233:7233" in p for p in tp_ports)
+    # Cassandra is the DB — explicit in temporal env.
+    assert data["x-temporal-env"]["DB"] == "cassandra"
+
+
+def test_temporal_compose_referenced_by_selfhost_builder():
+    h = hermes_handoff("temporal_selfhost")
+    cmds = " ".join(step["cmd"] for step in h.steps)
+    assert "console/deploy/hermes/docker-compose.temporal.yml" in cmds

@@ -43,6 +43,69 @@ HERMES_ENGINE_BY_TIER: dict[str, HermesEngine] = {
     "scale":    "temporal_cloud",
 }
 
+# Which engines are *permitted* per tier, in priority order (first =
+# recommended default). Free/hobby cannot reach Temporal Cloud because
+# the entry price of TC would blow the tier budget; standard can opt in
+# either way; scale can pick any engine.
+HERMES_ENGINES_BY_TIER: dict[str, tuple[HermesEngine, ...]] = {
+    "free":     ("in_process",),
+    "hobby":    ("in_process",),
+    "standard": ("in_process", "temporal_cloud", "temporal_selfhost"),
+    "scale":    ("temporal_cloud", "temporal_selfhost", "in_process"),
+}
+
+
+class EngineIncompatibleWithTierError(ValueError):
+    """Raised when an operator asks for an engine the tier doesn't allow."""
+
+    def __init__(self, engine: str, tier: str, allowed: tuple[str, ...]):
+        self.engine = engine
+        self.tier = tier
+        self.allowed = allowed
+        super().__init__(
+            f"Hermes engine {engine!r} is not available on tier {tier!r}. "
+            f"Allowed engines for this tier: {', '.join(allowed)}."
+        )
+
+
+def validate_engine_for_tier(engine: HermesEngine, tier: str) -> None:
+    # Raise if the (tier, engine) pair is not allowed.
+    allowed = HERMES_ENGINES_BY_TIER.get(tier, ("in_process",))
+    if engine not in allowed:
+        raise EngineIncompatibleWithTierError(engine, tier, allowed)
+
+
+# Default seed of agents Hermes registers in the `hermes-agents` task
+# queue as soon as the kernel boots. The operator can add more from
+# Nexus Studios; these four are the ones the base platform assumes to
+# exist (planner, coordinator, worker, embeddings echo the LLM roles).
+DEFAULT_HERMES_AGENTS: tuple[dict[str, str], ...] = (
+    {
+        "name":  "planner",
+        "queue": "hermes-agents",
+        "role":  "planner",
+        "note":  "Breaks a user goal into an ordered task list.",
+    },
+    {
+        "name":  "coordinator",
+        "queue": "hermes-agents",
+        "role":  "coordinator",
+        "note":  "Dispatches tasks to workers and reconciles results.",
+    },
+    {
+        "name":  "worker",
+        "queue": "hermes-agents",
+        "role":  "worker",
+        "note":  "Executes single-step tasks against tools and memory.",
+    },
+    {
+        "name":  "embeddings",
+        "queue": "hermes-agents",
+        "role":  "embeddings",
+        "note":  "Vectorizes text for the memory driver.",
+    },
+)
+
 
 class HermesConfig(BaseModel):
     """How Hermes runs on this deployment."""

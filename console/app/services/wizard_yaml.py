@@ -92,6 +92,8 @@ def render_instance_yaml(sub: WizardSubmission) -> str:
         lines.append(f"    estimated_monthly_usd: {sub.stack.selection.estimated_monthly_usd}")
 
         # Kernel — always emitted, never configurable through the catalogue.
+        from app.models.kernel import DEFAULT_HERMES_AGENTS
+
         kernel = sub.stack.kernel
         lines.append(f"    kernel:")
         lines.append(f"      # Always deployed. Not part of the stack catalogue.")
@@ -105,6 +107,17 @@ def render_instance_yaml(sub: WizardSubmission) -> str:
             lines.append(f"        required_secrets:")
             for s in secrets:
                 lines.append(f"          - {s}")
+        # Default agents that Hermes registers on the `hermes-agents`
+        # task queue at boot. The operator adds more via Nexus Studios.
+        lines.append(f"        default_agents:")
+        lines.append(
+            f"          # Registered on the `hermes-agents` queue at kernel boot."
+        )
+        for agent in DEFAULT_HERMES_AGENTS:
+            lines.append(f"          - name: {agent['name']}")
+            lines.append(f"            queue: {agent['queue']}")
+            lines.append(f"            role: {agent['role']}")
+            lines.append(f"            note: {agent['note']!r}")
 
         # Host capabilities — what laptop the operator is running from.
         if sub.stack.host is not None:
