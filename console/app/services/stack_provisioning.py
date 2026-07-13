@@ -602,7 +602,7 @@ def _render() -> ServiceHandoff:
     return ServiceHandoff(
         slug="render",
         role="app_compute",
-        secrets=["RENDER_API_KEY", "RENDER_OWNER_ID"],
+        secrets=["RENDER_API_KEY", "RENDER_OWNER_ID", "RENDER_SERVICE_ID", "GITHUB_ORG"],
         steps=[
             {
                 "title": "Create a web service from the repo (idempotent — 409 if exists)",

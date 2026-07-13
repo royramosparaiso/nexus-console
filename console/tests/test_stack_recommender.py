@@ -101,6 +101,53 @@ def test_recommend_disable_feature_flags_drops_roles():
         assert present in sel.services
 
 
+def test_recommend_hobby_prefers_grafana_cloud_over_axiom():
+    from app.models.stack import StackPreferences, recommend_stack
+
+    prefs = StackPreferences(
+        monthly_budget_eur=30,   # hobby tier
+        deployment_mode="cloud",
+        prefer_open_source=False,
+    )
+    sel = recommend_stack(prefs)
+    assert sel.tier == "hobby"
+    assert sel.services.get("log_platform") == "grafana_cloud", (
+        "hobby tier should prefer Grafana Cloud — same 0 EUR entry price "
+        "but bundles logs + metrics + traces"
+    )
+
+
+def test_recommend_hobby_override_is_skipped_when_service_removed():
+    """Sanity: if grafana_cloud lost its 'hobby' tier, the override
+    should silently fall through instead of returning an invalid pick."""
+    from app.models.stack import (
+        CATALOGUE_BY_SLUG, StackPreferences, recommend_stack,
+    )
+
+    grafana = CATALOGUE_BY_SLUG["grafana_cloud"]
+    original_tiers = grafana.tiers
+    try:
+        # Strip 'hobby' — the override guard should now fall back.
+        object.__setattr__(grafana, "tiers", [t for t in original_tiers if t != "hobby"])
+        prefs = StackPreferences(monthly_budget_eur=30, deployment_mode="cloud")
+        sel = recommend_stack(prefs)
+        assert sel.tier == "hobby"
+        # Falls back to the cheapest hobby-eligible option — not grafana_cloud.
+        assert sel.services.get("log_platform") != "grafana_cloud"
+    finally:
+        object.__setattr__(grafana, "tiers", original_tiers)
+
+
+def test_recommend_standard_still_uses_axiom():
+    from app.models.stack import StackPreferences, recommend_stack
+
+    prefs = StackPreferences(monthly_budget_eur=100, deployment_mode="cloud")
+    sel = recommend_stack(prefs)
+    # Canonical 100-EUR stack keeps Axiom — the hobby override is
+    # scoped to hobby tier only.
+    assert sel.services["log_platform"] == "axiom"
+
+
 def test_recommend_free_tier_stays_under_budget():
     prefs = StackPreferences(monthly_budget_eur=10, deployment_mode="cloud")
     sel = recommend_stack(prefs)
@@ -157,6 +204,60 @@ def test_recommend_endpoint_rejects_negative_budget():
 # ---------- WizardSubmission carries StackConfig through YAML ----------
 
 
+def _make_submission(stack):
+    return WizardSubmission(
+        instance_name="nexus-yaml-labels",
+        persona={"display_name": "Test", "kind": "personal"},
+        deployment={"modality": "fly"},
+        llms={
+            "enabled_providers": ["anthropic"],
+            "roles": {
+                "planner": "anthropic:claude-3-5-sonnet",
+                "coordinator": "anthropic:claude-3-5-sonnet",
+                "worker": "anthropic:claude-3-5-haiku",
+                "embeddings": "openai:text-embedding-3-small",
+            },
+            "monthly_budget_usd": 50,
+        },
+        memory={"driver": "postgres_pgvector"},
+        areas={"enabled": ["personal_organization"]},
+        governance={},
+        stack=stack,
+    )
+
+
+def test_yaml_labels_services_as_builder_or_manual():
+    from app.models.stack import StackConfig
+    from app.services.wizard_yaml import render_instance_yaml
+
+    prefs = StackPreferences(monthly_budget_eur=100, deployment_mode="cloud")
+    cfg = StackConfig(preferences=prefs, selection=recommend_stack(prefs))
+    yaml_text = render_instance_yaml(_make_submission(cfg))
+
+    assert "handoff: builder" in yaml_text
+    for role, slug in cfg.effective_services().items():
+        assert f"{role}: {{ slug: {slug}," in yaml_text
+    assert "handoff_summary:" in yaml_text
+    assert "automated:" in yaml_text
+
+
+def test_yaml_labels_self_host_only_service_as_manual():
+    from app.models.stack import StackConfig
+    from app.services.wizard_yaml import render_instance_yaml
+
+    prefs = StackPreferences(monthly_budget_eur=100, deployment_mode="cloud")
+    sel = recommend_stack(prefs)
+    cfg = StackConfig(
+        preferences=prefs, selection=sel,
+        overrides={"log_platform": "loki_self_host"},
+    )
+    yaml_text = render_instance_yaml(_make_submission(cfg))
+
+    assert "log_platform: { slug: loki_self_host, handoff: manual }" in yaml_text
+    assert "manual:" in yaml_text
+    assert "log_platform=loki_self_host" in yaml_text
+
+
 def test_submission_with_stack_renders_yaml_section():
     from app.services.wizard_yaml import render_instance_yaml
 
@@ -187,8 +288,8 @@ def test_submission_with_stack_renders_yaml_section():
     yaml = render_instance_yaml(sub)
     assert "stack:" in yaml
     assert "tier: standard" in yaml
-    assert "app_compute: railway" in yaml
-    assert "postgres: neon" in yaml
+    assert "app_compute: { slug: railway," in yaml
+    assert "postgres: { slug: neon," in yaml
 
 
 def test_submission_without_stack_still_valid():

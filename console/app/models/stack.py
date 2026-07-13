@@ -881,6 +881,21 @@ def _pick_for_role(
         if canonical and canonical in CATALOGUE_BY_SLUG:
             return CATALOGUE_BY_SLUG[canonical]
 
+    # Hobby tier: role-specific overrides that beat pure-price sorting.
+    # Grafana Cloud wins over Axiom for log_platform because its free
+    # tier bundles logs + metrics + traces in one pane — strictly more
+    # capability at the same 0-EUR entry price. Skip the override when
+    # the operator asked for open-source only (Grafana Cloud is managed).
+    if tier == "hobby":
+        hobby_overrides: dict[StackRole, str] = {
+            "log_platform": "grafana_cloud",
+        }
+        override_slug = hobby_overrides.get(role)
+        if override_slug and not prefs.prefer_open_source:
+            override = CATALOGUE_BY_SLUG.get(override_slug)
+            if override and "hobby" in override.tiers:
+                return override
+
     # Free / hobby / scale: pick the cheapest that offers the tier,
     # respecting the open-source and scale-to-zero preferences.
     def _score(s: StackService) -> tuple:

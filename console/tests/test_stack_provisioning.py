@@ -163,6 +163,57 @@ def test_pgvector_reuses_database_url_only():
     assert fragment.secrets == ["DATABASE_URL"]
 
 
+# Env vars that come from OTHER handoffs or from the base playbook,
+# so it's fine for a builder to reference them without declaring them
+# in its own `secrets` list.
+_CROSS_HANDOFF_VARS: set[str] = {
+    # Base playbook (cloud_deployers.py + write_playbook).
+    "PLATFORM_BOOTSTRAP_TOKEN", "ANTHROPIC_API_KEY", "POSTGRES_PASSWORD",
+    "FLY_API_TOKEN",  # reused by fly_gpu
+    # From other handoffs — pgvector/better_auth reuse the Postgres DSN,
+    # Cloudflare Pages reuses the Cloudflare account creds, etc.
+    "DATABASE_URL",
+    "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ZONE_ID",
+    "PLATFORM_PUBLIC_URL", "PLATFORM_PUBLIC_HOST",
+    "NEXUS_DOMAIN",
+    "OPENROUTER_API_KEY",  # railway pushes it downstream
+}
+
+_PLACEHOLDER_RE = re.compile(r"\$\{([A-Z][A-Z0-9_]*)\}")
+
+
+def test_every_builder_uses_only_declared_or_shared_placeholders():
+    """Every ${VAR} in any step must be either declared in that builder's
+    `secrets` list or in the shared cross-handoff allow-list. Catches
+    typos and accidentally-inline secrets in one shot."""
+    for slug, builder in _BUILDERS.items():
+        fragment = builder()
+        declared = set(fragment.secrets)
+        for step in fragment.steps:
+            referenced = set(_PLACEHOLDER_RE.findall(step["cmd"]))
+            undeclared = referenced - declared - _CROSS_HANDOFF_VARS
+            assert not undeclared, (
+                f"{slug} step {step['title']!r} references undeclared "
+                f"placeholders: {sorted(undeclared)}"
+            )
+
+
+def test_no_step_contains_a_bare_command_flag_that_looks_like_a_secret():
+    """Belt-and-braces regex: catch anything shaped like an inline secret
+    that the coarser test in test_no_real_secret_looking_string missed."""
+    inline_looking = re.compile(
+        r"(?:token|key|secret|password|dsn)\s*[=:]\s*[a-zA-Z0-9]{16,}",
+        re.IGNORECASE,
+    )
+    for slug, builder in _BUILDERS.items():
+        for step in builder().steps:
+            # Ignore matches that are actually ${VAR} placeholders.
+            cmd = _PLACEHOLDER_RE.sub("", step["cmd"])
+            assert not inline_looking.search(cmd), (
+                f"{slug} step {step['title']!r} looks like it inlines a secret: {step['cmd']!r}"
+            )
+
+
 def test_grafana_cloud_covers_logs_metrics_traces():
     fragment = handoff_for("grafana_cloud")
     secret_set = set(fragment.secrets)

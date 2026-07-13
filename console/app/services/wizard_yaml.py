@@ -80,14 +80,36 @@ def render_instance_yaml(sub: WizardSubmission) -> str:
 
     # stack (optional)
     if sub.stack is not None:
+        # Import here so the yaml module doesn't hard-depend on the
+        # provisioning layer for its own tests.
+        from app.services.stack_provisioning import handoff_for
+
         lines.append(f"  stack:")
         lines.append(f"    tier: {sub.stack.selection.tier}")
         lines.append(f"    monthly_budget_eur: {sub.stack.preferences.monthly_budget_eur}")
         lines.append(f"    deployment_mode: {sub.stack.preferences.deployment_mode}")
         lines.append(f"    estimated_monthly_usd: {sub.stack.selection.estimated_monthly_usd}")
+        lines.append(f"    # handoff=builder: nexus.handoff.md will include "
+                     f"scripted provisioning steps.")
+        lines.append(f"    # handoff=manual : self-hosted or dashboard-only "
+                     f"\u2014 the operator runs it out-of-band.")
         lines.append(f"    services:")
+        automated: list[str] = []
+        manual: list[str] = []
         for role, slug in sorted(sub.stack.effective_services().items()):
-            lines.append(f"      {role}: {_yaml_scalar(slug)}")
+            has_builder = handoff_for(slug) is not None
+            marker = "builder" if has_builder else "manual"
+            lines.append(
+                f"      {role}: {{ slug: {_yaml_scalar(slug)}, handoff: {marker} }}"
+            )
+            (automated if has_builder else manual).append(f"{role}={slug}")
+        lines.append(f"    handoff_summary:")
+        lines.append(
+            f"      automated: {_yaml_scalar(', '.join(automated) or '(none)')}"
+        )
+        lines.append(
+            f"      manual:    {_yaml_scalar(', '.join(manual) or '(none)')}"
+        )
 
     # governance
     lines.append(f"  governance:")
