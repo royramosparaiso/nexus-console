@@ -1,6 +1,6 @@
 """Instances endpoints — CRUD stub for the Instance Registry."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, HTTPException, status
@@ -51,7 +51,7 @@ async def create_instance(body: InstanceCreate):
         endpoint=None,
         version=None,
         status="bootstrap-pending",
-        created_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
     )
     _REGISTRY[iid] = instance
     # TODO: dispatch wizard + deployer

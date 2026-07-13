@@ -2,6 +2,7 @@ import { Route, Router, Switch } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
 import Sidebar from "./components/Sidebar";
 import Instances from "./pages/Instances";
+import Wizard from "./pages/Wizard";
 import Providers from "./pages/Providers";
 import Agents from "./pages/Agents";
 import Jarvis from "./pages/Jarvis";
@@ -16,6 +17,7 @@ export default function App() {
         <main className="flex-1 overflow-auto">
           <Switch>
             <Route path="/" component={Instances} />
+            <Route path="/wizard" component={Wizard} />
             <Route path="/providers" component={Providers} />
             <Route path="/agents" component={Agents} />
             <Route path="/jarvis" component={Jarvis} />

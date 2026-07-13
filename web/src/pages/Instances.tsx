@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "wouter";
 import { apiFetch } from "@/lib/api";
 import { Plus } from "lucide-react";
 
@@ -39,13 +40,14 @@ export default function Instances() {
             Nexus Platform instances managed by this Console.
           </p>
         </div>
-        <button
+        <Link
+          href="/wizard"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-bg text-sm font-medium hover:bg-primary-hover transition-colors"
           data-testid="button-new-instance"
         >
           <Plus className="w-4 h-4" />
           New instance
-        </button>
+        </Link>
       </header>
 
       {loading && (
