@@ -19,6 +19,7 @@ from typing import Literal, Optional
 from pydantic import BaseModel, Field, field_validator
 
 from app.models.host_capabilities import HostCapabilities
+from app.models.kernel import KernelServices, default_kernel_for_tier
 
 
 # ---------------------------------------------------------------------------
@@ -1010,6 +1011,27 @@ class StackConfig(BaseModel):
         default=None,
         description="Operator's laptop specs — gates local deployment and shapes the handoff.",
     )
+    kernel: KernelServices = Field(
+        default_factory=KernelServices,
+        description=(
+            "Always-on Nexus core services (Hermes, etc). Not part of "
+            "the stack catalogue — the wizard cannot toggle these off. "
+            "Only the *engine* is configurable and it auto-tracks the tier."
+        ),
+    )
+
+    def model_post_init(self, __context) -> None:
+        # If the caller built a StackConfig without pinning the kernel,
+        # snap the Hermes engine to the tier's default. This runs once
+        # per instance and never overrides an explicit choice.
+        default_engine = default_kernel_for_tier(self.selection.tier).hermes.engine
+        # A KernelServices() built with defaults has engine=in_process.
+        # Only rewrite when the user didn't set kernel explicitly — we
+        # can tell because the incoming kernel matches the class default
+        # and the tier default is different.
+        current = self.kernel.hermes.engine
+        if current == "in_process" and default_engine != "in_process":
+            self.kernel.hermes.engine = default_engine
 
     def effective_services(self) -> dict[StackRole, str]:
         """Return selection with overrides applied."""

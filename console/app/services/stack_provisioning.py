@@ -1376,6 +1376,133 @@ _BUILDERS: dict[str, Callable[[], ServiceHandoff]] = {
 }
 
 
+# ---------------------------------------------------------------------------
+# Kernel handoffs — Hermes. Always emitted, one per engine.
+# ---------------------------------------------------------------------------
+
+
+def _hermes_in_process() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="hermes_in_process",
+        role="kernel",
+        secrets=[],  # Reuses the platform's DATABASE_URL.
+        steps=[
+            {
+                "title": "Run Hermes SQL migrations against the platform Postgres",
+                "cmd": (
+                    "psql \"${DATABASE_URL}\" -v ON_ERROR_STOP=1 -f "
+                    "nexus-platform/hermes/migrations/0001_jobs_and_agents.sql"
+                ),
+            },
+            {
+                "title": "Enable LISTEN/NOTIFY channels used by the in-process dispatcher",
+                "cmd": (
+                    "psql \"${DATABASE_URL}\" -v ON_ERROR_STOP=1 -c "
+                    "\"SELECT pg_notify('hermes_boot', 'ok');\" > /dev/null && echo OK"
+                ),
+            },
+            {
+                "title": "Set HERMES_ENGINE=in_process on the platform service",
+                "cmd": (
+                    "echo 'export HERMES_ENGINE=in_process' >> nexus.env"
+                ),
+            },
+        ],
+    )
+
+
+def _hermes_temporal_cloud() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="hermes_temporal_cloud",
+        role="kernel",
+        secrets=[
+            "TEMPORAL_CLOUD_NAMESPACE",
+            "TEMPORAL_CLOUD_API_KEY",
+            "TEMPORAL_CLOUD_ADDRESS",
+        ],
+        steps=[
+            {
+                "title": "Verify the Temporal Cloud namespace exists (idempotent)",
+                "cmd": (
+                    "temporal --address ${TEMPORAL_CLOUD_ADDRESS} "
+                    "--namespace ${TEMPORAL_CLOUD_NAMESPACE} "
+                    "--tls --api-key ${TEMPORAL_CLOUD_API_KEY} "
+                    "operator namespace describe > /dev/null && echo NAMESPACE_OK"
+                ),
+            },
+            {
+                "title": "Register the Hermes task queues (agents, dispatch, events)",
+                "cmd": (
+                    "for q in hermes-agents hermes-dispatch hermes-events; do "
+                    "temporal --address ${TEMPORAL_CLOUD_ADDRESS} "
+                    "--namespace ${TEMPORAL_CLOUD_NAMESPACE} "
+                    "--tls --api-key ${TEMPORAL_CLOUD_API_KEY} "
+                    "task-queue describe --task-queue $q > /dev/null 2>&1 || true; done"
+                ),
+            },
+            {
+                "title": "Set Hermes engine env vars on the platform service",
+                "cmd": (
+                    "{ echo 'export HERMES_ENGINE=temporal_cloud'; "
+                    "echo 'export TEMPORAL_CLOUD_NAMESPACE='${TEMPORAL_CLOUD_NAMESPACE}; "
+                    "echo 'export TEMPORAL_CLOUD_ADDRESS='${TEMPORAL_CLOUD_ADDRESS}; } "
+                    ">> nexus.env"
+                ),
+            },
+        ],
+    )
+
+
+def _hermes_temporal_selfhost() -> ServiceHandoff:
+    return ServiceHandoff(
+        slug="hermes_temporal_selfhost",
+        role="kernel",
+        secrets=["TEMPORAL_HOST", "TEMPORAL_NAMESPACE"],
+        steps=[
+            {
+                "title": "Boot the Temporal single-node stack (docker compose)",
+                "cmd": (
+                    "docker compose -f nexus-platform/hermes/docker-compose.temporal.yml "
+                    "up -d --wait"
+                ),
+            },
+            {
+                "title": "Create the Hermes namespace on the self-hosted cluster (idempotent)",
+                "cmd": (
+                    "temporal --address ${TEMPORAL_HOST} operator namespace create "
+                    "--namespace ${TEMPORAL_NAMESPACE} "
+                    "--retention 72h 2>/dev/null || true"
+                ),
+            },
+            {
+                "title": "Set Hermes engine env vars on the platform service",
+                "cmd": (
+                    "{ echo 'export HERMES_ENGINE=temporal_selfhost'; "
+                    "echo 'export TEMPORAL_HOST='${TEMPORAL_HOST}; "
+                    "echo 'export TEMPORAL_NAMESPACE='${TEMPORAL_NAMESPACE}; } "
+                    ">> nexus.env"
+                ),
+            },
+        ],
+    )
+
+
+_HERMES_BUILDERS: dict[str, Callable[[], ServiceHandoff]] = {
+    "in_process":         _hermes_in_process,
+    "temporal_cloud":     _hermes_temporal_cloud,
+    "temporal_selfhost":  _hermes_temporal_selfhost,
+}
+
+
+def hermes_handoff(engine: str) -> ServiceHandoff:
+    """Return the handoff for the chosen Hermes engine. Never None —
+    Hermes is kernel-mandatory."""
+    builder = _HERMES_BUILDERS.get(engine)
+    if builder is None:
+        raise ValueError(f"Unknown Hermes engine: {engine!r}")
+    return builder()
+
+
 def handoff_for(slug: str) -> ServiceHandoff | None:
     """Return the handoff fragment for one service, or None if unknown."""
     builder = _BUILDERS.get(slug)
@@ -1402,6 +1529,10 @@ def stack_handoffs(stack: StackConfig) -> list[ServiceHandoff]:
     ]
     services = stack.effective_services()
     out: list[ServiceHandoff] = []
+    # Kernel first — Hermes must be online before any app_compute step
+    # runs, because the platform boot script reads HERMES_ENGINE from
+    # nexus.env and refuses to start without it.
+    out.append(hermes_handoff(stack.kernel.hermes.engine))
     for role in role_order:
         slug = services.get(role)
         if not slug:

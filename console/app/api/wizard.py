@@ -19,6 +19,11 @@ from app.models.host_capabilities import (
     discovery_command,
     parse_discovery_output,
 )
+from app.models.kernel import (
+    HERMES_ENGINE_BY_TIER,
+    KernelServices,
+    default_kernel_for_tier,
+)
 from app.models.stack import (
     CATALOGUE,
     STANDARD_100_EUR_STACK,
@@ -216,6 +221,40 @@ async def wizard_host_assess(req: HostParseRequest):
     """Parse the discovery output and return the local-vs-cloud verdict."""
     caps = parse_discovery_output(req.os, req.raw_output)
     return HostAssessmentResponse(capabilities=caps, assessment=assess_host(caps))
+
+
+# ---------------------------------------------------------------------------
+# Kernel services — always-on, non-toggleable.
+# ---------------------------------------------------------------------------
+
+
+class KernelInfoResponse(BaseModel):
+    kernel: KernelServices
+    tier_defaults: dict[str, str]  # tier -> hermes engine
+    rationale: str
+
+
+@router.get("/kernel", response_model=KernelInfoResponse)
+async def wizard_kernel(tier: str = "standard"):
+    """Return the kernel services for a given stack tier.
+
+    Hermes is always present — the wizard cannot toggle it off. Only
+    the engine changes with tier: in_process (embedded, uses the
+    platform's Postgres) for free/hobby/standard, temporal_cloud for
+    scale.
+    """
+    kernel = default_kernel_for_tier(tier)
+    return KernelInfoResponse(
+        kernel=kernel,
+        tier_defaults={t: e for t, e in HERMES_ENGINE_BY_TIER.items()},
+        rationale=(
+            "Hermes is a Nexus kernel service: agent registry, durable "
+            "job dispatch, hot-deploy of new agents, and the event bus. "
+            "It is always deployed. Only its engine is configurable and "
+            "the default tracks the stack tier so the operator gets a "
+            "working setup without extra choices."
+        ),
+    )
 
 
 @router.post("/preview", response_model=WizardPreview)

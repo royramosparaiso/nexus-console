@@ -91,6 +91,21 @@ def render_instance_yaml(sub: WizardSubmission) -> str:
         lines.append(f"    deployment_mode: {sub.stack.preferences.deployment_mode}")
         lines.append(f"    estimated_monthly_usd: {sub.stack.selection.estimated_monthly_usd}")
 
+        # Kernel — always emitted, never configurable through the catalogue.
+        kernel = sub.stack.kernel
+        lines.append(f"    kernel:")
+        lines.append(f"      # Always deployed. Not part of the stack catalogue.")
+        lines.append(f"      hermes:")
+        lines.append(f"        engine: {kernel.hermes.engine}")
+        lines.append(f"        features:")
+        for feat in kernel.hermes.features:
+            lines.append(f"          - {feat}")
+        secrets = kernel.hermes.required_secrets()
+        if secrets:
+            lines.append(f"        required_secrets:")
+            for s in secrets:
+                lines.append(f"          - {s}")
+
         # Host capabilities — what laptop the operator is running from.
         if sub.stack.host is not None:
             host = sub.stack.host
