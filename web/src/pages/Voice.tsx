@@ -22,20 +22,33 @@ interface Instance {
   endpoint: string | null;
 }
 
-// Kokoro-FastAPI ships with several English + multilingual voices. We
-// surface a small curated set; the endpoint accepts any Kokoro voice id.
-const VOICE_OPTIONS: { value: string; label: string }[] = [
-  { value: "af_bella", label: "Bella (English, warm)" },
-  { value: "af_heart", label: "Heart (English, calm)" },
-  { value: "af_sky", label: "Sky (English, bright)" },
-  { value: "am_adam", label: "Adam (English, male)" },
-  { value: "em_alex", label: "Alex (Spanish)" },
-];
+interface VoiceInfo {
+  id: string;
+  language: string | null;
+  language_label: string | null;
+  gender: string | null;
+}
+
+interface VoiceCatalogue {
+  source: string;
+  default: string;
+  voices: VoiceInfo[];
+}
+
+function voiceLabel(v: VoiceInfo): string {
+  const parts: string[] = [];
+  if (v.language_label) parts.push(v.language_label);
+  if (v.gender) parts.push(v.gender);
+  return parts.length ? `${v.id} — ${parts.join(", ")}` : v.id;
+}
+
+function endpointToBaseUrl(endpoint: string): string {
+  return endpoint.replace(/\/$/, "");
+}
 
 function endpointToWebSocketUrl(endpoint: string): string {
   // Platform endpoint is http://host:port — /_voice/stream is a WS route.
-  const wsBase = endpoint.replace(/^http/i, "ws").replace(/\/$/, "");
-  return `${wsBase}/_voice/stream`;
+  return `${endpointToBaseUrl(endpoint).replace(/^http/i, "ws")}/_voice/stream`;
 }
 
 export default function Voice() {
@@ -47,6 +60,8 @@ export default function Voice() {
   const [voice, setVoice] = useState<string>("af_bella");
   const [speed, setSpeed] = useState<number>(1.0);
   const [listError, setListError] = useState<string | null>(null);
+  const [catalogue, setCatalogue] = useState<VoiceCatalogue | null>(null);
+  const [catalogueError, setCatalogueError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -72,6 +87,37 @@ export default function Voice() {
   const wsUrl = selectedInstance?.endpoint
     ? endpointToWebSocketUrl(selectedInstance.endpoint)
     : "";
+
+  // Fetch the voice catalogue directly from the Platform instance so it
+  // reflects whichever Kokoro build is actually deployed there. Falls back
+  // gracefully to the server-side static catalogue if Kokoro is down.
+  useEffect(() => {
+    setCatalogue(null);
+    setCatalogueError(null);
+    if (!selectedInstance?.endpoint) return;
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const url = `${endpointToBaseUrl(selectedInstance.endpoint!)}/_voice/voices`;
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        const data = (await res.json()) as VoiceCatalogue;
+        setCatalogue(data);
+        // Only override voice selection when the current one isn't offered
+        // by this Platform — keeps operator's manual choice sticky.
+        if (data.voices.length && !data.voices.some((v) => v.id === voice)) {
+          setVoice(data.default || data.voices[0].id);
+        }
+      } catch (e) {
+        if ((e as { name?: string }).name === "AbortError") return;
+        setCatalogueError(e instanceof Error ? e.message : "failed to load");
+      }
+    })();
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedInstance?.endpoint]);
+
+  const voiceOptions: VoiceInfo[] = catalogue?.voices ?? [];
 
   const { state, synthesize, cancel } = useVoiceStream({ endpoint: wsUrl });
 
@@ -143,18 +189,34 @@ export default function Voice() {
 
           <div className="grid grid-cols-2 gap-4">
             <label className="block">
-              <span className="block text-xs font-medium text-text-muted mb-1.5">
-                Voice
+              <span className="block text-xs font-medium text-text-muted mb-1.5 flex items-center justify-between">
+                <span>Voice</span>
+                {catalogue && (
+                  <span
+                    className="text-[10px] font-mono uppercase tracking-wider text-text-faint"
+                    data-testid="text-voice-source"
+                  >
+                    {catalogue.source === "backend"
+                      ? `${catalogue.voices.length} live`
+                      : catalogue.source.replace("fallback-", "⚠ ")}
+                  </span>
+                )}
               </span>
               <select
                 value={voice}
                 onChange={(e) => setVoice(e.target.value)}
+                disabled={voiceOptions.length === 0}
                 data-testid="select-voice"
-                className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text"
+                className="w-full rounded-md border border-border bg-bg px-3 py-2 text-sm text-text disabled:opacity-50"
               >
-                {VOICE_OPTIONS.map((v) => (
-                  <option key={v.value} value={v.value}>
-                    {v.label}
+                {voiceOptions.length === 0 && (
+                  <option value="">
+                    {catalogueError ? "failed to load" : "loading…"}
+                  </option>
+                )}
+                {voiceOptions.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {voiceLabel(v)}
                   </option>
                 ))}
               </select>

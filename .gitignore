@@ -57,3 +57,8 @@ console/deploy_state/
 
 console/vendor/
 
+
+# Playwright
+web/test-results/
+web/playwright-report/
+web/blob-report/
