@@ -50,8 +50,15 @@ data/
 *.sqlite
 *.sqlite3
 
-# Provisioned model binaries (fetched + integrity-checked at setup time)
-web/public/models/
+# Provisioned model binaries (fetched + integrity-checked at setup time).
+# The verified Silero VAD .tflite + its README are committed; everything else
+# under models/ (e.g. the source ONNX fetched by scripts/fetch-vad-model.mjs)
+# stays out of git.
+web/public/models/*
+!web/public/models/silero-vad
+web/public/models/silero-vad/*
+!web/public/models/silero-vad/silero_vad.tflite
+!web/public/models/silero-vad/README.md
 
 # Runtime
 console/instance/

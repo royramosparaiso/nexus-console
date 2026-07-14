@@ -1,0 +1,19 @@
+# Pinned toolchain for the deterministic Silero VAD ONNX -> LiteRT/TFLite
+# conversion (tools/vad-conversion/convert.py). Python 3.12.
+#
+# These exact versions produced the committed
+# web/public/models/silero-vad/silero_vad.tflite
+# (sha256 99e2ca568d436f781a98f669b71bb83db248452c367144f51704a8feae4996a7).
+onnx==1.17.0
+onnx2tf==1.28.0
+onnxslim==0.1.94
+onnxruntime==1.27.0
+onnx-graphsurgeon==0.3.27
+sng4onnx==2.0.1
+tensorflow==2.20.0
+tf-keras==2.20.1
+ai-edge-litert==2.1.6
+numpy==2.5.1
+flatbuffers==25.12.19
+protobuf==6.33.6
+psutil==7.2.2

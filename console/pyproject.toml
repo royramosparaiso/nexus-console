@@ -1,6 +1,6 @@
 [project]
 name = "nexus-console"
-version = "0.13.4"
+version = "0.13.5"
 description = "Nexus Console — control plane for Nexus OS"
 readme = "README.md"
 requires-python = ">=3.11"

@@ -1,22 +1,30 @@
 /**
  * vadBenchmark.ts — Silero VAD proof-of-concept benchmark for the Voice
- * cockpit. Measures LiteRT.js runtime init, model compile, and inference
- * latency on *this device/session only*, and reports honest capability
- * diagnostics.
+ * cockpit. Runs the real, committed silero_vad.tflite through LiteRT.js and
+ * measures runtime init, model compile, and per-frame inference latency on
+ * *this device/session only*, plus honest capability diagnostics.
  *
  * Model provenance: Silero VAD is MIT-licensed (github.com/snakers4/silero-vad).
- * Upstream distributes ONNX/JIT, not .tflite — so the .tflite must be
- * provisioned locally (see scripts/fetch-vad-model.mjs, which pins the source
- * URL + SHA256 and refuses on mismatch). When the model is absent we report
- * `model-unavailable` and never fabricate inference numbers.
+ * Upstream ships ONNX/JIT, not .tflite, so we convert the verified v5.1 ONNX
+ * ourselves (see tools/vad-conversion/) and commit the parity-checked result at
+ * web/public/models/silero-vad/silero_vad.tflite. scripts/fetch-vad-model.mjs
+ * re-verifies its SHA256 on setup.
+ *
+ * Stateful contract (16 kHz, 512-sample frames):
+ *   inputs : input f32 [1,512]  (one frame)
+ *            state f32 [2,128]  (LSTM h;c, zeros at stream start)
+ *   outputs: prob  f32 [1,1]    (speech probability)
+ *            state f32 [2,128]  (fed into the next frame's state)
+ * We init state to zeros and carry the output state across frames — the real
+ * recurrent lifecycle, not a per-frame reset.
  *
  * Deterministic E2E path: if `window.__NEXUS_VAD_MOCK__` is set, the benchmark
- * returns that mocked result (clearly labelled source:"mock") without loading
- * any WASM. This lets CI exercise the UI's success/fallback/error states with
- * no hardware WebGPU. Mocked numbers are never presented as hardware numbers.
+ * returns that mocked result (source:"mock") without loading any WASM, so CI
+ * can drive every UI state with no hardware. Mocked numbers are never presented
+ * as hardware numbers.
  */
 
-import type { TensorDetails, Tensor } from "@litertjs/core";
+import type { Tensor, TensorDetails } from "@litertjs/core";
 
 import {
   Backend,
@@ -26,22 +34,37 @@ import {
   ensureRuntime,
   loadModel,
   selectBackend,
-  timeInference,
+  summarize,
 } from "./literert";
 
 export type { Backend } from "./literert";
 
+/** LSTM hidden size — the recurrent state is [2, HIDDEN] (row 0 = h, 1 = c). */
+const HIDDEN = 128;
+
 export const SILERO_VAD = {
-  /** Local path served from web/public/models/silero-vad/ (gitignored). */
+  /** Committed, integrity-checked model served from web/public/models/. */
   url: "/models/silero-vad/silero_vad.tflite",
   license: "MIT",
   source: "github.com/snakers4/silero-vad",
-  /** Silero VAD v5 operates on 16 kHz audio in 512-sample frames. */
+  version: "v5.1",
+  /** SHA256 of the committed .tflite (see fetch-vad-model.mjs / README). */
+  sha256: "99e2ca568d436f781a98f669b71bb83db248452c367144f51704a8feae4996a7",
+  /** Silero VAD v5.1 operates on 16 kHz audio in 512-sample frames. */
   sampleRate: 16000,
   frameSize: 512,
+  stateShape: [2, HIDDEN] as const,
 } as const;
 
 export type BenchmarkStatus = "ok" | "fallback" | "error" | "model-unavailable";
+
+export interface VadModelInfo {
+  url: string;
+  license: string;
+  source: string;
+  version: string;
+  sha256: string;
+}
 
 export interface VadBenchmarkResult {
   status: BenchmarkStatus;
@@ -60,7 +83,11 @@ export interface VadBenchmarkResult {
   frameBudgetMs: number;
   /** medianMs / frameBudgetMs — <1 means faster than real time. */
   realTimeFactor: number | null;
-  model: { url: string; license: string; source: string };
+  /** Frames actually pushed through the model (measured runs). */
+  framesProcessed: number | null;
+  /** Max speech probability observed over the measured frames (real output). */
+  maxSpeechProb: number | null;
+  model: VadModelInfo;
   usedMicrophone: boolean;
   error?: string;
 }
@@ -82,28 +109,56 @@ function readMock(): VadMock | undefined {
   return (window as unknown as { __NEXUS_VAD_MOCK__?: VadMock }).__NEXUS_VAD_MOCK__;
 }
 
-const DTYPE_CTOR = {
-  float32: Float32Array,
-  int32: Int32Array,
-  uint8: Uint8Array,
-} as const;
+function tensorSize(d: TensorDetails): number {
+  return Array.from(d.shape).reduce((a, b) => a * b, 1);
+}
 
 /**
- * A deterministic pseudo-audio frame: a fixed mixture of sine tones so every
- * run/device processes byte-identical input. Values in [-1, 1].
+ * A deterministic pseudo-audio frame at time-offset `start` (in samples): a
+ * fixed mixture of sine tones so every run/device processes byte-identical
+ * input. Values in [-1, 1]. Consecutive frames use contiguous offsets to form
+ * a coherent stream for the stateful model.
  */
-export function makeDeterministicFrame(n: number): Float32Array {
+export function makeDeterministicFrame(n: number, start = 0): Float32Array {
   const out = new Float32Array(n);
   for (let i = 0; i < n; i++) {
+    const t = start + i;
     out[i] =
-      0.6 * Math.sin((2 * Math.PI * 220 * i) / SILERO_VAD.sampleRate) +
-      0.3 * Math.sin((2 * Math.PI * 440 * i) / SILERO_VAD.sampleRate) +
-      0.1 * Math.sin((2 * Math.PI * 880 * i) / SILERO_VAD.sampleRate);
+      0.6 * Math.sin((2 * Math.PI * 220 * t) / SILERO_VAD.sampleRate) +
+      0.3 * Math.sin((2 * Math.PI * 440 * t) / SILERO_VAD.sampleRate) +
+      0.1 * Math.sin((2 * Math.PI * 880 * t) / SILERO_VAD.sampleRate);
   }
   return out;
 }
 
-async function captureMicFrame(n: number): Promise<Float32Array> {
+/** A contiguous sequence of `count` deterministic frames of `frameSize`. */
+export function makeDeterministicFrames(count: number, frameSize: number): Float32Array[] {
+  const frames: Float32Array[] = [];
+  for (let f = 0; f < count; f++) frames.push(makeDeterministicFrame(frameSize, f * frameSize));
+  return frames;
+}
+
+/** Slice a flat PCM buffer into `count` frames of `frameSize`, tiling if short. */
+function sliceIntoFrames(buf: Float32Array, count: number, frameSize: number): Float32Array[] {
+  const frames: Float32Array[] = [];
+  for (let f = 0; f < count; f++) {
+    const frame = new Float32Array(frameSize);
+    for (let i = 0; i < frameSize; i++) {
+      const src = f * frameSize + i;
+      frame[i] = buf.length ? buf[src % buf.length] : 0;
+    }
+    frames.push(frame);
+  }
+  return frames;
+}
+
+function nextPow2(n: number): number {
+  let p = 1;
+  while (p < n) p <<= 1;
+  return p;
+}
+
+async function captureMicFrames(count: number, frameSize: number): Promise<Float32Array[]> {
   const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
   try {
     const AudioCtx =
@@ -113,65 +168,19 @@ async function captureMicFrame(n: number): Promise<Float32Array> {
     try {
       const source = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();
-      analyser.fftSize = Math.max(2048, nextPow2(n));
+      const need = count * frameSize;
+      analyser.fftSize = Math.min(32768, Math.max(2048, nextPow2(need)));
       source.connect(analyser);
-      await new Promise((r) => setTimeout(r, 120)); // let a little audio arrive
+      await new Promise((r) => setTimeout(r, 200)); // let some audio arrive
       const buf = new Float32Array(analyser.fftSize);
       analyser.getFloatTimeDomainData(buf);
-      return buf.slice(0, n);
+      return sliceIntoFrames(buf, count, frameSize);
     } finally {
       await ctx.close();
     }
   } finally {
     for (const t of stream.getTracks()) t.stop();
   }
-}
-
-function nextPow2(n: number): number {
-  let p = 1;
-  while (p < n) p <<= 1;
-  return p;
-}
-
-/**
- * Build one fresh set of positional input tensors matching the model's
- * declared input signature. The largest float32 input receives the audio
- * fixture (tiled/truncated to fit); all other inputs (state, sample-rate) are
- * zero-initialised. Robust to Silero's multi-input signature without
- * hardcoding tensor names.
- */
-function makeInputsFactory(
-  core: Awaited<ReturnType<typeof ensureRuntime>>["core"],
-  details: readonly TensorDetails[],
-  audio: Float32Array,
-): () => Tensor[] {
-  return () =>
-    details.map((d) => {
-      const shape = Array.from(d.shape);
-      const size = shape.reduce((a, b) => a * b, 1);
-      const Ctor = DTYPE_CTOR[d.dtype as keyof typeof DTYPE_CTOR] ?? Float32Array;
-      const arr = new Ctor(size);
-      if (d.dtype === "float32") {
-        for (let i = 0; i < size; i++) arr[i] = audio[i % audio.length];
-      }
-      return new core.Tensor(arr as never, shape);
-    });
-}
-
-/** Choose the audio-carrying input's frame size (largest float32 input). */
-function inferFrameSize(details: readonly TensorDetails[]): number {
-  let best: number = SILERO_VAD.frameSize;
-  let bestSize = -1;
-  for (const d of details) {
-    if (d.dtype !== "float32") continue;
-    const shape = Array.from(d.shape);
-    const size = shape.reduce((a, b) => a * b, 1);
-    if (size > bestSize) {
-      bestSize = size;
-      best = shape[shape.length - 1] || size;
-    }
-  }
-  return best;
 }
 
 async function modelAvailable(url: string): Promise<boolean> {
@@ -191,6 +200,91 @@ function frameBudgetMs(frameSize: number, sampleRate: number): number {
   return (frameSize / sampleRate) * 1000;
 }
 
+interface SequenceRun {
+  timing: TimingSummary;
+  framesProcessed: number;
+  maxSpeechProb: number;
+}
+
+/**
+ * Run the VAD model over a frame sequence with the real recurrent-state
+ * lifecycle: state starts at zeros [2,128] and each frame's output state is
+ * carried into the next frame. Warmup frames prime the state + JIT and are not
+ * timed; measured frames are timed with performance.now(). All tensors are
+ * freed each frame to keep WASM memory bounded.
+ */
+async function runVadSequence(
+  core: Awaited<ReturnType<typeof ensureRuntime>>["core"],
+  model: Awaited<ReturnType<typeof loadModel>>["model"],
+  frames: Float32Array[],
+  opts: { warmupRuns: number; measuredRuns: number },
+): Promise<SequenceRun> {
+  const inD = model.getInputDetails();
+  const outD = model.getOutputDetails();
+  // Identify the recurrent-state input (size 2*HIDDEN) vs the audio input.
+  const stateInIdx = inD.findIndex((d) => tensorSize(d) === 2 * HIDDEN);
+  const audioInIdx = inD.findIndex((_, i) => i !== stateInIdx);
+  if (stateInIdx < 0 || audioInIdx < 0) {
+    throw new Error(
+      `unexpected VAD input signature: ${inD.map((d) => `${d.name}${JSON.stringify(Array.from(d.shape))}`).join(", ")}`,
+    );
+  }
+
+  // Annotated so `state` and the copied `nextState` share the (augmented)
+  // Float32Array type; the @litertjs/core global augmentation would otherwise
+  // make the two disagree on the backing-buffer type parameter.
+  let state: Float32Array = new Float32Array(2 * HIDDEN); // zeros at stream start
+
+  const runFrame = async (frame: Float32Array): Promise<{ dt: number; prob: number }> => {
+    const inputs: Tensor[] = inD.map((d, i) => {
+      if (i === stateInIdx) return new core.Tensor(state, [2, HIDDEN]);
+      const arr = new Float32Array(tensorSize(d));
+      arr.set(frame.subarray(0, arr.length));
+      return new core.Tensor(arr, Array.from(d.shape));
+    });
+    const t0 = performance.now();
+    const outputs = (await model.run(inputs)) as Tensor[];
+    const dt = performance.now() - t0;
+
+    let prob = NaN;
+    let nextState: Float32Array | null = null;
+    for (let k = 0; k < outputs.length; k++) {
+      const size = tensorSize(outD[k]);
+      const data = await outputs[k].data();
+      if (size === 1) prob = data[0];
+      else if (size === 2 * HIDDEN) {
+        // Copy out of WASM memory. Construct via numeric length + set (not
+        // new Float32Array(data)) to keep the ArrayBuffer-backed type — the
+        // @litertjs/core global augmentation otherwise weakens Float32Array.
+        const copy = new Float32Array(size);
+        copy.set(data as ArrayLike<number>);
+        nextState = copy;
+      }
+    }
+    for (const o of outputs) o.delete();
+    for (const t of inputs) t.delete();
+    if (nextState) state = nextState;
+    return { dt, prob };
+  };
+
+  const n = frames.length;
+  let fi = 0;
+  for (let i = 0; i < opts.warmupRuns; i++) await runFrame(frames[fi++ % n]);
+
+  const latencies: number[] = [];
+  let maxProb = 0;
+  for (let i = 0; i < opts.measuredRuns; i++) {
+    const { dt, prob } = await runFrame(frames[fi++ % n]);
+    latencies.push(dt);
+    if (Number.isFinite(prob)) maxProb = Math.max(maxProb, prob);
+  }
+  return {
+    timing: summarize(latencies, opts.warmupRuns),
+    framesProcessed: opts.measuredRuns,
+    maxSpeechProb: maxProb,
+  };
+}
+
 /**
  * Run the VAD benchmark. Never throws — failures are captured in the returned
  * result's `status`/`error` so the UI can render them.
@@ -200,6 +294,14 @@ export async function runVadBenchmark(
 ): Promise<VadBenchmarkResult> {
   const requestedBackend = opts.requestedBackend ?? "webgpu";
   const capabilities = await collectCapabilities();
+
+  const modelInfo: VadModelInfo = {
+    url: SILERO_VAD.url,
+    license: SILERO_VAD.license,
+    source: SILERO_VAD.source,
+    version: SILERO_VAD.version,
+    sha256: SILERO_VAD.sha256,
+  };
 
   const base: VadBenchmarkResult = {
     status: "error",
@@ -215,7 +317,9 @@ export async function runVadBenchmark(
     frameSize: SILERO_VAD.frameSize,
     frameBudgetMs: frameBudgetMs(SILERO_VAD.frameSize, SILERO_VAD.sampleRate),
     realTimeFactor: null,
-    model: { url: SILERO_VAD.url, license: SILERO_VAD.license, source: SILERO_VAD.source },
+    framesProcessed: null,
+    maxSpeechProb: null,
+    model: modelInfo,
     usedMicrophone: false,
   };
 
@@ -228,6 +332,7 @@ export async function runVadBenchmark(
       ...mock,
       source: "mock",
       capabilities: { ...capabilities, ...(mock.capabilities ?? {}) },
+      model: { ...modelInfo, ...(mock.model ?? {}) },
     };
     if (merged.timing && merged.frameBudgetMs) {
       merged.realTimeFactor = merged.timing.medianMs / merged.frameBudgetMs;
@@ -242,7 +347,7 @@ export async function runVadBenchmark(
       status: "model-unavailable",
       error:
         `Silero VAD model not found at ${SILERO_VAD.url}. ` +
-        "Run `node scripts/fetch-vad-model.mjs` to provision it (MIT).",
+        "Run `node scripts/fetch-vad-model.mjs` to verify/provision it (MIT).",
     };
   }
 
@@ -256,26 +361,28 @@ export async function runVadBenchmark(
 
     const loaded = await loadModel(SILERO_VAD.url, selected);
 
-    let audio: Float32Array;
+    const warmupRuns = opts.warmupRuns ?? 3;
+    const measuredRuns = opts.measuredRuns ?? 30;
+    const frameSize = SILERO_VAD.frameSize;
+
+    let frames: Float32Array[];
     let usedMic = false;
-    const details = loaded.model.getInputDetails();
-    const frameSize = inferFrameSize(details);
+    const needed = warmupRuns + measuredRuns;
     if (opts.useMicrophone && typeof navigator !== "undefined" && navigator.mediaDevices) {
       try {
-        audio = await captureMicFrame(frameSize);
+        frames = await captureMicFrames(needed, frameSize);
         usedMic = true;
       } catch {
-        audio = makeDeterministicFrame(frameSize);
+        frames = makeDeterministicFrames(needed, frameSize);
       }
     } else {
-      audio = makeDeterministicFrame(frameSize);
+      frames = makeDeterministicFrames(needed, frameSize);
     }
 
-    const timing = await timeInference(
-      loaded.model,
-      makeInputsFactory(core, details, audio),
-      { warmupRuns: opts.warmupRuns ?? 3, measuredRuns: opts.measuredRuns ?? 30 },
-    );
+    const seq = await runVadSequence(core, loaded.model, frames, {
+      warmupRuns,
+      measuredRuns,
+    });
 
     const budget = frameBudgetMs(frameSize, SILERO_VAD.sampleRate);
     return {
@@ -285,10 +392,12 @@ export async function runVadBenchmark(
       fallbackUsed: loaded.fallbackUsed,
       runtimeInitMs,
       modelCompileMs: loaded.compileMs,
-      timing,
+      timing: seq.timing,
       frameSize,
       frameBudgetMs: budget,
-      realTimeFactor: timing.medianMs / budget,
+      realTimeFactor: seq.timing.medianMs / budget,
+      framesProcessed: seq.framesProcessed,
+      maxSpeechProb: seq.maxSpeechProb,
       usedMicrophone: usedMic,
     };
   } catch (err) {

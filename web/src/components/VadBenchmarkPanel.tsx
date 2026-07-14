@@ -289,6 +289,16 @@ export default function VadBenchmarkPanel() {
                 value={ms(result.frameBudgetMs)}
                 testid="vad-frame-budget"
               />
+              <Metric
+                label="Frames processed"
+                value={result.framesProcessed != null ? String(result.framesProcessed) : "—"}
+                testid="vad-frames"
+              />
+              <Metric
+                label="Max speech prob"
+                value={result.maxSpeechProb != null ? result.maxSpeechProb.toFixed(3) : "—"}
+                testid="vad-max-prob"
+              />
             </div>
           </div>
 
@@ -326,13 +336,19 @@ export default function VadBenchmarkPanel() {
               />
               <Metric label="Microphone" value={yesNo(result.usedMicrophone)} testid="vad-mic-used" />
               <Metric
-                label="Model license"
-                value={result.model.license}
+                label="Model"
+                value={`Silero VAD ${result.model.version} (${result.model.license})`}
                 testid="vad-model-license"
               />
             </div>
             <p
-              className="mt-2 break-all text-[10px] text-text-faint"
+              className="mt-2 break-all font-mono text-[10px] text-text-faint"
+              data-testid="vad-model-sha"
+            >
+              sha256:{result.model.sha256}
+            </p>
+            <p
+              className="mt-1 break-all text-[10px] text-text-faint"
               data-testid="vad-ua"
             >
               {cap?.userAgent}
