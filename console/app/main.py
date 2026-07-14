@@ -11,6 +11,7 @@ from app.api import (
     ecosystem,
     health,
     instances,
+    integrations,
     local_models,
     platform_notify,
     providers,
@@ -54,6 +55,7 @@ app.include_router(platform_notify.router, prefix="/_platform", tags=["platform-
 app.include_router(agent_templates.router, prefix="/agent-templates", tags=["agent-templates"])
 app.include_router(ecosystem.router, prefix="/ecosystem", tags=["ecosystem"])
 app.include_router(local_models.router, prefix="/local-models", tags=["local-models"])
+app.include_router(integrations.router, prefix="/integrations", tags=["integrations"])
 app.include_router(voicebox.router, prefix="/voicebox", tags=["voicebox"])
 
 

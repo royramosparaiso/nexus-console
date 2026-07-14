@@ -38,6 +38,7 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 from app.core.config import Settings
+from app.services.integrations import ADAPTERS, Adapter
 
 
 class Status(str, Enum):
@@ -125,18 +126,42 @@ class EcosystemView(BaseModel):
 # ecosystem follows as honest ``planned`` catalogue rows.
 # ---------------------------------------------------------------------------
 
-# The eight LLM provider slots the Console already knows about (providers.py).
-# They are ``configurable``: the panel exists, credentials do not ship.
-_LLM_PROVIDERS: list[tuple[str, str]] = [
-    ("anthropic", "Anthropic Claude"),
-    ("openai", "OpenAI"),
-    ("openrouter", "OpenRouter"),
-    ("perplexity", "Perplexity"),
-    ("mistral", "Mistral"),
-    ("groq", "Groq"),
-    ("together", "Together AI"),
-    ("ollama", "Ollama (local)"),
-]
+def _integration_of(adapter: Adapter) -> Integration:
+    return Integration.native if adapter.integration == "native" else Integration.external
+
+
+def _requires_for(adapter: Adapter) -> list[str]:
+    """Honest, concrete steps to make an adapter-backed entry work."""
+    reqs: list[str] = ["Create + enable an integration profile (Ecosystem → Integrations)"]
+    if any(f.key == "base_url" for f in adapter.fields):
+        reqs.append(f"Point base_url at your {adapter.name} endpoint")
+    required_envs = [s.env for s in adapter.secrets if s.required]
+    if required_envs:
+        reqs.append("Set " + ", ".join(required_envs))
+    reqs.append("Run 'Test connection' to verify reachability")
+    return reqs
+
+
+def _entry_from_adapter(adapter: Adapter) -> EcosystemEntry:
+    caps = ", ".join(adapter.capabilities)
+    summary = f"{adapter.name}: {caps} via {adapter.provider}."
+    if adapter.notes:
+        summary += f" {adapter.notes}"
+    return EcosystemEntry(
+        id=adapter.id,
+        name=adapter.name,
+        category=Category(adapter.category),
+        # A real config + health/probe path exists ⇒ configurable (never
+        # ``available``, which requires an enabled, tested runtime path).
+        status=Status.configurable,
+        integration=_integration_of(adapter),
+        summary=summary,
+        provider=adapter.provider,
+        requires=_requires_for(adapter),
+        docs_url=adapter.docs_url,
+        tags=adapter.tags,
+        template_id=adapter.template_id,
+    )
 
 
 def _seed() -> list[EcosystemEntry]:
@@ -192,149 +217,12 @@ def _seed() -> list[EcosystemEntry]:
         )
     )
 
-    # -- LLM providers (real slots, configurable) ---------------------------
-    for pid, label in _LLM_PROVIDERS:
-        entries.append(
-            EcosystemEntry(
-                id=f"llm_{pid}",
-                name=label,
-                category=Category.llm,
-                status=Status.configurable,
-                integration=Integration.native,
-                provider=pid,
-                summary=f"LLM provider slot managed on the Providers page ({label}).",
-                requires=["Add credentials on the LLM Providers page"],
-                tags=["llm", pid],
-            )
-        )
-
-    # -- Open-model access (planned catalogue) ------------------------------
-    for pid, label, prov in [
-        ("huggingface", "Hugging Face", "huggingface"),
-        ("groq_access", "Groq", "groq"),
-        ("together_access", "Together AI", "together"),
-    ]:
-        entries.append(
-            EcosystemEntry(
-                id=f"open_{pid}",
-                name=label,
-                category=Category.open_model_access,
-                status=Status.planned,
-                integration=Integration.catalog,
-                provider=prov,
-                summary=f"Open-model gateway ({label}). Catalogue entry — no client wired yet.",
-                requires=["Provider client + credential sync (planned)"],
-                tags=["open-models", prov],
-            )
-        )
-
-    # -- Text embeddings (planned catalogue) --------------------------------
-    for pid, label in [
-        ("nomic", "Nomic"),
-        ("sbert", "SBERT / sentence-transformers"),
-        ("openai_embed", "OpenAI Embeddings"),
-        ("voyage", "Voyage AI"),
-        ("google_embed", "Google (Gecko / EmbeddingGemma)"),
-        ("cohere_embed", "Cohere Embed"),
-    ]:
-        entries.append(
-            EcosystemEntry(
-                id=f"embed_{pid}",
-                name=label,
-                category=Category.embeddings,
-                status=Status.planned,
-                integration=Integration.catalog,
-                summary=f"Text-embedding provider ({label}). Catalogue entry — planned.",
-                requires=["Embedding client + vector store wiring (planned)"],
-                tags=["embeddings"],
-            )
-        )
-
-    # -- Vector databases (planned catalogue) -------------------------------
-    for pid, label in [
-        ("chroma", "Chroma"),
-        ("qdrant", "Qdrant"),
-        ("pinecone", "Pinecone"),
-        ("weaviate", "Weaviate"),
-        ("milvus", "Milvus"),
-        ("pgvector", "Postgres / pgvector"),
-        ("cassandra", "Cassandra"),
-        ("opensearch", "OpenSearch"),
-    ]:
-        entries.append(
-            EcosystemEntry(
-                id=f"vdb_{pid}",
-                name=label,
-                category=Category.vector_db,
-                status=Status.planned,
-                integration=Integration.catalog,
-                summary=f"Vector store ({label}). Catalogue entry — planned.",
-                requires=["Connection config + retrieval adapter (planned)"],
-                tags=["vector-db", "retrieval"],
-            )
-        )
-
-    # -- Frameworks (planned catalogue) -------------------------------------
-    for pid, label in [
-        ("langchain", "LangChain"),
-        ("llamaindex", "LlamaIndex"),
-        ("haystack", "Haystack"),
-        ("txtai", "txtai"),
-    ]:
-        entries.append(
-            EcosystemEntry(
-                id=f"fw_{pid}",
-                name=label,
-                category=Category.framework,
-                status=Status.planned,
-                integration=Integration.catalog,
-                summary=f"Orchestration framework ({label}). Catalogue entry — planned.",
-                requires=["Adapter for agent runtime (planned)"],
-                tags=["framework", "orchestration"],
-            )
-        )
-
-    # -- Data extraction (planned catalogue) --------------------------------
-    for pid, label in [
-        ("crawl4ai", "Crawl4AI"),
-        ("firecrawl", "FireCrawl"),
-        ("scrapegraphai", "ScrapeGraphAI"),
-        ("megaparser", "MegaParser"),
-        ("docling", "Docling"),
-        ("llamaparse", "LlamaParse"),
-        ("extractthinker", "ExtractThinker"),
-    ]:
-        entries.append(
-            EcosystemEntry(
-                id=f"extract_{pid}",
-                name=label,
-                category=Category.data_extraction,
-                status=Status.planned,
-                integration=Integration.catalog,
-                summary=f"Data-extraction tool ({label}). Catalogue entry — planned.",
-                requires=["Extraction adapter + skill card (planned)"],
-                tags=["extraction", "scraping"],
-            )
-        )
-
-    # -- Evaluation (planned catalogue) -------------------------------------
-    for pid, label in [
-        ("giskard", "Giskard"),
-        ("ragas", "Ragas"),
-        ("deepeval", "DeepEval"),
-    ]:
-        entries.append(
-            EcosystemEntry(
-                id=f"eval_{pid}",
-                name=label,
-                category=Category.evaluation,
-                status=Status.planned,
-                integration=Integration.catalog,
-                summary=f"Evaluation tool ({label}). Catalogue entry — planned.",
-                requires=["Eval harness integration (planned)"],
-                tags=["evaluation", "quality"],
-            )
-        )
+    # -- Everything else is derived from the integration adapter registry.
+    # Each adapter ships a real typed config + health/probe path, so its entry
+    # is ``configurable`` — never ``planned`` (no more logo-only catalogue rows)
+    # and never falsely ``available`` (that needs an enabled, tested runtime).
+    for adapter in ADAPTERS:
+        entries.append(_entry_from_adapter(adapter))
 
     return entries
 

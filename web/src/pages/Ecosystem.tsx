@@ -32,6 +32,7 @@ import {
   type EcosystemView,
 } from "../lib/ecosystem";
 import { collectCapabilities, type DeviceCapabilities } from "../lib/literert";
+import IntegrationsManager from "../components/IntegrationsManager";
 
 interface VoiceboxConfig {
   enabled: boolean;
@@ -347,6 +348,10 @@ export default function Ecosystem() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
             <LiteRtPanel />
             <VoiceboxPanel />
+          </div>
+
+          <div className="mb-8">
+            <IntegrationsManager />
           </div>
 
           <div className="space-y-8">
