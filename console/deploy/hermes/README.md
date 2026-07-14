@@ -92,9 +92,9 @@ namespace initializer. Bundled compose file:
   own VPC or on-prem.
 - Your team already knows Postgres and does not want a second, unfamiliar
   datastore in the ops rotation.
-- Expected write throughput is roughly under a few thousand history
-  events per second sustained. Postgres scales further than people
-  assume, but Cassandra scales further still.
+- Expected sustained load is roughly **under ~300 STPS** (see the
+  benchmarks section below for the reasoning). Postgres carries further
+  than people assume with tuning, but Cassandra scales further still.
 - You are on `standard` and want a self-host path — this is the tier's
   recommended self-host default over Cassandra because the operational
   surface is smaller.
@@ -125,10 +125,10 @@ Same Temporal server, Cassandra 4.1 as the durable store. Bundled compose
 file: [`docker-compose.temporal.yml`](./docker-compose.temporal.yml).
 
 **Choose when:**
-- You expect sustained write throughput that Postgres would struggle
-  with. As a rough rule of thumb: consider Cassandra when you plan to
-  push more than \~5–10k history events per second sustained, or when
-  you already have a Cassandra team.
+- You expect sustained load that Postgres would struggle with. As a
+  rough rule of thumb (see benchmarks section): **consider Cassandra
+  above roughly ~300 STPS sustained**, or when you already have a
+  Cassandra team.
 - You need horizontal write scaling by adding nodes rather than by
   vertical scaling the primary.
 - You have Cassandra expertise on the team — repair, compaction and
@@ -160,7 +160,7 @@ Is this hobby tier?
     ├── Yes → temporal_cloud. Done.
     └── No
         │
-        Do you have Cassandra expertise on-call AND expect >~5k events/s sustained?
+        Do you have Cassandra expertise on-call AND expect >~300 STPS sustained?
         ├── Yes → temporal_selfhost (Cassandra).
         └── No  → temporal_selfhost_postgres.
 ```
@@ -187,6 +187,123 @@ never changes when you migrate. What changes is state:
   workflow histories and versioning.
 
 Plan the migration; do not do it under load.
+
+---
+
+## Real-world benchmarks
+
+The fastest way to lie about Temporal capacity is to quote someone else's
+STPS number. Persistence throughput depends on backend size, RF, JVM/PG
+tuning, shard count, history size per workflow, and how chatty your
+activities are. Numbers below are anchored to specific public sources —
+read the source before using any of them as a sizing input.
+
+### The right unit
+
+Temporal measures itself in **state transitions per second (STPS)** —
+every persistence write. It is not the same as workflows/sec or
+activities/sec: a 3-activity workflow is roughly 8–12 state transitions.
+Most public numbers report either STPS or actions/sec (APS) — do not
+compare them directly, and translate to STPS before sizing.
+
+See [Temporal — Scaling Temporal: The basics](https://temporal.io/blog/scaling-temporal-the-basics)
+for the definition and the reference dev-default run (150 → 1,350
+STPS by tuning shards, replicas, and DB size — Cassandra backend).
+
+### Rule-of-thumb per vCPU (Cassandra)
+
+From a Temporal core-team answer on the community forum
+([source](https://community.temporal.io/t/temporal-throughput/2263)):
+
+- **~60 STPS per Cassandra vCPU**, at RF=3.
+- **~150 STPS per Temporal-cluster vCPU** (frontend + history + matching).
+
+So a 3-node Cassandra cluster of 8 vCPU each (~24 vCPU total) is
+nominally good for ~1,400 STPS before you start tuning. Reality is
+lower once you add history-event size and secondary indexes, but the
+ratio is a useful sanity check when the backend is the bottleneck.
+
+### Postgres ceilings observed in production reports
+
+All from public sources — take each as one datapoint, not a spec.
+
+| Setup                                                              | Sustained throughput                                    | Source                                                                                                                                                                       |
+| ------------------------------------------------------------------ | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Single Postgres 12, 2 vCPU / 8 GB, 1 activity/wf                   | ~8–10 workflows/s (~40–50 activities/s), DB pegged 100% | [Temporal forum](https://community.temporal.io/t/running-temporal-postgres-benchmark/836)                                                                                    |
+| Same setup, DB scaled to 4 vCPU / 16 GB                            | ~16 workflows/s, DB at 80%                              | [Temporal forum](https://community.temporal.io/t/running-temporal-postgres-benchmark/836)                                                                                    |
+| Single Postgres, 8-core SSD, 3-activity REST-call workflow         | Target 500 TPS not reached — latency degraded past ~10 req/s | [Temporal forum](https://community.temporal.io/t/navigating-through-the-internal-of-workflow-lifecycle/11567)                                                                |
+| Managed Postgres, tuned services, 3-activity workflow              | ~75 workflows/s, ~230 activities/s, DB at 40–50% CPU    | [Temporal forum](https://community.temporal.io/t/postgresql-specification-for-temporal/6902)                                                                                 |
+| Postgres 60k bursty workflows / 15 min question (community advice) | Community consensus: ~50–200 workflow starts/s ceiling on Postgres | [Temporal forum](https://community.temporal.io/t/can-temporal-postgres-handle-60k-bursty-scheduled-workflows-every-15-minutes/19420)                                         |
+
+Collectively: **a single well-tuned Postgres, sensibly sized, gets
+you to roughly the 50–200 workflows/s / a few hundred activities/s
+range**. Beyond that you are fighting `pg_locks`, autovacuum, and the
+`history_node` hot table — as the Quo team documented before migrating
+away ([Outgrowing Postgres and Moving to Cassandra](https://www.quo.com/blog/postgres-to-cassandra/)).
+
+### When Cassandra pays off
+
+Same Quo write-up above, plus the Temporal core team's public guidance
+(["we recommend Cassandra for huge loads"](https://community.temporal.io/t/postgresql-good-option-for-persistence-in-production/6153)):
+
+- Cassandra is Temporal's **reference backend** — it is what the core
+  team benchmarks and tunes against.
+- It is **sharded and write-optimized by design**. Adding a node adds
+  throughput; adding a Postgres replica does not (writes still go
+  through the primary).
+- Quo sustained "roughly 3× peak production state-transition rate"
+  on a 3-node Cassandra cluster at RF=3 with 32 matching partitions —
+  a comfortable margin for their workload. The engineering effort to
+  get there was non-trivial (RF tuning, matching partition scaling,
+  monitoring).
+- Public case study of a self-hosted migration: 100% CPU on Postgres →
+  ~3× cheaper and ~3–4× faster on 3-node Cassandra
+  ([Temporal Replay talk 2026](https://www.youtube.com/watch?v=H1wkzi_bdTU)).
+  The speaker also notes that Astra DB (managed Cassandra) was much
+  more expensive than their self-hosted alternative — factor that into
+  the total cost.
+
+### Temporal Cloud reference points
+
+- Default namespace limit: **500 actions per second (APS)**, floor that
+  scales up with On-Demand Capacity based on the last 7 days of usage.
+  Higher tiers via Provisioned Capacity.
+  ([Temporal Cloud limits](https://docs.temporal.io/cloud/limits))
+- Temporal's own claim is that Cloud has **lower and more stable
+  request latency than most self-hosted clusters** because of a
+  custom persistence layer, not stock Cassandra
+  ([Temporal Cloud custom persistence layer](https://temporal.io/blog/higher-throughput-and-lower-latency-temporal-clouds-custom-persistence-layer)).
+  Treat this as vendor claim; still, the practical implication is that
+  "beat Cloud on latency with self-hosted" is not a free win.
+
+### Practical sizing shortcut
+
+1. Estimate your **peak STPS**: expected workflows/s × average state
+   transitions per workflow (start + one per activity + completion, plus
+   any signals/timers). A typical 3-activity workflow ≈ 8–12 STPS.
+2. **If peak STPS ≲ 500** and you can accept a managed vendor →
+   `temporal_cloud` at default APS is a fit. Below the default floor
+   you pay for headroom you may not use, but the ops savings are real.
+3. **If peak STPS ≲ 300 and you want self-host** →
+   `temporal_selfhost_postgres` with a well-tuned Postgres (SSD, tuned
+   `shared_buffers`, autovacuum-friendly settings, connection pooler).
+   Multiple community reports land in this band before Postgres becomes
+   the bottleneck.
+4. **If peak STPS is roughly 300–2,000 and self-host is a hard
+   requirement** → `temporal_selfhost` (Cassandra), 3 nodes minimum,
+   RF=3. Expect real ops work.
+5. **If peak STPS > 2,000 sustained** → Cassandra is table stakes, and
+   you should also be reading the Temporal scaling posts end-to-end,
+   sizing history shards up-front, and planning for OpenSearch as
+   the visibility store.
+
+These boundaries are approximate. **Test with
+[maru](https://github.com/temporalio/maru) or the
+[temporalio/benchmark-workers](https://github.com/temporalio/benchmark-matrix)
+rig against a cluster shaped like your real workload before
+committing to a backend at scale.** Every number above should be
+treated as a rough anchor, not a spec sheet — see the linked sources
+for exact hardware, tuning, and workload shape.
 
 ---
 
