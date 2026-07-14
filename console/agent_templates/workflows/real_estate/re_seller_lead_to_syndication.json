@@ -1,0 +1,165 @@
+{
+  "id": "re_seller_lead_to_syndication",
+  "version": "0.13.5",
+  "vertical": "real-estate",
+  "title": "Seller lead → listing syndication",
+  "trigger": "event: seller_lead.created",
+  "participants": [
+    "re_lead_concierge",
+    "re_office_routing",
+    "re_listing_acquisition_manager",
+    "re_transaction_doc_checklist",
+    "re_listing_completeness_monitor",
+    "re_valuation_analyst",
+    "re_comparables_valuation",
+    "re_listing_marketing_manager",
+    "re_listing_copy_bilingual",
+    "re_portal_field_normalization",
+    "re_portal_syndication"
+  ],
+  "steps": [
+    {
+      "order": 1,
+      "name": "qualify",
+      "template_id": "re_lead_concierge",
+      "input_state": "raw_enquiry",
+      "output_state": "qualified_seller_lead",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 2,
+      "name": "route",
+      "template_id": "re_office_routing",
+      "input_state": "qualified_seller_lead",
+      "output_state": "assignment",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 3,
+      "name": "acquire",
+      "template_id": "re_listing_acquisition_manager",
+      "input_state": "seller_context",
+      "output_state": "acquisition_brief",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 4,
+      "name": "doc_checklist",
+      "template_id": "re_transaction_doc_checklist",
+      "input_state": "property_facts",
+      "output_state": "doc_status",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 5,
+      "name": "valuation_support",
+      "template_id": "re_valuation_analyst",
+      "input_state": "property_facts",
+      "output_state": "valuation_range",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 6,
+      "name": "marketing_pack",
+      "template_id": "re_listing_marketing_manager",
+      "input_state": "approved_listing",
+      "output_state": "marketing_package",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 7,
+      "name": "mandate_approval",
+      "template_id": "re_listing_acquisition_manager",
+      "input_state": "acquisition_brief",
+      "output_state": "signed_mandate",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      },
+      "human_approval_gate": {
+        "required": true,
+        "approver_role": "human",
+        "gate_id": "human_agent_and_seller_approve_mandate_and_price",
+        "note": "AI proposes; a named human approves. No autonomous send."
+      }
+    },
+    {
+      "order": 8,
+      "name": "syndicate",
+      "template_id": "re_portal_syndication",
+      "input_state": "marketing_package",
+      "output_state": "portal_publications",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    }
+  ],
+  "state_payload": {
+    "carried": [
+      "qualified_seller_lead",
+      "assignment",
+      "acquisition_brief",
+      "doc_status",
+      "valuation_range",
+      "marketing_package",
+      "signed_mandate",
+      "portal_publications"
+    ],
+    "pii_minimization": "PII minimization: pass only the identifiers and fields each step needs. Cross-office and aggregate steps operate on pseudonymized lead IDs and office-level rollups, never raw client contact details. Consent state is checked before any outreach."
+  },
+  "human_approval_gates": [
+    "human_agent_and_seller_approve_mandate_and_price"
+  ],
+  "sla": {
+    "first_response": "${LEAD_RESPONSE_SLA_MINUTES}"
+  },
+  "retries": {
+    "max_attempts": "${STEP_MAX_ATTEMPTS}",
+    "backoff": "exponential",
+    "dead_letter": "human_review_queue"
+  },
+  "terminal_states": [
+    "completed",
+    "failed",
+    "cancelled",
+    "expired"
+  ],
+  "audit_events": [
+    "re_seller_lead_to_syndication.qualify.completed",
+    "re_seller_lead_to_syndication.route.completed",
+    "re_seller_lead_to_syndication.acquire.completed",
+    "re_seller_lead_to_syndication.doc_checklist.completed",
+    "re_seller_lead_to_syndication.valuation_support.completed",
+    "re_seller_lead_to_syndication.marketing_pack.completed",
+    "re_seller_lead_to_syndication.mandate_approval.completed",
+    "re_seller_lead_to_syndication.syndicate.completed",
+    "re_seller_lead_to_syndication.human_agent_and_seller_approve_mandate_and_price.approved"
+  ],
+  "outputs": {
+    "success": "re_seller_lead_to_syndication.completed",
+    "failure": "re_seller_lead_to_syndication.failed"
+  },
+  "notes": {
+    "compliance": "KYC/AML, GDPR/consent, and property-document checks are checklists and flags with mandatory human/legal review. No approval is ever automated.",
+    "no_invented_data": "SLAs, rates, fees and thresholds are configurable via ${VAR}; no market price, conversion rate or guarantee is invented."
+  }
+}

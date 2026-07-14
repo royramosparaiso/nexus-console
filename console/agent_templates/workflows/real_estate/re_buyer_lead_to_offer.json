@@ -1,0 +1,181 @@
+{
+  "id": "re_buyer_lead_to_offer",
+  "version": "0.13.5",
+  "vertical": "real-estate",
+  "title": "Buyer lead → offer",
+  "trigger": "event: buyer_lead.created",
+  "participants": [
+    "re_lead_concierge",
+    "re_lead_qualification_bilingual",
+    "re_consent_gdpr_handling",
+    "re_lead_scoring_explainable",
+    "re_office_routing",
+    "re_territory_routing",
+    "re_buyer_advisor",
+    "re_requirements_normalization",
+    "re_property_matching_rank",
+    "re_viewing_coordinator",
+    "re_viewing_scheduling",
+    "re_objection_followup",
+    "re_offer_negotiation_coordinator"
+  ],
+  "steps": [
+    {
+      "order": 1,
+      "name": "qualify",
+      "template_id": "re_lead_concierge",
+      "input_state": "raw_enquiry",
+      "output_state": "qualified_lead",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 2,
+      "name": "consent_check",
+      "template_id": "re_consent_gdpr_handling",
+      "input_state": "qualified_lead",
+      "output_state": "consent_state",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 3,
+      "name": "score",
+      "template_id": "re_lead_scoring_explainable",
+      "input_state": "qualified_lead",
+      "output_state": "scored_lead",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 4,
+      "name": "route",
+      "template_id": "re_office_routing",
+      "input_state": "scored_lead",
+      "output_state": "assignment",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 5,
+      "name": "match",
+      "template_id": "re_property_matching_rank",
+      "input_state": "buyer_brief",
+      "output_state": "ranked_matches",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 6,
+      "name": "advise",
+      "template_id": "re_buyer_advisor",
+      "input_state": "ranked_matches",
+      "output_state": "shortlist",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 7,
+      "name": "schedule_viewing",
+      "template_id": "re_viewing_coordinator",
+      "input_state": "shortlist",
+      "output_state": "viewing_schedule",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 8,
+      "name": "follow_up",
+      "template_id": "re_objection_followup",
+      "input_state": "viewing_outcome",
+      "output_state": "follow_up_draft",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 9,
+      "name": "offer",
+      "template_id": "re_offer_negotiation_coordinator",
+      "input_state": "buyer_intent",
+      "output_state": "offer_decision",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      },
+      "human_approval_gate": {
+        "required": true,
+        "approver_role": "human",
+        "gate_id": "human_agent_approves_offer",
+        "note": "AI proposes; a named human approves. No autonomous send."
+      }
+    }
+  ],
+  "state_payload": {
+    "carried": [
+      "qualified_lead",
+      "consent_state",
+      "scored_lead",
+      "assignment",
+      "ranked_matches",
+      "shortlist",
+      "viewing_schedule",
+      "follow_up_draft",
+      "offer_decision"
+    ],
+    "pii_minimization": "PII minimization: pass only the identifiers and fields each step needs. Cross-office and aggregate steps operate on pseudonymized lead IDs and office-level rollups, never raw client contact details. Consent state is checked before any outreach."
+  },
+  "human_approval_gates": [
+    "human_agent_approves_offer"
+  ],
+  "sla": {
+    "first_response": "${LEAD_RESPONSE_SLA_MINUTES}",
+    "viewing_confirm": "${VIEWING_CONFIRM_SLA_HOURS}"
+  },
+  "retries": {
+    "max_attempts": "${STEP_MAX_ATTEMPTS}",
+    "backoff": "exponential",
+    "dead_letter": "human_review_queue"
+  },
+  "terminal_states": [
+    "completed",
+    "failed",
+    "cancelled",
+    "expired"
+  ],
+  "audit_events": [
+    "re_buyer_lead_to_offer.qualify.completed",
+    "re_buyer_lead_to_offer.consent_check.completed",
+    "re_buyer_lead_to_offer.score.completed",
+    "re_buyer_lead_to_offer.route.completed",
+    "re_buyer_lead_to_offer.match.completed",
+    "re_buyer_lead_to_offer.advise.completed",
+    "re_buyer_lead_to_offer.schedule_viewing.completed",
+    "re_buyer_lead_to_offer.follow_up.completed",
+    "re_buyer_lead_to_offer.offer.completed",
+    "re_buyer_lead_to_offer.human_agent_approves_offer.approved"
+  ],
+  "outputs": {
+    "success": "re_buyer_lead_to_offer.completed",
+    "failure": "re_buyer_lead_to_offer.failed"
+  },
+  "notes": {
+    "compliance": "KYC/AML, GDPR/consent, and property-document checks are checklists and flags with mandatory human/legal review. No approval is ever automated.",
+    "no_invented_data": "SLAs, rates, fees and thresholds are configurable via ${VAR}; no market price, conversion rate or guarantee is invented."
+  }
+}

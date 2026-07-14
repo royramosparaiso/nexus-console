@@ -1,0 +1,92 @@
+{
+  "id": "re_cross_office_balancing",
+  "version": "0.13.5",
+  "vertical": "real-estate",
+  "title": "Cross-office workload balancing (Madrid ↔ Marbella)",
+  "trigger": "event: branch.saturation_signal / schedule: ${BALANCING_CRON}",
+  "participants": [
+    "re_office_routing",
+    "re_response_sla_monitor",
+    "re_branch_pipeline_manager"
+  ],
+  "steps": [
+    {
+      "order": 1,
+      "name": "detect_saturation",
+      "template_id": "re_response_sla_monitor",
+      "input_state": "sla_snapshot",
+      "output_state": "saturation_flags",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 2,
+      "name": "propose_rebalance",
+      "template_id": "re_office_routing",
+      "input_state": "saturation_flags",
+      "output_state": "rebalance_proposal",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 3,
+      "name": "approve_rebalance",
+      "template_id": "re_branch_pipeline_manager",
+      "input_state": "rebalance_proposal",
+      "output_state": "rebalance_decision",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      },
+      "human_approval_gate": {
+        "required": true,
+        "approver_role": "human",
+        "gate_id": "branch_manager_approves_rebalance",
+        "note": "AI proposes; a named human approves. No autonomous send."
+      }
+    }
+  ],
+  "state_payload": {
+    "carried": [
+      "saturation_flags",
+      "rebalance_proposal",
+      "rebalance_decision"
+    ],
+    "pii_minimization": "PII minimization: pass only the identifiers and fields each step needs. Cross-office and aggregate steps operate on pseudonymized lead IDs and office-level rollups, never raw client contact details. Consent state is checked before any outreach."
+  },
+  "human_approval_gates": [
+    "branch_manager_approves_rebalance"
+  ],
+  "sla": {
+    "rebalance_review": "${REBALANCE_REVIEW_SLA_HOURS}"
+  },
+  "retries": {
+    "max_attempts": "${STEP_MAX_ATTEMPTS}",
+    "backoff": "exponential",
+    "dead_letter": "human_review_queue"
+  },
+  "terminal_states": [
+    "completed",
+    "failed",
+    "cancelled",
+    "expired"
+  ],
+  "audit_events": [
+    "re_cross_office_balancing.detect_saturation.completed",
+    "re_cross_office_balancing.propose_rebalance.completed",
+    "re_cross_office_balancing.approve_rebalance.completed",
+    "re_cross_office_balancing.branch_manager_approves_rebalance.approved"
+  ],
+  "outputs": {
+    "success": "re_cross_office_balancing.completed",
+    "failure": "re_cross_office_balancing.failed"
+  },
+  "notes": {
+    "compliance": "KYC/AML, GDPR/consent, and property-document checks are checklists and flags with mandatory human/legal review. No approval is ever automated.",
+    "no_invented_data": "SLAs, rates, fees and thresholds are configurable via ${VAR}; no market price, conversion rate or guarantee is invented."
+  }
+}

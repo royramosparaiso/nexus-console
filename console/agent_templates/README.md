@@ -1,6 +1,6 @@
 # Agent Templates — Master Index
 
-Catalogue of **221 cards** across two independent axes: **46 project-lifecycle cards** (phases 0-5 + standalone finance) and **175 business-operations cards** (7 domains × 4 rollout stages × 3 autonomy levels). By artefact: **161 agents · 52 sidecars · 8 skills**.
+Catalogue of **263 cards** across two independent axes: **46 project-lifecycle cards** (phases 0-5 + standalone finance) and **217 business-operations cards** (7 domains × 4 rollout stages × 3 autonomy levels). By artefact: **171 agents · 66 sidecars · 26 skills**.
 
 Every card carries YAML frontmatter (see [`_schema.md`](_schema.md)). Regenerate this index and the machine-readable [`catalog.json`](catalog.json) via `scripts/build_agent_templates_index.py`.
 
@@ -115,13 +115,13 @@ Templates that operate a running business — organised by domain, then plotted 
 
 | Domain | Cards |
 | --- | ---: |
-| [Sales](#sales) | 33 |
-| [Deals](#deals) | 28 |
-| [Marketing](#marketing) | 24 |
-| [Operations](#operations) | 31 |
-| [Intelligence](#intelligence) | 21 |
-| [Customer](#customer) | 16 |
-| [Back Office](#back-office) | 22 |
+| [Sales](#sales) | 44 |
+| [Deals](#deals) | 39 |
+| [Marketing](#marketing) | 29 |
+| [Operations](#operations) | 34 |
+| [Intelligence](#intelligence) | 24 |
+| [Customer](#customer) | 18 |
+| [Back Office](#back-office) | 29 |
 
 ### Sales
 
@@ -397,13 +397,55 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 
 | Stage | Autonomy | Kind | Id | Role | Mode | Produces |
 | --- | --- | --- | --- | --- | --- | --- |
+| 1-foundation | fully-autonomous | skill | [`re_territory_routing`](verticals/real-estate/re_territory_routing.md) | — | — | structured_json |
+| 1-foundation | human-assisted | skill | [`re_consent_gdpr_handling`](verticals/real-estate/re_consent_gdpr_handling.md) | — | — | structured_json |
+| 1-foundation | human-assisted | sidecar | [`re_lead_enrichment`](verticals/real-estate/re_lead_enrichment.md) | worker | event-driven | enriched_record |
 | 2-capture | fully-autonomous | agent | [`buyer_matching`](verticals/real-estate/buyer_matching.md) | classifier | scheduled | structured_json |
 | 2-capture | fully-autonomous | agent | [`mortgage_prequal`](verticals/real-estate/mortgage_prequal.md) | analyst | single-shot | markdown_report |
+| 2-capture | fully-autonomous | skill | [`re_comparables_valuation`](verticals/real-estate/re_comparables_valuation.md) | — | — | structured_json |
+| 2-capture | fully-autonomous | sidecar | [`re_crm_dedupe`](verticals/real-estate/re_crm_dedupe.md) | worker | scheduled | side_effect |
+| 2-capture | fully-autonomous | skill | [`re_lead_qualification_bilingual`](verticals/real-estate/re_lead_qualification_bilingual.md) | — | — | structured_json |
+| 2-capture | fully-autonomous | skill | [`re_lead_scoring_explainable`](verticals/real-estate/re_lead_scoring_explainable.md) | — | — | structured_json |
+| 2-capture | fully-autonomous | sidecar | [`re_matching_refresh`](verticals/real-estate/re_matching_refresh.md) | worker | scheduled | side_effect |
+| 2-capture | fully-autonomous | skill | [`re_meeting_summary_crm`](verticals/real-estate/re_meeting_summary_crm.md) | — | — | structured_json |
+| 2-capture | fully-autonomous | sidecar | [`re_office_routing`](verticals/real-estate/re_office_routing.md) | connector | event-driven | side_effect |
+| 2-capture | fully-autonomous | skill | [`re_portal_field_normalization`](verticals/real-estate/re_portal_field_normalization.md) | — | — | structured_json |
+| 2-capture | fully-autonomous | skill | [`re_property_matching_rank`](verticals/real-estate/re_property_matching_rank.md) | — | — | structured_json |
+| 2-capture | fully-autonomous | skill | [`re_requirements_normalization`](verticals/real-estate/re_requirements_normalization.md) | — | — | structured_json |
+| 2-capture | human-assisted | agent | [`re_lead_concierge`](verticals/real-estate/re_lead_concierge.md) | classifier | event-driven | structured_json |
+| 2-capture | human-assisted | sidecar | [`re_listing_completeness_monitor`](verticals/real-estate/re_listing_completeness_monitor.md) | worker | scheduled | side_effect |
+| 2-capture | human-assisted | skill | [`re_transaction_doc_checklist`](verticals/real-estate/re_transaction_doc_checklist.md) | — | — | structured_json |
+| 2-capture | human-led | skill | [`re_kyc_aml_triage`](verticals/real-estate/re_kyc_aml_triage.md) | — | — | structured_json |
 | 3-generate | fully-autonomous | agent | [`listing_generator`](verticals/real-estate/listing_generator.md) | writer | single-shot | structured_json |
 | 3-generate | fully-autonomous | agent | [`property_dossier`](verticals/real-estate/property_dossier.md) | analyst | single-shot | pdf |
+| 3-generate | fully-autonomous | skill | [`re_listing_copy_bilingual`](verticals/real-estate/re_listing_copy_bilingual.md) | — | — | structured_json |
+| 3-generate | fully-autonomous | skill | [`re_objection_followup`](verticals/real-estate/re_objection_followup.md) | — | — | structured_json |
+| 3-generate | fully-autonomous | skill | [`re_referral_review_request`](verticals/real-estate/re_referral_review_request.md) | — | — | structured_json |
+| 3-generate | fully-autonomous | skill | [`re_viewing_scheduling`](verticals/real-estate/re_viewing_scheduling.md) | — | — | structured_json |
+| 3-generate | fully-autonomous | sidecar | [`re_visit_route_sync`](verticals/real-estate/re_visit_route_sync.md) | connector | event-driven | side_effect |
 | 3-generate | human-assisted | agent | [`offer_letter_drafting`](verticals/real-estate/offer_letter_drafting.md) | writer | single-shot | pdf |
 | 3-generate | human-assisted | sidecar | [`open_house_coordination`](verticals/real-estate/open_house_coordination.md) | connector | event-driven | side_effect |
+| 3-generate | human-assisted | agent | [`re_buyer_advisor`](verticals/real-estate/re_buyer_advisor.md) | analyst | single-shot | structured_json |
+| 3-generate | human-assisted | skill | [`re_commission_net_proceeds`](verticals/real-estate/re_commission_net_proceeds.md) | — | — | structured_json |
+| 3-generate | human-assisted | agent | [`re_listing_acquisition_manager`](verticals/real-estate/re_listing_acquisition_manager.md) | writer | single-shot | markdown_report |
+| 3-generate | human-assisted | agent | [`re_listing_marketing_manager`](verticals/real-estate/re_listing_marketing_manager.md) | writer | single-shot | structured_json |
+| 3-generate | human-assisted | skill | [`re_mortgage_affordability`](verticals/real-estate/re_mortgage_affordability.md) | — | — | structured_json |
+| 3-generate | human-assisted | skill | [`re_offer_comparison_brief`](verticals/real-estate/re_offer_comparison_brief.md) | — | — | structured_json |
+| 3-generate | human-assisted | agent | [`re_valuation_analyst`](verticals/real-estate/re_valuation_analyst.md) | analyst | single-shot | markdown_report |
+| 3-generate | human-assisted | agent | [`re_viewing_coordinator`](verticals/real-estate/re_viewing_coordinator.md) | coordinator | event-driven | markdown_report |
+| 4-orchestrate | fully-autonomous | sidecar | [`re_campaign_attribution`](verticals/real-estate/re_campaign_attribution.md) | worker | scheduled | side_effect |
 | 4-orchestrate | human-assisted | agent | [`closing_coordination`](verticals/real-estate/closing_coordination.md) | coordinator | single-shot | markdown_report |
+| 4-orchestrate | human-assisted | agent | [`re_aftersales_referral_agent`](verticals/real-estate/re_aftersales_referral_agent.md) | writer | single-shot | structured_json |
+| 4-orchestrate | human-assisted | sidecar | [`re_commission_forecast`](verticals/real-estate/re_commission_forecast.md) | worker | scheduled | side_effect |
+| 4-orchestrate | human-assisted | sidecar | [`re_dormant_lead_trigger`](verticals/real-estate/re_dormant_lead_trigger.md) | worker | scheduled | side_effect |
+| 4-orchestrate | human-assisted | sidecar | [`re_market_listing_watcher`](verticals/real-estate/re_market_listing_watcher.md) | worker | scheduled | side_effect |
+| 4-orchestrate | human-assisted | sidecar | [`re_offer_deadline_monitor`](verticals/real-estate/re_offer_deadline_monitor.md) | worker | scheduled | side_effect |
+| 4-orchestrate | human-assisted | sidecar | [`re_portal_syndication`](verticals/real-estate/re_portal_syndication.md) | connector | scheduled | side_effect |
+| 4-orchestrate | human-assisted | sidecar | [`re_response_sla_monitor`](verticals/real-estate/re_response_sla_monitor.md) | worker | scheduled | side_effect |
+| 4-orchestrate | human-assisted | agent | [`re_transaction_coordinator`](verticals/real-estate/re_transaction_coordinator.md) | coordinator | single-shot | markdown_report |
+| 4-orchestrate | human-led | agent | [`re_branch_pipeline_manager`](verticals/real-estate/re_branch_pipeline_manager.md) | coordinator | scheduled | markdown_report |
+| 4-orchestrate | human-led | sidecar | [`re_kyc_aml_status_monitor`](verticals/real-estate/re_kyc_aml_status_monitor.md) | worker | scheduled | side_effect |
+| 4-orchestrate | human-led | agent | [`re_offer_negotiation_coordinator`](verticals/real-estate/re_offer_negotiation_coordinator.md) | coordinator | single-shot | decision |
 
 ### Marketing agency
 
@@ -448,18 +490,18 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 
 | Role | Count | Templates |
 | --- | ---: | --- |
-| `analyst` | 61 | `advocacy_referrals`, `architecture_decisions`, `bottle_service_pricing`, `buying_committee_mapping`, `candidate_sourcing`, `cash_flow_forecasting`, `channel_economics_modeler`, `company_deep_dive`, … (+53) |
-| `classifier` | 14 | `buyer_matching`, `churn_prediction`, `community_moderation`, `community_moderation_cx`, `email_triage_office`, `expense_categorization`, `fit_scoring`, `health_scoring`, … (+6) |
-| `connector` | 11 | `alert_routing`, `campaign_launch`, `creative_approval_flow`, `crm_sync`, `deal_room_assembly`, `hot_lead_routing`, `meeting_booking`, `open_house_coordination`, … (+3) |
-| `coordinator` | 10 | `campaign_orchestration`, `closing_coordination`, `content_calendar`, `creative_pipeline`, `dj_booking_pipeline`, `escalations`, `event_coordination`, `event_planning`, … (+2) |
+| `analyst` | 63 | `advocacy_referrals`, `architecture_decisions`, `bottle_service_pricing`, `buying_committee_mapping`, `candidate_sourcing`, `cash_flow_forecasting`, `channel_economics_modeler`, `company_deep_dive`, … (+55) |
+| `classifier` | 15 | `buyer_matching`, `churn_prediction`, `community_moderation`, `community_moderation_cx`, `email_triage_office`, `expense_categorization`, `fit_scoring`, `health_scoring`, … (+7) |
+| `connector` | 14 | `alert_routing`, `campaign_launch`, `creative_approval_flow`, `crm_sync`, `deal_room_assembly`, `hot_lead_routing`, `meeting_booking`, `open_house_coordination`, … (+6) |
+| `coordinator` | 14 | `campaign_orchestration`, `closing_coordination`, `content_calendar`, `creative_pipeline`, `dj_booking_pipeline`, `escalations`, `event_coordination`, `event_planning`, … (+6) |
 | `debater` | 2 | `bull_bear_debate_pair`, `risk_committee` |
 | `integrator` | 3 | `list_building`, `tranche_0_budgeter`, `tranche_1_budgeter` |
 | `judge` | 5 | `adversarial_verification`, `agent_evaluation`, `scaling_gate_definer`, `strategic_decision_gate`, `trusting_the_call` |
 | `reflector` | 1 | `memory_reflector` |
 | `reviewer` | 6 | `brand_voice_final_approvals`, `compliance_signoff`, `final_ship_approval`, `proposal_final_signoff`, `qa_verification`, `spend_authority` |
-| `worker` | 33 | `account_monitoring`, `analytics_rollup`, `bar_inventory`, `budget_tracking`, `calendar_management`, `call_capture`, `comment_cta_fulfillment`, `context_maintenance`, … (+25) |
-| `writer` | 67 | `access_collection`, `ad_creative_generator`, `agreement_drafting`, `banking_operations`, `brand_identity_writer`, `brand_voice_guide`, `brief_generation`, `client_reporting`, … (+59) |
-| `—` | 8 | `account_enrichment`, `contact_enrichment`, `data_visualization`, `document_extraction`, `email_verification`, `funding_financials_lookup`, `local_inference`, `tech_stack_detection` |
+| `worker` | 44 | `account_monitoring`, `analytics_rollup`, `bar_inventory`, `budget_tracking`, `calendar_management`, `call_capture`, `comment_cta_fulfillment`, `context_maintenance`, … (+36) |
+| `writer` | 70 | `access_collection`, `ad_creative_generator`, `agreement_drafting`, `banking_operations`, `brand_identity_writer`, `brand_voice_guide`, `brief_generation`, `client_reporting`, … (+62) |
+| `—` | 26 | `account_enrichment`, `contact_enrichment`, `data_visualization`, `document_extraction`, `email_verification`, `funding_financials_lookup`, `local_inference`, `re_commission_net_proceeds`, … (+18) |
 
 ## Index by tag
 
@@ -470,27 +512,33 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `account` | `account_enrichment` |
 | `accounting` | `expense_categorization` |
 | `accounts` | `account_monitoring`, `market_mapping` |
+| `acquisition` | `re_listing_acquisition_manager` |
 | `adoption` | `market_trends_timing_analyst` |
 | `adr` | `architecture_decisions` |
 | `ads` | `ad_creative_generator` |
 | `adversarial` | `adversarial_verification` |
+| `advisory` | `re_buyer_advisor` |
 | `advocacy` | `advocacy_referrals` |
 | `ae-assisted` | `objection_response` |
 | `ae-led` | `closing_the_deal`, `discounting_concessions`, `proposal_final_signoff`, `strategic_account_calls` |
+| `affordability` | `re_mortgage_affordability` |
+| `after-sales` | `re_aftersales_referral_agent` |
 | `agency` | `brief_generation`, `client_reporting`, `creative_approval_flow`, `creative_pipeline`, `pitch_deck_generator`, `scope_change_control`, … (+1) |
 | `alerting` | `monitoring_alerting` |
 | `alerts` | `alert_routing` |
 | `alive-cost` | `minimal_tech_stack_cost_estimator` |
+| `aml` | `re_kyc_aml_status_monitor`, `re_kyc_aml_triage` |
 | `analyst-led` | `reading_between_lines`, `research_prioritization`, `trusting_the_call` |
 | `analytics` | `analytics_rollup` |
 | `android` | `mobile_app_specifier` |
 | `api` | `integration_builds` |
-| `approval` | `creative_approval_flow`, `final_ship_approval`, `proposal_final_signoff`, `spend_authority` |
+| `approval` | `creative_approval_flow`, `final_ship_approval`, `proposal_final_signoff`, `re_offer_negotiation_coordinator`, `spend_authority` |
 | `ar` | `collections` |
 | `architecture` | `architecture_decisions`, `platform_areas_architect` |
 | `areas` | `platform_areas_architect` |
-| `assignment` | `hot_lead_routing` |
+| `assignment` | `hot_lead_routing`, `re_office_routing` |
 | `atomization` | `creative_asset_repurpose` |
+| `attribution` | `re_campaign_attribution` |
 | `bandit` | `campaign_orchestration` |
 | `banking` | `banking_operations` |
 | `bant` | `lead_qualification` |
@@ -499,6 +547,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `benchmarks` | `channel_economics_modeler` |
 | `berkus` | `startup_valuation_analyst` |
 | `big-accounts` | `deal_strategy_big_accounts` |
+| `bilingual` | `re_lead_qualification_bilingual`, `re_listing_copy_bilingual` |
 | `billing` | `invoice_generation`, `timesheet_reconciliation` |
 | `blog` | `long_form_content_writer` |
 | `blue-ocean` | `market_gap_analyst` |
@@ -506,6 +555,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `booking` | `dj_booking_pipeline` |
 | `bottle-service` | `bottle_service_pricing` |
 | `brain` | `context_maintenance` |
+| `branch` | `re_branch_pipeline_manager` |
 | `brand` | `brand_identity_writer`, `news_mention_tracking` |
 | `brand-voice` | `brand_voice_final_approvals`, `brand_voice_guide` |
 | `brief` | `brief_generation`, `seo_briefs` |
@@ -516,14 +566,15 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `bull` | `bull_bear_debate_pair` |
 | `burn` | `budget_tracking` |
 | `business-plan` | `financial_business_planner` |
-| `buyers` | `buyer_matching` |
+| `buyer` | `re_buyer_advisor`, `re_property_matching_rank`, `re_requirements_normalization` |
+| `buyers` | `buyer_matching`, `re_matching_refresh` |
 | `cac` | `channel_economics_modeler`, `ltv_cac_targeter` |
 | `cac-ltv` | `scaling_gate_definer` |
-| `calendar` | `calendar_management`, `content_calendar`, `tranche_1_budgeter` |
+| `calendar` | `calendar_management`, `content_calendar`, `re_visit_route_sync`, `tranche_1_budgeter` |
 | `call` | `call_capture`, `post_call_debrief` |
-| `campaign` | `campaign_launch`, `campaign_orchestration` |
+| `campaign` | `campaign_launch`, `campaign_orchestration`, `re_campaign_attribution` |
 | `cap-table` | `resource_inventory_analyst` |
-| `capacity` | `creative_pipeline` |
+| `capacity` | `creative_pipeline`, `re_territory_routing` |
 | `capital` | `tranche_0_budgeter`, `tranche_1_budgeter` |
 | `capture` | `referral_capture` |
 | `case-study` | `proof_matching` |
@@ -531,6 +582,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `change-order` | `scope_change_control` |
 | `channels` | `channel_economics_modeler` |
 | `chart` | `data_visualization`, `market_research_analyst` |
+| `checklist` | `re_transaction_doc_checklist` |
 | `checkpoint` | `scaling_gate_definer`, `strategic_decision_gate` |
 | `churn` | `churn_prediction`, `save_calls` |
 | `classification` | `reply_classification` |
@@ -538,25 +590,31 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `client` | `client_reporting` |
 | `client-comms` | `client_trust` |
 | `closed-lost` | `reactivation` |
-| `closing` | `closing_coordination`, `closing_the_deal` |
+| `closing` | `closing_coordination`, `closing_the_deal`, `re_transaction_coordinator` |
 | `cloud` | `tech_stack_vendors_analyst` |
 | `cold` | `cold_email_drafting` |
 | `cold-call` | `cold_call_scripting` |
 | `collections` | `collections` |
+| `commission` | `re_commission_forecast`, `re_commission_net_proceeds` |
 | `committee` | `buying_committee_mapping`, `risk_committee` |
 | `community` | `community_moderation`, `community_moderation_cx` |
-| `comparables` | `startup_valuation_analyst` |
+| `comparables` | `re_comparables_valuation`, `re_valuation_analyst`, `startup_valuation_analyst` |
+| `comparison` | `re_offer_comparison_brief` |
 | `competition` | `competitive_analyst` |
 | `competitive` | `pricing_research` |
 | `competitor` | `competitor_teardown` |
-| `compliance` | `compliance_signoff`, `entity_compliance`, `licensing_compliance` |
+| `completeness` | `re_listing_completeness_monitor` |
+| `compliance` | `compliance_signoff`, `entity_compliance`, `licensing_compliance`, `re_consent_gdpr_handling`, `re_kyc_aml_status_monitor` |
 | `concession` | `discounting_concessions` |
+| `concierge` | `re_lead_concierge` |
 | `connector` | `crm_sync` |
+| `consent` | `re_consent_gdpr_handling`, `re_lead_enrichment` |
 | `contact` | `contact_enrichment` |
-| `content` | `creative_asset_repurpose`, `long_form_content_writer`, `seo_briefs`, `ugc_pipeline`, `validation_experiment_designer` |
+| `content` | `creative_asset_repurpose`, `long_form_content_writer`, `re_listing_marketing_manager`, `seo_briefs`, `ugc_pipeline`, `validation_experiment_designer` |
 | `context` | `context_maintenance` |
 | `contract` | `agreement_drafting`, `contract_lifecycle`, `offer_letter_drafting` |
-| `copy` | `ad_creative_generator`, `cold_email_drafting`, `landing_page_writer` |
+| `coordination` | `re_transaction_coordinator` |
+| `copy` | `ad_creative_generator`, `cold_email_drafting`, `landing_page_writer`, `re_listing_copy_bilingual` |
 | `cost` | `cost_usage_tracking` |
 | `country` | `market_study_by_country_analyst` |
 | `cpc` | `channel_economics_modeler` |
@@ -565,7 +623,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `creative` | `ad_creative_generator`, `brief_generation`, `creative_approval_flow` |
 | `creator` | `influencer_outreach` |
 | `credentials` | `access_collection` |
-| `crm` | `crm_hygiene`, `crm_sync` |
+| `crm` | `crm_hygiene`, `crm_sync`, `re_crm_dedupe`, `re_meeting_summary_crm` |
 | `csm` | `health_scoring`, `qbr_prep` |
 | `csm-led` | `expansion_playbook`, `renewal_negotiation`, `save_calls`, `strategic_customer_accounts` |
 | `cta` | `comment_cta_fulfillment` |
@@ -576,10 +634,13 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `data-model` | `data_schema_designer` |
 | `database` | `database_mining` |
 | `dcf` | `startup_valuation_analyst` |
+| `deadline` | `re_offer_deadline_monitor` |
 | `deal-room` | `deal_room_assembly` |
 | `debate` | `bull_bear_debate_pair` |
 | `debrief` | `post_call_debrief` |
 | `decision` | `trusting_the_call` |
+| `decision-support` | `re_valuation_analyst` |
+| `dedupe` | `re_crm_dedupe` |
 | `deep-dive` | `company_deep_dive` |
 | `deliverability` | `deliverability`, `email_verification`, `send_optimization` |
 | `demo` | `demo_prototyping` |
@@ -591,22 +652,23 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `dm` | `linkedin_messaging` |
 | `dmarc` | `deliverability` |
 | `documentation` | `handoff_docs` |
-| `documents` | `document_extraction`, `document_filing` |
+| `documents` | `document_extraction`, `document_filing`, `re_listing_completeness_monitor`, `re_transaction_doc_checklist` |
 | `docx` | `project_intake_facilitator` |
 | `door` | `guest_list_management` |
+| `dormant` | `re_dormant_lead_trigger` |
 | `dossier` | `person_research`, `property_dossier` |
 | `dpa` | `legal_ip_analyst` |
-| `drafting` | `agreement_drafting` |
+| `drafting` | `agreement_drafting`, `re_objection_followup` |
 | `eaa` | `calendar_management` |
 | `elasticity` | `pricing_strategist` |
 | `email` | `cold_email_drafting`, `deliverability`, `email_nurture_writer`, `email_verification`, `follow_up_drafting` |
 | `enablement` | `objection_library` |
 | `engagement` | `deal_room_assembly` |
-| `enrichment` | `account_enrichment`, `contact_enrichment` |
+| `enrichment` | `account_enrichment`, `contact_enrichment`, `re_lead_enrichment` |
 | `entities` | `data_schema_designer` |
 | `entity` | `entity_compliance` |
 | `equity` | `fundamental_analyst`, `market_research_analyst` |
-| `escalation` | `escalations` |
+| `escalation` | `escalations`, `re_response_sla_monitor` |
 | `escrow` | `closing_coordination` |
 | `etl` | `data_migration` |
 | `evals` | `agent_evaluation` |
@@ -616,6 +678,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `expansion` | `expansion_playbook` |
 | `expense` | `expense_categorization` |
 | `experiments` | `validation_experiment_designer` |
+| `explainable` | `re_lead_scoring_explainable` |
 | `extraction` | `document_extraction` |
 | `features` | `competitive_analyst` |
 | `filing` | `document_filing` |
@@ -626,8 +689,8 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `firmographics` | `account_enrichment`, `icp_definition` |
 | `fit` | `fit_scoring` |
 | `flows` | `data_schema_designer` |
-| `follow-up` | `follow_up_drafting`, `meeting_follow_ups` |
-| `forecast` | `cash_flow_forecasting`, `forecasting` |
+| `follow-up` | `follow_up_drafting`, `meeting_follow_ups`, `re_objection_followup`, `re_viewing_coordinator` |
+| `forecast` | `cash_flow_forecasting`, `forecasting`, `re_branch_pipeline_manager`, `re_commission_forecast` |
 | `founder-led` | `banking_operations`, `brand_voice_final_approvals`, `brand_voice_guide`, `candidate_sourcing`, `compliance_signoff`, `deal_strategy_big_accounts`, … (+6) |
 | `founder-onboarding` | `project_intake_facilitator` |
 | `fred` | `macro_context_agent` |
@@ -638,7 +701,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `gap` | `market_gap_analyst` |
 | `gate` | `final_ship_approval`, `strategic_decision_gate` |
 | `gate-1` | `scaling_gate_definer` |
-| `gdpr` | `legal_ip_analyst` |
+| `gdpr` | `legal_ip_analyst`, `re_consent_gdpr_handling` |
 | `geo` | `market_study_by_country_analyst`, `web_maps_scraping` |
 | `go-no-go` | `strategic_decision_gate` |
 | `go-to-market` | `gtm_strategist` |
@@ -651,7 +714,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `hiring` | `candidate_sourcing`, `financial_business_planner`, `hiring_decisions`, `screening_scheduling` |
 | `hooks` | `personalization_research` |
 | `hr` | `hr_policy_assistant`, `onboarding_training` |
-| `hygiene` | `crm_hygiene` |
+| `hygiene` | `crm_hygiene`, `re_crm_dedupe` |
 | `hypothesis` | `validation_hypotheses_analyst` |
 | `iam` | `user_roles_permissions_writer` |
 | `icp` | `fit_scoring`, `icp_definition` |
@@ -679,17 +742,19 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `kb` | `faq_self_serve` |
 | `kickoff` | `kickoff_pack`, `project_scaffolding` |
 | `kpi` | `goal_pacing`, `kpis_okrs_framework_writer` |
+| `kyc` | `re_kyc_aml_status_monitor`, `re_kyc_aml_triage` |
 | `landing` | `validation_experiment_designer` |
 | `landing-page` | `landing_page_writer` |
 | `landscape` | `market_mapping` |
 | `launch` | `campaign_launch`, `gtm_strategist` |
+| `lead` | `re_lead_concierge`, `re_lead_enrichment`, `re_lead_qualification_bilingual`, `re_lead_scoring_explainable` |
 | `legal` | `legal_ip_analyst`, `legal_setup_cost_estimator` |
 | `library` | `objection_library` |
 | `licensing` | `licensing_compliance` |
 | `lifecycle` | `contract_lifecycle`, `email_nurture_writer`, `onboarding_journeys` |
 | `linkedin` | `linkedin_messaging`, `social_mining` |
 | `list` | `list_building` |
-| `listing` | `listing_generator` |
+| `listing` | `listing_generator`, `re_listing_acquisition_manager`, `re_listing_completeness_monitor`, `re_listing_copy_bilingual`, `re_listing_marketing_manager` |
 | `litertjs` | `local_inference` |
 | `local` | `web_maps_scraping` |
 | `logo` | `brand_identity_writer` |
@@ -698,11 +763,14 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `loom` | `video_prospecting` |
 | `ltv` | `ltv_cac_targeter` |
 | `macro` | `macro_authoring`, `macro_context_agent` |
+| `management` | `re_branch_pipeline_manager` |
+| `mapping` | `re_portal_field_normalization` |
 | `maps` | `web_maps_scraping` |
-| `market` | `competitive_analyst`, `market_customer_profiler`, `market_problem_analyst`, `market_study_by_country_analyst`, `market_trends_timing_analyst` |
+| `market` | `competitive_analyst`, `market_customer_profiler`, `market_problem_analyst`, `market_study_by_country_analyst`, `market_trends_timing_analyst`, `re_market_listing_watcher` |
 | `market-map` | `market_mapping` |
 | `market-sizing` | `tam_market_sizing` |
-| `matching` | `buyer_matching` |
+| `marketing` | `re_listing_marketing_manager` |
+| `matching` | `buyer_matching`, `re_buyer_advisor`, `re_matching_refresh`, `re_property_matching_rank` |
 | `matrix` | `risk_assessor` |
 | `meddpicc` | `buying_committee_mapping`, `lead_qualification` |
 | `meeting` | `meeting_booking` |
@@ -719,22 +787,27 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `moderation` | `community_moderation`, `community_moderation_cx` |
 | `modules` | `platform_areas_architect` |
 | `monetization` | `pricing_strategist` |
+| `monitor` | `re_kyc_aml_status_monitor`, `re_offer_deadline_monitor` |
 | `monitoring` | `account_monitoring`, `monitoring_alerting`, `news_mention_tracking` |
-| `mortgage` | `mortgage_prequal` |
+| `mortgage` | `mortgage_prequal`, `re_mortgage_affordability` |
 | `motion` | `gtm_strategist` |
 | `mvp` | `minimal_tech_stack_cost_estimator`, `mvp_scoper` |
 | `mvs` | `resource_inventory_analyst` |
 | `naming` | `brand_identity_writer` |
 | `navigation` | `ux_platform_designer` |
+| `negotiation` | `re_offer_comparison_brief`, `re_offer_negotiation_coordinator` |
+| `net-proceeds` | `re_commission_net_proceeds` |
 | `network` | `network_mapping`, `warm_intro_pathing`, `warm_path_finding` |
 | `new-business` | `pitch_deck_generator` |
 | `news` | `news_mention_tracking` |
 | `nightclub` | `bar_inventory`, `bottle_service_pricing`, `dj_booking_pipeline`, `guest_list_management`, `incident_book`, `licensing_compliance`, … (+2) |
+| `normalization` | `re_portal_field_normalization`, `re_requirements_normalization` |
 | `north-star` | `kpis_okrs_framework_writer` |
+| `notes` | `re_meeting_summary_crm` |
 | `nurture` | `email_nurture_writer` |
-| `objection` | `objection_response` |
+| `objection` | `objection_response`, `re_objection_followup` |
 | `objections` | `objection_library` |
-| `offer` | `offer_letter_drafting`, `offer_positioning` |
+| `offer` | `offer_letter_drafting`, `offer_positioning`, `re_offer_comparison_brief`, `re_offer_deadline_monitor`, `re_offer_negotiation_coordinator` |
 | `okr` | `kpis_okrs_framework_writer` |
 | `onboarding` | `access_collection`, `kickoff_pack`, `onboarding_journeys`, `onboarding_training` |
 | `one-pager` | `executive_summary_writer` |
@@ -753,6 +826,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `pain-points` | `market_problem_analyst` |
 | `payments` | `payment_tracking` |
 | `pdf` | `executive_summary_writer`, `proposal_generation`, `research_reports` |
+| `performance` | `re_campaign_attribution` |
 | `permissions` | `user_roles_permissions_writer` |
 | `person` | `person_research` |
 | `personalization` | `personalization_research` |
@@ -763,14 +837,14 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `phase-4` | `data_schema_designer`, `executive_summary_writer`, `financial_business_planner`, `financial_excel_builder`, `functional_specifier`, `fundraising_strategist`, … (+11) |
 | `phase-5` | `pitch_deck_designer` |
 | `phase-boundary` | `scaling_gate_definer`, `strategic_decision_gate`, `tranche_0_budgeter` |
-| `pipeline` | `creative_pipeline`, `forecasting`, `pipeline_reporting` |
+| `pipeline` | `creative_pipeline`, `forecasting`, `pipeline_reporting`, `re_branch_pipeline_manager`, `re_commission_forecast` |
 | `pitch` | `pitch_deck_generator` |
 | `pitch-deck` | `pitch_deck_designer` |
 | `pivot` | `strategic_decision_gate` |
 | `planning` | `content_calendar`, `event_planning` |
 | `platform` | `platform_areas_architect` |
 | `policy` | `hr_policy_assistant` |
-| `portal` | `portal_sync` |
+| `portal` | `portal_sync`, `re_portal_field_normalization`, `re_portal_syndication` |
 | `portals` | `listing_generator` |
 | `portfolio-manager` | `risk_committee` |
 | `positioning` | `competitive_analyst`, `offer_positioning` |
@@ -782,6 +856,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `prep` | `demo_prototyping`, `pre_call_briefing` |
 | `prequal` | `mortgage_prequal` |
 | `press` | `pr_press_kit` |
+| `price-change` | `re_market_listing_watcher` |
 | `pricing` | `bottle_service_pricing`, `competitive_analyst`, `pricing_research`, `pricing_strategist`, `pricing_support` |
 | `prioritization` | `list_building` |
 | `problem` | `market_problem_analyst` |
@@ -796,21 +871,24 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `qa` | `qa_verification` |
 | `qbr` | `qbr_prep` |
 | `quadrant` | `market_gap_analyst` |
-| `qualification` | `lead_qualification` |
+| `qualification` | `lead_qualification`, `re_lead_concierge`, `re_lead_qualification_bilingual` |
 | `quality` | `adversarial_verification` |
 | `quality-gate` | `agent_evaluation` |
 | `quarters` | `product_roadmap_writer` |
 | `questionnaire` | `project_intake_facilitator` |
 | `quote` | `pricing_support` |
+| `range` | `re_comparables_valuation` |
+| `ranking` | `re_property_matching_rank` |
 | `rates` | `macro_context_agent` |
 | `rbac` | `user_roles_permissions_writer` |
-| `reactivation` | `reactivation` |
-| `real-estate` | `buyer_matching`, `closing_coordination`, `listing_generator`, `mortgage_prequal`, `offer_letter_drafting`, `open_house_coordination`, … (+1) |
+| `reactivation` | `re_dormant_lead_trigger`, `reactivation` |
+| `real-estate` | `buyer_matching`, `closing_coordination`, `listing_generator`, `mortgage_prequal`, `offer_letter_drafting`, `open_house_coordination`, … (+43) |
 | `recap` | `social_night_recap` |
-| `reconciliation` | `payment_tracking` |
+| `reconciliation` | `payment_tracking`, `re_portal_syndication` |
 | `redlines` | `agreement_drafting` |
-| `referral` | `advocacy_referrals`, `referral_capture` |
+| `referral` | `advocacy_referrals`, `re_aftersales_referral_agent`, `re_referral_review_request`, `referral_capture` |
 | `reflection` | `memory_reflector` |
+| `refresh` | `re_matching_refresh` |
 | `relationships` | `key_account_relationships` |
 | `release` | `pr_press_kit` |
 | `renewal` | `renewal_negotiation` |
@@ -818,31 +896,35 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `report` | `research_reports` |
 | `reporting` | `client_reporting`, `pipeline_reporting`, `revenue_reporting` |
 | `repurpose` | `creative_asset_repurpose`, `social_posts_generator` |
+| `request` | `re_referral_review_request` |
+| `requirements` | `re_requirements_normalization` |
 | `research` | `company_deep_dive`, `person_research`, `personalization_research` |
 | `research-plan` | `research_prioritization` |
 | `reservations` | `reservation_handling` |
 | `resources` | `resource_inventory_analyst` |
-| `response` | `objection_response` |
+| `response` | `objection_response`, `re_response_sla_monitor` |
 | `response-sla` | `speed_to_lead` |
 | `revenue` | `revenue_reporting` |
 | `revenue-model` | `financial_business_planner` |
-| `review` | `brand_voice_final_approvals` |
+| `review` | `brand_voice_final_approvals`, `re_aftersales_referral_agent`, `re_referral_review_request` |
 | `risk` | `risk_assessor`, `risk_committee` |
 | `roadmap` | `product_roadmap_writer` |
 | `roles` | `user_roles_permissions_writer` |
 | `rollup` | `analytics_rollup` |
 | `round` | `fundraising_strategist` |
-| `routing` | `alert_routing`, `hot_lead_routing`, `trigger_detection` |
+| `route` | `re_viewing_scheduling`, `re_visit_route_sync` |
+| `routing` | `alert_routing`, `hot_lead_routing`, `re_office_routing`, `re_territory_routing`, `trigger_detection` |
 | `safety` | `incident_book` |
 | `sam` | `market_study_by_country_analyst` |
 | `save` | `save_calls` |
 | `scaffolding` | `project_scaffolding` |
 | `scaling` | `scaling_gate_definer` |
-| `scheduling` | `meeting_booking` |
+| `scenario` | `re_commission_net_proceeds`, `re_mortgage_affordability` |
+| `scheduling` | `meeting_booking`, `re_viewing_coordinator`, `re_viewing_scheduling` |
 | `schema` | `data_schema_designer` |
 | `scope` | `mvp_scoper`, `scope_calls`, `scope_change_control` |
 | `scorecard` | `startup_valuation_analyst` |
-| `scoring` | `fit_scoring` |
+| `scoring` | `fit_scoring`, `re_lead_scoring_explainable` |
 | `scraping` | `web_maps_scraping` |
 | `screening` | `screening_scheduling` |
 | `script` | `cold_call_scripting` |
@@ -852,6 +934,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `segment-channel-message` | `validation_hypotheses_analyst` |
 | `segmentation` | `lookalike_modeling`, `market_customer_profiler` |
 | `self-serve` | `faq_self_serve` |
+| `seller` | `re_listing_acquisition_manager` |
 | `send-time` | `send_optimization` |
 | `sensitivity` | `financial_excel_builder` |
 | `seo` | `seo_briefs`, `validation_experiment_designer` |
@@ -859,8 +942,8 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `shared-inbox` | `inbox_triage` |
 | `signals` | `account_monitoring`, `health_scoring`, `reading_between_lines`, `social_mining`, `trigger_detection` |
 | `sizing` | `risk_committee` |
-| `skill` | `account_enrichment`, `contact_enrichment`, `data_visualization`, `document_extraction`, `email_verification`, `funding_financials_lookup`, … (+2) |
-| `sla` | `hot_lead_routing` |
+| `skill` | `account_enrichment`, `contact_enrichment`, `data_visualization`, `document_extraction`, `email_verification`, `funding_financials_lookup`, … (+20) |
+| `sla` | `hot_lead_routing`, `re_response_sla_monitor` |
 | `social` | `comment_cta_fulfillment`, `social_mining`, `social_night_recap`, `social_posts_generator` |
 | `social-proof` | `proof_matching`, `ugc_pipeline` |
 | `som` | `market_study_by_country_analyst` |
@@ -877,9 +960,10 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `status` | `status_updates` |
 | `strategic-accounts` | `key_account_relationships`, `strategic_account_calls`, `strategic_customer_accounts` |
 | `strategy` | `deal_strategy_big_accounts` |
-| `summary` | `call_capture` |
+| `summary` | `call_capture`, `re_meeting_summary_crm` |
 | `swot` | `swot_analyst` |
-| `sync` | `crm_sync`, `database_mining`, `portal_sync` |
+| `sync` | `crm_sync`, `database_mining`, `portal_sync`, `re_visit_route_sync` |
+| `syndication` | `re_portal_syndication` |
 | `synthesis` | `swot_analyst` |
 | `tam` | `market_study_by_country_analyst`, `tam_market_sizing` |
 | `targeting` | `icp_definition` |
@@ -888,6 +972,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `technical` | `market_research_analyst` |
 | `term-sheet` | `fundraising_strategist` |
 | `terms` | `legal_ip_analyst` |
+| `territory` | `re_office_routing`, `re_territory_routing` |
 | `thesis` | `bull_bear_debate_pair` |
 | `threshold` | `ltv_cac_targeter` |
 | `throttle` | `send_optimization` |
@@ -900,11 +985,13 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `training` | `onboarding_training` |
 | `tramo-0` | `legal_setup_cost_estimator`, `minimal_tech_stack_cost_estimator`, `tranche_0_budgeter` |
 | `tramo-1` | `tranche_1_budgeter` |
+| `transaction` | `re_transaction_coordinator`, `re_transaction_doc_checklist` |
 | `transcript` | `transcript_processing` |
 | `transcription` | `call_capture` |
 | `treasury` | `banking_operations` |
 | `trends` | `market_trends_timing_analyst` |
-| `triage` | `email_triage_office`, `inbox_triage`, `ticket_triage` |
+| `triage` | `email_triage_office`, `inbox_triage`, `re_kyc_aml_triage`, `ticket_triage` |
+| `trigger` | `re_dormant_lead_trigger` |
 | `triggers` | `trigger_detection` |
 | `trust` | `client_trust` |
 | `ugc` | `ugc_pipeline` |
@@ -915,14 +1002,16 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `ux` | `ux_platform_designer` |
 | `vad` | `local_inference` |
 | `validation` | `validation_hypotheses_analyst` |
-| `valuation` | `startup_valuation_analyst` |
+| `valuation` | `re_comparables_valuation`, `re_valuation_analyst`, `startup_valuation_analyst` |
 | `vendors` | `tech_stack_vendors_analyst` |
 | `verification` | `adversarial_verification`, `email_verification`, `qa_verification` |
 | `vertical` | `vertical_analysis` |
 | `video` | `video_prospecting` |
+| `viewing` | `re_viewing_coordinator`, `re_viewing_scheduling` |
 | `viz` | `data_visualization` |
 | `warm-intro` | `warm_intro_pathing` |
 | `warm-path` | `warm_path_finding` |
+| `watcher` | `re_market_listing_watcher` |
 | `webgpu` | `local_inference` |
 | `webinar` | `webinar_producer` |
 | `weekly-update` | `status_updates` |

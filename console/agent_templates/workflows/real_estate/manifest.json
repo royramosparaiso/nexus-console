@@ -1,0 +1,48 @@
+{
+  "version": "0.13.5",
+  "vertical": "real-estate",
+  "workflows": [
+    {
+      "id": "re_buyer_lead_to_offer",
+      "title": "Buyer lead → offer",
+      "manifest": "re_buyer_lead_to_offer.json",
+      "doc": "re_buyer_lead_to_offer.md"
+    },
+    {
+      "id": "re_seller_lead_to_syndication",
+      "title": "Seller lead → listing syndication",
+      "manifest": "re_seller_lead_to_syndication.json",
+      "doc": "re_seller_lead_to_syndication.md"
+    },
+    {
+      "id": "re_listing_update_rematch",
+      "title": "New/updated listing → buyer rematch",
+      "manifest": "re_listing_update_rematch.json",
+      "doc": "re_listing_update_rematch.md"
+    },
+    {
+      "id": "re_offer_accepted_to_closing",
+      "title": "Offer accepted → closing → after-sales",
+      "manifest": "re_offer_accepted_to_closing.json",
+      "doc": "re_offer_accepted_to_closing.md"
+    },
+    {
+      "id": "re_dormant_lead_reactivation",
+      "title": "Dormant lead → reactivation → handoff",
+      "manifest": "re_dormant_lead_reactivation.json",
+      "doc": "re_dormant_lead_reactivation.md"
+    },
+    {
+      "id": "re_cross_office_balancing",
+      "title": "Cross-office workload balancing (Madrid ↔ Marbella)",
+      "manifest": "re_cross_office_balancing.json",
+      "doc": "re_cross_office_balancing.md"
+    },
+    {
+      "id": "re_weekly_pipeline_review",
+      "title": "Weekly branch pipeline review & forecast",
+      "manifest": "re_weekly_pipeline_review.json",
+      "doc": "re_weekly_pipeline_review.md"
+    }
+  ]
+}

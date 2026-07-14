@@ -1,6 +1,6 @@
 {
   "version": "0.13.5",
-  "total": 221,
+  "total": 263,
   "cards": [
     {
       "id": "banking_operations",
@@ -7274,6 +7274,1451 @@
       "gate": false,
       "optional": false,
       "path": "verticals/real-estate/property_dossier.md"
+    },
+    {
+      "id": "re_aftersales_referral_agent",
+      "name": "re_aftersales_referral_agent",
+      "artifact_type": "agent",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "customer",
+      "rollout_stage": "4-orchestrate",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "writer",
+      "mode": "single-shot",
+      "depends_on": [
+        "re_referral_review_request"
+      ],
+      "produces": "structured_json",
+      "tools": [
+        "read_crm",
+        "email"
+      ],
+      "tags": [
+        "after-sales",
+        "referral",
+        "review",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_aftersales_referral_agent.md"
+    },
+    {
+      "id": "re_branch_pipeline_manager",
+      "name": "re_branch_pipeline_manager",
+      "artifact_type": "agent",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "deals",
+      "rollout_stage": "4-orchestrate",
+      "autonomy": "human-led",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "coordinator",
+      "mode": "scheduled",
+      "depends_on": [
+        "re_commission_forecast",
+        "re_campaign_attribution",
+        "re_response_sla_monitor"
+      ],
+      "produces": "markdown_report",
+      "tools": [
+        "read_crm",
+        "read_analytics"
+      ],
+      "tags": [
+        "pipeline",
+        "branch",
+        "forecast",
+        "management",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_branch_pipeline_manager.md"
+    },
+    {
+      "id": "re_buyer_advisor",
+      "name": "re_buyer_advisor",
+      "artifact_type": "agent",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "sales",
+      "rollout_stage": "3-generate",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "analyst",
+      "mode": "single-shot",
+      "depends_on": [
+        "re_requirements_normalization",
+        "re_property_matching_rank"
+      ],
+      "produces": "structured_json",
+      "tools": [
+        "read_crm",
+        "search_inventory"
+      ],
+      "tags": [
+        "buyer",
+        "matching",
+        "advisory",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_buyer_advisor.md"
+    },
+    {
+      "id": "re_campaign_attribution",
+      "name": "re_campaign_attribution",
+      "artifact_type": "sidecar",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "marketing",
+      "rollout_stage": "4-orchestrate",
+      "autonomy": "fully-autonomous",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "worker",
+      "mode": "scheduled",
+      "depends_on": [],
+      "produces": "side_effect",
+      "tools": [
+        "read_analytics",
+        "read_crm"
+      ],
+      "tags": [
+        "campaign",
+        "attribution",
+        "performance",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_campaign_attribution.md"
+    },
+    {
+      "id": "re_commission_forecast",
+      "name": "re_commission_forecast",
+      "artifact_type": "sidecar",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "back-office",
+      "rollout_stage": "4-orchestrate",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "worker",
+      "mode": "scheduled",
+      "depends_on": [],
+      "produces": "side_effect",
+      "tools": [
+        "read_crm",
+        "read_analytics"
+      ],
+      "tags": [
+        "commission",
+        "forecast",
+        "pipeline",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_commission_forecast.md"
+    },
+    {
+      "id": "re_commission_net_proceeds",
+      "name": "re_commission_net_proceeds",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "back-office",
+      "rollout_stage": "3-generate",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "llm"
+      ],
+      "tags": [
+        "commission",
+        "net-proceeds",
+        "scenario",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_commission_net_proceeds.md"
+    },
+    {
+      "id": "re_comparables_valuation",
+      "name": "re_comparables_valuation",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "intelligence",
+      "rollout_stage": "2-capture",
+      "autonomy": "fully-autonomous",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "comparables_source",
+        "read_analytics"
+      ],
+      "tags": [
+        "comparables",
+        "valuation",
+        "range",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_comparables_valuation.md"
+    },
+    {
+      "id": "re_consent_gdpr_handling",
+      "name": "re_consent_gdpr_handling",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "back-office",
+      "rollout_stage": "1-foundation",
+      "autonomy": "human-assisted",
+      "maturity": 3,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "read_crm"
+      ],
+      "tags": [
+        "consent",
+        "gdpr",
+        "compliance",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_consent_gdpr_handling.md"
+    },
+    {
+      "id": "re_crm_dedupe",
+      "name": "re_crm_dedupe",
+      "artifact_type": "sidecar",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "deals",
+      "rollout_stage": "2-capture",
+      "autonomy": "fully-autonomous",
+      "maturity": 3,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "worker",
+      "mode": "scheduled",
+      "depends_on": [],
+      "produces": "side_effect",
+      "tools": [
+        "read_crm",
+        "write_crm"
+      ],
+      "tags": [
+        "crm",
+        "dedupe",
+        "hygiene",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_crm_dedupe.md"
+    },
+    {
+      "id": "re_dormant_lead_trigger",
+      "name": "re_dormant_lead_trigger",
+      "artifact_type": "sidecar",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "deals",
+      "rollout_stage": "4-orchestrate",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "worker",
+      "mode": "scheduled",
+      "depends_on": [
+        "re_consent_gdpr_handling"
+      ],
+      "produces": "side_effect",
+      "tools": [
+        "read_crm",
+        "alerting"
+      ],
+      "tags": [
+        "dormant",
+        "reactivation",
+        "trigger",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_dormant_lead_trigger.md"
+    },
+    {
+      "id": "re_kyc_aml_status_monitor",
+      "name": "re_kyc_aml_status_monitor",
+      "artifact_type": "sidecar",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "back-office",
+      "rollout_stage": "4-orchestrate",
+      "autonomy": "human-led",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "worker",
+      "mode": "scheduled",
+      "depends_on": [
+        "re_kyc_aml_triage"
+      ],
+      "produces": "side_effect",
+      "tools": [
+        "document_store",
+        "read_crm"
+      ],
+      "tags": [
+        "kyc",
+        "aml",
+        "compliance",
+        "monitor",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_kyc_aml_status_monitor.md"
+    },
+    {
+      "id": "re_kyc_aml_triage",
+      "name": "re_kyc_aml_triage",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "back-office",
+      "rollout_stage": "2-capture",
+      "autonomy": "human-led",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "document_store"
+      ],
+      "tags": [
+        "kyc",
+        "aml",
+        "triage",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_kyc_aml_triage.md"
+    },
+    {
+      "id": "re_lead_concierge",
+      "name": "re_lead_concierge",
+      "artifact_type": "agent",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "sales",
+      "rollout_stage": "2-capture",
+      "autonomy": "human-assisted",
+      "maturity": 3,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "classifier",
+      "mode": "event-driven",
+      "depends_on": [
+        "re_lead_qualification_bilingual",
+        "re_consent_gdpr_handling",
+        "re_lead_scoring_explainable"
+      ],
+      "produces": "structured_json",
+      "tools": [
+        "read_crm",
+        "email",
+        "whatsapp_api"
+      ],
+      "tags": [
+        "lead",
+        "qualification",
+        "concierge",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_lead_concierge.md"
+    },
+    {
+      "id": "re_lead_enrichment",
+      "name": "re_lead_enrichment",
+      "artifact_type": "sidecar",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "sales",
+      "rollout_stage": "1-foundation",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "worker",
+      "mode": "event-driven",
+      "depends_on": [
+        "re_consent_gdpr_handling"
+      ],
+      "produces": "enriched_record",
+      "tools": [
+        "read_crm",
+        "enrichment_api"
+      ],
+      "tags": [
+        "lead",
+        "enrichment",
+        "consent",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_lead_enrichment.md"
+    },
+    {
+      "id": "re_lead_qualification_bilingual",
+      "name": "re_lead_qualification_bilingual",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "sales",
+      "rollout_stage": "2-capture",
+      "autonomy": "fully-autonomous",
+      "maturity": 3,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "language_detect",
+        "llm"
+      ],
+      "tags": [
+        "lead",
+        "qualification",
+        "bilingual",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_lead_qualification_bilingual.md"
+    },
+    {
+      "id": "re_lead_scoring_explainable",
+      "name": "re_lead_scoring_explainable",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "sales",
+      "rollout_stage": "2-capture",
+      "autonomy": "fully-autonomous",
+      "maturity": 3,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "read_crm"
+      ],
+      "tags": [
+        "scoring",
+        "explainable",
+        "lead",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_lead_scoring_explainable.md"
+    },
+    {
+      "id": "re_listing_acquisition_manager",
+      "name": "re_listing_acquisition_manager",
+      "artifact_type": "agent",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "sales",
+      "rollout_stage": "3-generate",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "writer",
+      "mode": "single-shot",
+      "depends_on": [
+        "re_transaction_doc_checklist",
+        "re_comparables_valuation"
+      ],
+      "produces": "markdown_report",
+      "tools": [
+        "read_crm",
+        "document_store"
+      ],
+      "tags": [
+        "seller",
+        "listing",
+        "acquisition",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_listing_acquisition_manager.md"
+    },
+    {
+      "id": "re_listing_completeness_monitor",
+      "name": "re_listing_completeness_monitor",
+      "artifact_type": "sidecar",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "operations",
+      "rollout_stage": "2-capture",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "worker",
+      "mode": "scheduled",
+      "depends_on": [
+        "re_transaction_doc_checklist"
+      ],
+      "produces": "side_effect",
+      "tools": [
+        "document_store",
+        "read_crm"
+      ],
+      "tags": [
+        "listing",
+        "documents",
+        "completeness",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_listing_completeness_monitor.md"
+    },
+    {
+      "id": "re_listing_copy_bilingual",
+      "name": "re_listing_copy_bilingual",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "marketing",
+      "rollout_stage": "3-generate",
+      "autonomy": "fully-autonomous",
+      "maturity": 3,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "llm"
+      ],
+      "tags": [
+        "copy",
+        "bilingual",
+        "listing",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_listing_copy_bilingual.md"
+    },
+    {
+      "id": "re_listing_marketing_manager",
+      "name": "re_listing_marketing_manager",
+      "artifact_type": "agent",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "marketing",
+      "rollout_stage": "3-generate",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "writer",
+      "mode": "single-shot",
+      "depends_on": [
+        "re_listing_copy_bilingual",
+        "re_portal_field_normalization"
+      ],
+      "produces": "structured_json",
+      "tools": [
+        "document_store",
+        "image_pipeline"
+      ],
+      "tags": [
+        "listing",
+        "content",
+        "marketing",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_listing_marketing_manager.md"
+    },
+    {
+      "id": "re_market_listing_watcher",
+      "name": "re_market_listing_watcher",
+      "artifact_type": "sidecar",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "intelligence",
+      "rollout_stage": "4-orchestrate",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "worker",
+      "mode": "scheduled",
+      "depends_on": [],
+      "produces": "side_effect",
+      "tools": [
+        "portal_api",
+        "read_analytics"
+      ],
+      "tags": [
+        "market",
+        "price-change",
+        "watcher",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_market_listing_watcher.md"
+    },
+    {
+      "id": "re_matching_refresh",
+      "name": "re_matching_refresh",
+      "artifact_type": "sidecar",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "sales",
+      "rollout_stage": "2-capture",
+      "autonomy": "fully-autonomous",
+      "maturity": 3,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "worker",
+      "mode": "scheduled",
+      "depends_on": [
+        "re_property_matching_rank"
+      ],
+      "produces": "side_effect",
+      "tools": [
+        "read_crm",
+        "search_inventory"
+      ],
+      "tags": [
+        "matching",
+        "refresh",
+        "buyers",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_matching_refresh.md"
+    },
+    {
+      "id": "re_meeting_summary_crm",
+      "name": "re_meeting_summary_crm",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "deals",
+      "rollout_stage": "2-capture",
+      "autonomy": "fully-autonomous",
+      "maturity": 3,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "llm",
+        "write_crm"
+      ],
+      "tags": [
+        "summary",
+        "crm",
+        "notes",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_meeting_summary_crm.md"
+    },
+    {
+      "id": "re_mortgage_affordability",
+      "name": "re_mortgage_affordability",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "back-office",
+      "rollout_stage": "3-generate",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "llm"
+      ],
+      "tags": [
+        "mortgage",
+        "affordability",
+        "scenario",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_mortgage_affordability.md"
+    },
+    {
+      "id": "re_objection_followup",
+      "name": "re_objection_followup",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "deals",
+      "rollout_stage": "3-generate",
+      "autonomy": "fully-autonomous",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "llm"
+      ],
+      "tags": [
+        "objection",
+        "follow-up",
+        "drafting",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_objection_followup.md"
+    },
+    {
+      "id": "re_offer_comparison_brief",
+      "name": "re_offer_comparison_brief",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "deals",
+      "rollout_stage": "3-generate",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "llm",
+        "read_crm"
+      ],
+      "tags": [
+        "offer",
+        "comparison",
+        "negotiation",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_offer_comparison_brief.md"
+    },
+    {
+      "id": "re_offer_deadline_monitor",
+      "name": "re_offer_deadline_monitor",
+      "artifact_type": "sidecar",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "deals",
+      "rollout_stage": "4-orchestrate",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "worker",
+      "mode": "scheduled",
+      "depends_on": [],
+      "produces": "side_effect",
+      "tools": [
+        "read_crm",
+        "alerting"
+      ],
+      "tags": [
+        "offer",
+        "deadline",
+        "monitor",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_offer_deadline_monitor.md"
+    },
+    {
+      "id": "re_offer_negotiation_coordinator",
+      "name": "re_offer_negotiation_coordinator",
+      "artifact_type": "agent",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "deals",
+      "rollout_stage": "4-orchestrate",
+      "autonomy": "human-led",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "coordinator",
+      "mode": "single-shot",
+      "depends_on": [
+        "re_offer_comparison_brief"
+      ],
+      "produces": "decision",
+      "tools": [
+        "read_crm",
+        "document_store"
+      ],
+      "tags": [
+        "offer",
+        "negotiation",
+        "approval",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_offer_negotiation_coordinator.md"
+    },
+    {
+      "id": "re_office_routing",
+      "name": "re_office_routing",
+      "artifact_type": "sidecar",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "deals",
+      "rollout_stage": "2-capture",
+      "autonomy": "fully-autonomous",
+      "maturity": 3,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "connector",
+      "mode": "event-driven",
+      "depends_on": [
+        "re_territory_routing"
+      ],
+      "produces": "side_effect",
+      "tools": [
+        "read_crm",
+        "assignment_api"
+      ],
+      "tags": [
+        "routing",
+        "territory",
+        "assignment",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_office_routing.md"
+    },
+    {
+      "id": "re_portal_field_normalization",
+      "name": "re_portal_field_normalization",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "marketing",
+      "rollout_stage": "2-capture",
+      "autonomy": "fully-autonomous",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "read_crm"
+      ],
+      "tags": [
+        "portal",
+        "normalization",
+        "mapping",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_portal_field_normalization.md"
+    },
+    {
+      "id": "re_portal_syndication",
+      "name": "re_portal_syndication",
+      "artifact_type": "sidecar",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "marketing",
+      "rollout_stage": "4-orchestrate",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "connector",
+      "mode": "scheduled",
+      "depends_on": [
+        "re_portal_field_normalization"
+      ],
+      "produces": "side_effect",
+      "tools": [
+        "portal_api",
+        "read_crm"
+      ],
+      "tags": [
+        "portal",
+        "syndication",
+        "reconciliation",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_portal_syndication.md"
+    },
+    {
+      "id": "re_property_matching_rank",
+      "name": "re_property_matching_rank",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "sales",
+      "rollout_stage": "2-capture",
+      "autonomy": "fully-autonomous",
+      "maturity": 3,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [
+        "re_requirements_normalization"
+      ],
+      "produces": "structured_json",
+      "tools": [
+        "search_inventory",
+        "score_similarity"
+      ],
+      "tags": [
+        "matching",
+        "ranking",
+        "buyer",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_property_matching_rank.md"
+    },
+    {
+      "id": "re_referral_review_request",
+      "name": "re_referral_review_request",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "customer",
+      "rollout_stage": "3-generate",
+      "autonomy": "fully-autonomous",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "llm",
+        "email"
+      ],
+      "tags": [
+        "referral",
+        "review",
+        "request",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_referral_review_request.md"
+    },
+    {
+      "id": "re_requirements_normalization",
+      "name": "re_requirements_normalization",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "sales",
+      "rollout_stage": "2-capture",
+      "autonomy": "fully-autonomous",
+      "maturity": 3,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "llm"
+      ],
+      "tags": [
+        "requirements",
+        "normalization",
+        "buyer",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_requirements_normalization.md"
+    },
+    {
+      "id": "re_response_sla_monitor",
+      "name": "re_response_sla_monitor",
+      "artifact_type": "sidecar",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "deals",
+      "rollout_stage": "4-orchestrate",
+      "autonomy": "human-assisted",
+      "maturity": 3,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "worker",
+      "mode": "scheduled",
+      "depends_on": [],
+      "produces": "side_effect",
+      "tools": [
+        "read_crm",
+        "alerting"
+      ],
+      "tags": [
+        "sla",
+        "response",
+        "escalation",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_response_sla_monitor.md"
+    },
+    {
+      "id": "re_territory_routing",
+      "name": "re_territory_routing",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "sales",
+      "rollout_stage": "1-foundation",
+      "autonomy": "fully-autonomous",
+      "maturity": 3,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "geo_lookup"
+      ],
+      "tags": [
+        "routing",
+        "territory",
+        "capacity",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_territory_routing.md"
+    },
+    {
+      "id": "re_transaction_coordinator",
+      "name": "re_transaction_coordinator",
+      "artifact_type": "agent",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "deals",
+      "rollout_stage": "4-orchestrate",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "coordinator",
+      "mode": "single-shot",
+      "depends_on": [
+        "re_transaction_doc_checklist",
+        "re_kyc_aml_triage"
+      ],
+      "produces": "markdown_report",
+      "tools": [
+        "read_crm",
+        "document_store",
+        "calendar_api"
+      ],
+      "tags": [
+        "transaction",
+        "closing",
+        "coordination",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_transaction_coordinator.md"
+    },
+    {
+      "id": "re_transaction_doc_checklist",
+      "name": "re_transaction_doc_checklist",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "back-office",
+      "rollout_stage": "2-capture",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "document_store"
+      ],
+      "tags": [
+        "documents",
+        "checklist",
+        "transaction",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_transaction_doc_checklist.md"
+    },
+    {
+      "id": "re_valuation_analyst",
+      "name": "re_valuation_analyst",
+      "artifact_type": "agent",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "intelligence",
+      "rollout_stage": "3-generate",
+      "autonomy": "human-assisted",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "analyst",
+      "mode": "single-shot",
+      "depends_on": [
+        "re_comparables_valuation"
+      ],
+      "produces": "markdown_report",
+      "tools": [
+        "read_crm",
+        "comparables_source"
+      ],
+      "tags": [
+        "valuation",
+        "comparables",
+        "decision-support",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_valuation_analyst.md"
+    },
+    {
+      "id": "re_viewing_coordinator",
+      "name": "re_viewing_coordinator",
+      "artifact_type": "agent",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "sales",
+      "rollout_stage": "3-generate",
+      "autonomy": "human-assisted",
+      "maturity": 3,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "coordinator",
+      "mode": "event-driven",
+      "depends_on": [
+        "re_viewing_scheduling",
+        "re_objection_followup"
+      ],
+      "produces": "markdown_report",
+      "tools": [
+        "calendar_api",
+        "email",
+        "whatsapp_api"
+      ],
+      "tags": [
+        "viewing",
+        "scheduling",
+        "follow-up",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_viewing_coordinator.md"
+    },
+    {
+      "id": "re_viewing_scheduling",
+      "name": "re_viewing_scheduling",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "operations",
+      "rollout_stage": "3-generate",
+      "autonomy": "fully-autonomous",
+      "maturity": 3,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "calendar_api",
+        "maps_api"
+      ],
+      "tags": [
+        "scheduling",
+        "route",
+        "viewing",
+        "skill",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_viewing_scheduling.md"
+    },
+    {
+      "id": "re_visit_route_sync",
+      "name": "re_visit_route_sync",
+      "artifact_type": "sidecar",
+      "lifecycle": "ops",
+      "category": "verticals",
+      "phase": null,
+      "step": null,
+      "domain": "operations",
+      "rollout_stage": "3-generate",
+      "autonomy": "fully-autonomous",
+      "maturity": 2,
+      "verticals": [
+        "real-estate"
+      ],
+      "role": "connector",
+      "mode": "event-driven",
+      "depends_on": [
+        "re_viewing_scheduling"
+      ],
+      "produces": "side_effect",
+      "tools": [
+        "calendar_api",
+        "maps_api"
+      ],
+      "tags": [
+        "calendar",
+        "route",
+        "sync",
+        "real-estate"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "verticals/real-estate/re_visit_route_sync.md"
     }
   ],
   "indexes": {
@@ -7400,6 +8845,16 @@
         "proposal_generation",
         "qa_verification",
         "qbr_prep",
+        "re_aftersales_referral_agent",
+        "re_branch_pipeline_manager",
+        "re_buyer_advisor",
+        "re_lead_concierge",
+        "re_listing_acquisition_manager",
+        "re_listing_marketing_manager",
+        "re_offer_negotiation_coordinator",
+        "re_transaction_coordinator",
+        "re_valuation_analyst",
+        "re_viewing_coordinator",
         "reading_between_lines",
         "referral_capture",
         "renewal_negotiation",
@@ -7482,6 +8937,20 @@
         "pipeline_reporting",
         "portal_sync",
         "project_scaffolding",
+        "re_campaign_attribution",
+        "re_commission_forecast",
+        "re_crm_dedupe",
+        "re_dormant_lead_trigger",
+        "re_kyc_aml_status_monitor",
+        "re_lead_enrichment",
+        "re_listing_completeness_monitor",
+        "re_market_listing_watcher",
+        "re_matching_refresh",
+        "re_offer_deadline_monitor",
+        "re_office_routing",
+        "re_portal_syndication",
+        "re_response_sla_monitor",
+        "re_visit_route_sync",
         "reactivation",
         "revenue_reporting",
         "screening_scheduling",
@@ -7503,6 +8972,24 @@
         "email_verification",
         "funding_financials_lookup",
         "local_inference",
+        "re_commission_net_proceeds",
+        "re_comparables_valuation",
+        "re_consent_gdpr_handling",
+        "re_kyc_aml_triage",
+        "re_lead_qualification_bilingual",
+        "re_lead_scoring_explainable",
+        "re_listing_copy_bilingual",
+        "re_meeting_summary_crm",
+        "re_mortgage_affordability",
+        "re_objection_followup",
+        "re_offer_comparison_brief",
+        "re_portal_field_normalization",
+        "re_property_matching_rank",
+        "re_referral_review_request",
+        "re_requirements_normalization",
+        "re_territory_routing",
+        "re_transaction_doc_checklist",
+        "re_viewing_scheduling",
         "tech_stack_detection"
       ]
     },
@@ -7644,6 +9131,48 @@
         "proposal_generation",
         "qa_verification",
         "qbr_prep",
+        "re_aftersales_referral_agent",
+        "re_branch_pipeline_manager",
+        "re_buyer_advisor",
+        "re_campaign_attribution",
+        "re_commission_forecast",
+        "re_commission_net_proceeds",
+        "re_comparables_valuation",
+        "re_consent_gdpr_handling",
+        "re_crm_dedupe",
+        "re_dormant_lead_trigger",
+        "re_kyc_aml_status_monitor",
+        "re_kyc_aml_triage",
+        "re_lead_concierge",
+        "re_lead_enrichment",
+        "re_lead_qualification_bilingual",
+        "re_lead_scoring_explainable",
+        "re_listing_acquisition_manager",
+        "re_listing_completeness_monitor",
+        "re_listing_copy_bilingual",
+        "re_listing_marketing_manager",
+        "re_market_listing_watcher",
+        "re_matching_refresh",
+        "re_meeting_summary_crm",
+        "re_mortgage_affordability",
+        "re_objection_followup",
+        "re_offer_comparison_brief",
+        "re_offer_deadline_monitor",
+        "re_offer_negotiation_coordinator",
+        "re_office_routing",
+        "re_portal_field_normalization",
+        "re_portal_syndication",
+        "re_property_matching_rank",
+        "re_referral_review_request",
+        "re_requirements_normalization",
+        "re_response_sla_monitor",
+        "re_territory_routing",
+        "re_transaction_coordinator",
+        "re_transaction_doc_checklist",
+        "re_valuation_analyst",
+        "re_viewing_coordinator",
+        "re_viewing_scheduling",
+        "re_visit_route_sync",
         "reactivation",
         "reading_between_lines",
         "referral_capture",
@@ -7982,6 +9511,48 @@
         "open_house_coordination",
         "pitch_deck_generator",
         "property_dossier",
+        "re_aftersales_referral_agent",
+        "re_branch_pipeline_manager",
+        "re_buyer_advisor",
+        "re_campaign_attribution",
+        "re_commission_forecast",
+        "re_commission_net_proceeds",
+        "re_comparables_valuation",
+        "re_consent_gdpr_handling",
+        "re_crm_dedupe",
+        "re_dormant_lead_trigger",
+        "re_kyc_aml_status_monitor",
+        "re_kyc_aml_triage",
+        "re_lead_concierge",
+        "re_lead_enrichment",
+        "re_lead_qualification_bilingual",
+        "re_lead_scoring_explainable",
+        "re_listing_acquisition_manager",
+        "re_listing_completeness_monitor",
+        "re_listing_copy_bilingual",
+        "re_listing_marketing_manager",
+        "re_market_listing_watcher",
+        "re_matching_refresh",
+        "re_meeting_summary_crm",
+        "re_mortgage_affordability",
+        "re_objection_followup",
+        "re_offer_comparison_brief",
+        "re_offer_deadline_monitor",
+        "re_offer_negotiation_coordinator",
+        "re_office_routing",
+        "re_portal_field_normalization",
+        "re_portal_syndication",
+        "re_property_matching_rank",
+        "re_referral_review_request",
+        "re_requirements_normalization",
+        "re_response_sla_monitor",
+        "re_territory_routing",
+        "re_transaction_coordinator",
+        "re_transaction_doc_checklist",
+        "re_valuation_analyst",
+        "re_viewing_coordinator",
+        "re_viewing_scheduling",
+        "re_visit_route_sync",
         "reservation_handling",
         "scope_change_control",
         "social_night_recap",
@@ -8063,6 +9634,13 @@
         "invoice_generation",
         "onboarding_training",
         "payment_tracking",
+        "re_commission_forecast",
+        "re_commission_net_proceeds",
+        "re_consent_gdpr_handling",
+        "re_kyc_aml_status_monitor",
+        "re_kyc_aml_triage",
+        "re_mortgage_affordability",
+        "re_transaction_doc_checklist",
         "revenue_reporting",
         "screening_scheduling",
         "spend_authority"
@@ -8080,6 +9658,8 @@
         "macro_authoring",
         "onboarding_journeys",
         "qbr_prep",
+        "re_aftersales_referral_agent",
+        "re_referral_review_request",
         "renewal_negotiation",
         "save_calls",
         "strategic_customer_accounts",
@@ -8108,6 +9688,17 @@
         "pricing_support",
         "proposal_final_signoff",
         "proposal_generation",
+        "re_branch_pipeline_manager",
+        "re_crm_dedupe",
+        "re_dormant_lead_trigger",
+        "re_meeting_summary_crm",
+        "re_objection_followup",
+        "re_offer_comparison_brief",
+        "re_offer_deadline_monitor",
+        "re_offer_negotiation_coordinator",
+        "re_office_routing",
+        "re_response_sla_monitor",
+        "re_transaction_coordinator",
         "reactivation",
         "referral_capture",
         "reply_classification",
@@ -8128,6 +9719,9 @@
         "news_mention_tracking",
         "person_research",
         "pricing_research",
+        "re_comparables_valuation",
+        "re_market_listing_watcher",
+        "re_valuation_analyst",
         "reading_between_lines",
         "research_prioritization",
         "research_reports",
@@ -8157,6 +9751,11 @@
         "paid_ads_optimizer",
         "pitch_deck_generator",
         "pr_press_kit",
+        "re_campaign_attribution",
+        "re_listing_copy_bilingual",
+        "re_listing_marketing_manager",
+        "re_portal_field_normalization",
+        "re_portal_syndication",
         "scope_change_control",
         "seo_briefs",
         "social_posts_generator",
@@ -8190,6 +9789,9 @@
         "portal_sync",
         "project_scaffolding",
         "qa_verification",
+        "re_listing_completeness_monitor",
+        "re_viewing_scheduling",
+        "re_visit_route_sync",
         "reservation_handling",
         "scope_calls",
         "social_night_recap",
@@ -8226,6 +9828,17 @@
         "personalization_research",
         "proof_matching",
         "property_dossier",
+        "re_buyer_advisor",
+        "re_lead_concierge",
+        "re_lead_enrichment",
+        "re_lead_qualification_bilingual",
+        "re_lead_scoring_explainable",
+        "re_listing_acquisition_manager",
+        "re_matching_refresh",
+        "re_property_matching_rank",
+        "re_requirements_normalization",
+        "re_territory_routing",
+        "re_viewing_coordinator",
         "send_optimization",
         "social_mining",
         "trigger_detection",
@@ -8280,6 +9893,18 @@
         "paid_ads_optimizer",
         "portal_sync",
         "proposal_final_signoff",
+        "re_aftersales_referral_agent",
+        "re_branch_pipeline_manager",
+        "re_campaign_attribution",
+        "re_commission_forecast",
+        "re_dormant_lead_trigger",
+        "re_kyc_aml_status_monitor",
+        "re_market_listing_watcher",
+        "re_offer_deadline_monitor",
+        "re_offer_negotiation_coordinator",
+        "re_portal_syndication",
+        "re_response_sla_monitor",
+        "re_transaction_coordinator",
         "reactivation",
         "renewal_negotiation",
         "revenue_reporting",
@@ -8323,6 +9948,20 @@
         "pipeline_reporting",
         "post_call_debrief",
         "qa_verification",
+        "re_comparables_valuation",
+        "re_crm_dedupe",
+        "re_kyc_aml_triage",
+        "re_lead_concierge",
+        "re_lead_qualification_bilingual",
+        "re_lead_scoring_explainable",
+        "re_listing_completeness_monitor",
+        "re_matching_refresh",
+        "re_meeting_summary_crm",
+        "re_office_routing",
+        "re_portal_field_normalization",
+        "re_property_matching_rank",
+        "re_requirements_normalization",
+        "re_transaction_doc_checklist",
         "reading_between_lines",
         "referral_capture",
         "reply_classification",
@@ -8387,6 +10026,19 @@
         "property_dossier",
         "proposal_generation",
         "qbr_prep",
+        "re_buyer_advisor",
+        "re_commission_net_proceeds",
+        "re_listing_acquisition_manager",
+        "re_listing_copy_bilingual",
+        "re_listing_marketing_manager",
+        "re_mortgage_affordability",
+        "re_objection_followup",
+        "re_offer_comparison_brief",
+        "re_referral_review_request",
+        "re_valuation_analyst",
+        "re_viewing_coordinator",
+        "re_viewing_scheduling",
+        "re_visit_route_sync",
         "research_reports",
         "social_night_recap",
         "social_posts_generator",
@@ -8411,6 +10063,9 @@
         "market_mapping",
         "network_mapping",
         "personalization_research",
+        "re_consent_gdpr_handling",
+        "re_lead_enrichment",
+        "re_territory_routing",
         "research_prioritization",
         "scope_calls",
         "social_mining",
@@ -8439,6 +10094,10 @@
         "network_mapping",
         "offer_positioning",
         "proposal_final_signoff",
+        "re_branch_pipeline_manager",
+        "re_kyc_aml_status_monitor",
+        "re_kyc_aml_triage",
+        "re_offer_negotiation_coordinator",
         "reading_between_lines",
         "renewal_negotiation",
         "research_prioritization",
@@ -8524,6 +10183,23 @@
         "property_dossier",
         "proposal_generation",
         "qbr_prep",
+        "re_campaign_attribution",
+        "re_comparables_valuation",
+        "re_crm_dedupe",
+        "re_lead_qualification_bilingual",
+        "re_lead_scoring_explainable",
+        "re_listing_copy_bilingual",
+        "re_matching_refresh",
+        "re_meeting_summary_crm",
+        "re_objection_followup",
+        "re_office_routing",
+        "re_portal_field_normalization",
+        "re_property_matching_rank",
+        "re_referral_review_request",
+        "re_requirements_normalization",
+        "re_territory_routing",
+        "re_viewing_scheduling",
+        "re_visit_route_sync",
         "reactivation",
         "referral_capture",
         "reply_classification",
@@ -8592,6 +10268,27 @@
         "pitch_deck_generator",
         "pr_press_kit",
         "qa_verification",
+        "re_aftersales_referral_agent",
+        "re_buyer_advisor",
+        "re_commission_forecast",
+        "re_commission_net_proceeds",
+        "re_consent_gdpr_handling",
+        "re_dormant_lead_trigger",
+        "re_lead_concierge",
+        "re_lead_enrichment",
+        "re_listing_acquisition_manager",
+        "re_listing_completeness_monitor",
+        "re_listing_marketing_manager",
+        "re_market_listing_watcher",
+        "re_mortgage_affordability",
+        "re_offer_comparison_brief",
+        "re_offer_deadline_monitor",
+        "re_portal_syndication",
+        "re_response_sla_monitor",
+        "re_transaction_coordinator",
+        "re_transaction_doc_checklist",
+        "re_valuation_analyst",
+        "re_viewing_coordinator",
         "scope_change_control",
         "screening_scheduling",
         "tam_market_sizing",
@@ -8655,6 +10352,9 @@
         "project_intake_facilitator",
         "proposal_generation",
         "qbr_prep",
+        "re_aftersales_referral_agent",
+        "re_listing_acquisition_manager",
+        "re_listing_marketing_manager",
         "renewal_negotiation",
         "research_reports",
         "reservation_handling",
@@ -8695,6 +10395,17 @@
         "onboarding_journeys",
         "payment_tracking",
         "pipeline_reporting",
+        "re_campaign_attribution",
+        "re_commission_forecast",
+        "re_crm_dedupe",
+        "re_dormant_lead_trigger",
+        "re_kyc_aml_status_monitor",
+        "re_lead_enrichment",
+        "re_listing_completeness_monitor",
+        "re_market_listing_watcher",
+        "re_matching_refresh",
+        "re_offer_deadline_monitor",
+        "re_response_sla_monitor",
         "reactivation",
         "revenue_reporting",
         "send_optimization",
@@ -8754,6 +10465,8 @@
         "pricing_support",
         "proof_matching",
         "property_dossier",
+        "re_buyer_advisor",
+        "re_valuation_analyst",
         "reading_between_lines",
         "research_prioritization",
         "resource_inventory_analyst",
@@ -8788,6 +10501,9 @@
         "open_house_coordination",
         "portal_sync",
         "project_scaffolding",
+        "re_office_routing",
+        "re_portal_syndication",
+        "re_visit_route_sync",
         "screening_scheduling"
       ],
       "classifier": [
@@ -8801,6 +10517,7 @@
         "health_scoring",
         "inbox_triage",
         "lead_qualification",
+        "re_lead_concierge",
         "referral_capture",
         "reply_classification",
         "ticket_triage",
@@ -8816,6 +10533,10 @@
         "event_coordination",
         "event_planning",
         "incident_response",
+        "re_branch_pipeline_manager",
+        "re_offer_negotiation_coordinator",
+        "re_transaction_coordinator",
+        "re_viewing_coordinator",
         "webinar_producer"
       ],
       "debater": [
@@ -8909,6 +10630,13 @@
         "proposal_generation",
         "qa_verification",
         "qbr_prep",
+        "re_aftersales_referral_agent",
+        "re_buyer_advisor",
+        "re_listing_acquisition_manager",
+        "re_listing_marketing_manager",
+        "re_offer_negotiation_coordinator",
+        "re_transaction_coordinator",
+        "re_valuation_analyst",
         "reading_between_lines",
         "renewal_negotiation",
         "research_prioritization",
@@ -8961,6 +10689,18 @@
         "pipeline_reporting",
         "portal_sync",
         "pre_call_briefing",
+        "re_branch_pipeline_manager",
+        "re_campaign_attribution",
+        "re_commission_forecast",
+        "re_crm_dedupe",
+        "re_dormant_lead_trigger",
+        "re_kyc_aml_status_monitor",
+        "re_listing_completeness_monitor",
+        "re_market_listing_watcher",
+        "re_matching_refresh",
+        "re_offer_deadline_monitor",
+        "re_portal_syndication",
+        "re_response_sla_monitor",
         "reactivation",
         "revenue_reporting",
         "send_optimization",
@@ -9003,6 +10743,11 @@
         "open_house_coordination",
         "post_call_debrief",
         "project_scaffolding",
+        "re_lead_concierge",
+        "re_lead_enrichment",
+        "re_office_routing",
+        "re_viewing_coordinator",
+        "re_visit_route_sync",
         "referral_capture",
         "reply_classification",
         "reservation_handling",
@@ -9295,7 +11040,49 @@
         "mortgage_prequal",
         "offer_letter_drafting",
         "open_house_coordination",
-        "property_dossier"
+        "property_dossier",
+        "re_aftersales_referral_agent",
+        "re_branch_pipeline_manager",
+        "re_buyer_advisor",
+        "re_campaign_attribution",
+        "re_commission_forecast",
+        "re_commission_net_proceeds",
+        "re_comparables_valuation",
+        "re_consent_gdpr_handling",
+        "re_crm_dedupe",
+        "re_dormant_lead_trigger",
+        "re_kyc_aml_status_monitor",
+        "re_kyc_aml_triage",
+        "re_lead_concierge",
+        "re_lead_enrichment",
+        "re_lead_qualification_bilingual",
+        "re_lead_scoring_explainable",
+        "re_listing_acquisition_manager",
+        "re_listing_completeness_monitor",
+        "re_listing_copy_bilingual",
+        "re_listing_marketing_manager",
+        "re_market_listing_watcher",
+        "re_matching_refresh",
+        "re_meeting_summary_crm",
+        "re_mortgage_affordability",
+        "re_objection_followup",
+        "re_offer_comparison_brief",
+        "re_offer_deadline_monitor",
+        "re_offer_negotiation_coordinator",
+        "re_office_routing",
+        "re_portal_field_normalization",
+        "re_portal_syndication",
+        "re_property_matching_rank",
+        "re_referral_review_request",
+        "re_requirements_normalization",
+        "re_response_sla_monitor",
+        "re_territory_routing",
+        "re_transaction_coordinator",
+        "re_transaction_doc_checklist",
+        "re_valuation_analyst",
+        "re_viewing_coordinator",
+        "re_viewing_scheduling",
+        "re_visit_route_sync"
       ]
     },
     "by_tag": {
@@ -9330,6 +11117,7 @@
       "calendar": [
         "calendar_management",
         "content_calendar",
+        "re_visit_route_sync",
         "tranche_1_budgeter"
       ],
       "eaa": [
@@ -9350,7 +11138,9 @@
       ],
       "forecast": [
         "cash_flow_forecasting",
-        "forecasting"
+        "forecasting",
+        "re_branch_pipeline_manager",
+        "re_commission_forecast"
       ],
       "collections": [
         "collections"
@@ -9361,7 +11151,9 @@
       "compliance": [
         "compliance_signoff",
         "entity_compliance",
-        "licensing_compliance"
+        "licensing_compliance",
+        "re_consent_gdpr_handling",
+        "re_kyc_aml_status_monitor"
       ],
       "contract": [
         "agreement_drafting",
@@ -9376,11 +11168,14 @@
       "sync": [
         "crm_sync",
         "database_mining",
-        "portal_sync"
+        "portal_sync",
+        "re_visit_route_sync"
       ],
       "crm": [
         "crm_hygiene",
-        "crm_sync"
+        "crm_sync",
+        "re_crm_dedupe",
+        "re_meeting_summary_crm"
       ],
       "connector": [
         "crm_sync"
@@ -9390,7 +11185,9 @@
       ],
       "documents": [
         "document_extraction",
-        "document_filing"
+        "document_filing",
+        "re_listing_completeness_monitor",
+        "re_transaction_doc_checklist"
       ],
       "inbox": [
         "email_triage_office",
@@ -9402,6 +11199,7 @@
       "triage": [
         "email_triage_office",
         "inbox_triage",
+        "re_kyc_aml_triage",
         "ticket_triage"
       ],
       "entity": [
@@ -9447,7 +11245,8 @@
         "payment_tracking"
       ],
       "reconciliation": [
-        "payment_tracking"
+        "payment_tracking",
+        "re_portal_syndication"
       ],
       "revenue": [
         "revenue_reporting"
@@ -9470,6 +11269,7 @@
         "creative_approval_flow",
         "final_ship_approval",
         "proposal_final_signoff",
+        "re_offer_negotiation_coordinator",
         "spend_authority"
       ],
       "advocacy": [
@@ -9477,6 +11277,8 @@
       ],
       "referral": [
         "advocacy_referrals",
+        "re_aftersales_referral_agent",
+        "re_referral_review_request",
         "referral_capture"
       ],
       "churn": [
@@ -9508,7 +11310,8 @@
         "macro_authoring"
       ],
       "escalation": [
-        "escalations"
+        "escalations",
+        "re_response_sla_monitor"
       ],
       "events": [
         "event_coordination",
@@ -9573,7 +11376,8 @@
         "ticket_triage"
       ],
       "drafting": [
-        "agreement_drafting"
+        "agreement_drafting",
+        "re_objection_followup"
       ],
       "redlines": [
         "agreement_drafting"
@@ -9586,11 +11390,13 @@
         "call_capture"
       ],
       "summary": [
-        "call_capture"
+        "call_capture",
+        "re_meeting_summary_crm"
       ],
       "closing": [
         "closing_coordination",
-        "closing_the_deal"
+        "closing_the_deal",
+        "re_transaction_coordinator"
       ],
       "ae-led": [
         "closing_the_deal",
@@ -9612,7 +11418,8 @@
         "speed_to_lead"
       ],
       "hygiene": [
-        "crm_hygiene"
+        "crm_hygiene",
+        "re_crm_dedupe"
       ],
       "cleanup": [
         "crm_hygiene"
@@ -9638,7 +11445,9 @@
       ],
       "follow-up": [
         "follow_up_drafting",
-        "meeting_follow_ups"
+        "meeting_follow_ups",
+        "re_objection_followup",
+        "re_viewing_coordinator"
       ],
       "email": [
         "cold_email_drafting",
@@ -9650,24 +11459,32 @@
       "pipeline": [
         "creative_pipeline",
         "forecasting",
-        "pipeline_reporting"
+        "pipeline_reporting",
+        "re_branch_pipeline_manager",
+        "re_commission_forecast"
       ],
       "routing": [
         "alert_routing",
         "hot_lead_routing",
+        "re_office_routing",
+        "re_territory_routing",
         "trigger_detection"
       ],
       "assignment": [
-        "hot_lead_routing"
+        "hot_lead_routing",
+        "re_office_routing"
       ],
       "sla": [
-        "hot_lead_routing"
+        "hot_lead_routing",
+        "re_response_sla_monitor"
       ],
       "shared-inbox": [
         "inbox_triage"
       ],
       "qualification": [
-        "lead_qualification"
+        "lead_qualification",
+        "re_lead_concierge",
+        "re_lead_qualification_bilingual"
       ],
       "meddpicc": [
         "buying_committee_mapping",
@@ -9677,7 +11494,9 @@
         "lead_qualification"
       ],
       "scheduling": [
-        "meeting_booking"
+        "meeting_booking",
+        "re_viewing_coordinator",
+        "re_viewing_scheduling"
       ],
       "meeting": [
         "meeting_booking"
@@ -9692,10 +11511,12 @@
         "objection_library"
       ],
       "objection": [
-        "objection_response"
+        "objection_response",
+        "re_objection_followup"
       ],
       "response": [
-        "objection_response"
+        "objection_response",
+        "re_response_sla_monitor"
       ],
       "ae-assisted": [
         "objection_response"
@@ -9729,6 +11550,7 @@
         "research_reports"
       ],
       "reactivation": [
+        "re_dormant_lead_trigger",
         "reactivation"
       ],
       "closed-lost": [
@@ -9988,7 +11810,8 @@
         "market_customer_profiler",
         "market_problem_analyst",
         "market_study_by_country_analyst",
-        "market_trends_timing_analyst"
+        "market_trends_timing_analyst",
+        "re_market_listing_watcher"
       ],
       "competition": [
         "competitive_analyst"
@@ -10095,7 +11918,8 @@
       "copy": [
         "ad_creative_generator",
         "cold_email_drafting",
-        "landing_page_writer"
+        "landing_page_writer",
+        "re_listing_copy_bilingual"
       ],
       "analytics": [
         "analytics_rollup"
@@ -10134,6 +11958,7 @@
       "content": [
         "creative_asset_repurpose",
         "long_form_content_writer",
+        "re_listing_marketing_manager",
         "seo_briefs",
         "ugc_pipeline",
         "validation_experiment_designer"
@@ -10351,7 +12176,9 @@
         "monitoring_alerting"
       ],
       "portal": [
-        "portal_sync"
+        "portal_sync",
+        "re_portal_field_normalization",
+        "re_portal_syndication"
       ],
       "scaffolding": [
         "project_scaffolding"
@@ -10381,11 +12208,14 @@
         "transcript_processing"
       ],
       "review": [
-        "brand_voice_final_approvals"
+        "brand_voice_final_approvals",
+        "re_aftersales_referral_agent",
+        "re_referral_review_request"
       ],
       "campaign": [
         "campaign_launch",
-        "campaign_orchestration"
+        "campaign_orchestration",
+        "re_campaign_attribution"
       ],
       "launch": [
         "campaign_launch",
@@ -10443,7 +12273,8 @@
         "deliverability"
       ],
       "scoring": [
-        "fit_scoring"
+        "fit_scoring",
+        "re_lead_scoring_explainable"
       ],
       "fit": [
         "fit_scoring"
@@ -10492,7 +12323,10 @@
       ],
       "offer": [
         "offer_letter_drafting",
-        "offer_positioning"
+        "offer_positioning",
+        "re_offer_comparison_brief",
+        "re_offer_deadline_monitor",
+        "re_offer_negotiation_coordinator"
       ],
       "personalization": [
         "personalization_research"
@@ -10635,7 +12469,8 @@
         "kpis_okrs_framework_writer"
       ],
       "gdpr": [
-        "legal_ip_analyst"
+        "legal_ip_analyst",
+        "re_consent_gdpr_handling"
       ],
       "dpa": [
         "legal_ip_analyst"
@@ -10686,9 +12521,13 @@
         "risk_assessor"
       ],
       "valuation": [
+        "re_comparables_valuation",
+        "re_valuation_analyst",
         "startup_valuation_analyst"
       ],
       "comparables": [
+        "re_comparables_valuation",
+        "re_valuation_analyst",
         "startup_valuation_analyst"
       ],
       "dcf": [
@@ -10735,7 +12574,8 @@
       ],
       "enrichment": [
         "account_enrichment",
-        "contact_enrichment"
+        "contact_enrichment",
+        "re_lead_enrichment"
       ],
       "account": [
         "account_enrichment"
@@ -10748,6 +12588,24 @@
         "email_verification",
         "funding_financials_lookup",
         "local_inference",
+        "re_commission_net_proceeds",
+        "re_comparables_valuation",
+        "re_consent_gdpr_handling",
+        "re_kyc_aml_triage",
+        "re_lead_qualification_bilingual",
+        "re_lead_scoring_explainable",
+        "re_listing_copy_bilingual",
+        "re_meeting_summary_crm",
+        "re_mortgage_affordability",
+        "re_objection_followup",
+        "re_offer_comparison_brief",
+        "re_portal_field_normalization",
+        "re_property_matching_rank",
+        "re_referral_review_request",
+        "re_requirements_normalization",
+        "re_territory_routing",
+        "re_transaction_doc_checklist",
+        "re_viewing_scheduling",
         "tech_stack_detection"
       ],
       "contact": [
@@ -10844,7 +12702,8 @@
         "client_reporting"
       ],
       "capacity": [
-        "creative_pipeline"
+        "creative_pipeline",
+        "re_territory_routing"
       ],
       "pitch": [
         "pitch_deck_generator"
@@ -10899,10 +12758,14 @@
         "social_night_recap"
       ],
       "matching": [
-        "buyer_matching"
+        "buyer_matching",
+        "re_buyer_advisor",
+        "re_matching_refresh",
+        "re_property_matching_rank"
       ],
       "buyers": [
-        "buyer_matching"
+        "buyer_matching",
+        "re_matching_refresh"
       ],
       "real-estate": [
         "buyer_matching",
@@ -10911,19 +12774,66 @@
         "mortgage_prequal",
         "offer_letter_drafting",
         "open_house_coordination",
-        "property_dossier"
+        "property_dossier",
+        "re_aftersales_referral_agent",
+        "re_branch_pipeline_manager",
+        "re_buyer_advisor",
+        "re_campaign_attribution",
+        "re_commission_forecast",
+        "re_commission_net_proceeds",
+        "re_comparables_valuation",
+        "re_consent_gdpr_handling",
+        "re_crm_dedupe",
+        "re_dormant_lead_trigger",
+        "re_kyc_aml_status_monitor",
+        "re_kyc_aml_triage",
+        "re_lead_concierge",
+        "re_lead_enrichment",
+        "re_lead_qualification_bilingual",
+        "re_lead_scoring_explainable",
+        "re_listing_acquisition_manager",
+        "re_listing_completeness_monitor",
+        "re_listing_copy_bilingual",
+        "re_listing_marketing_manager",
+        "re_market_listing_watcher",
+        "re_matching_refresh",
+        "re_meeting_summary_crm",
+        "re_mortgage_affordability",
+        "re_objection_followup",
+        "re_offer_comparison_brief",
+        "re_offer_deadline_monitor",
+        "re_offer_negotiation_coordinator",
+        "re_office_routing",
+        "re_portal_field_normalization",
+        "re_portal_syndication",
+        "re_property_matching_rank",
+        "re_referral_review_request",
+        "re_requirements_normalization",
+        "re_response_sla_monitor",
+        "re_territory_routing",
+        "re_transaction_coordinator",
+        "re_transaction_doc_checklist",
+        "re_valuation_analyst",
+        "re_viewing_coordinator",
+        "re_viewing_scheduling",
+        "re_visit_route_sync"
       ],
       "escrow": [
         "closing_coordination"
       ],
       "listing": [
-        "listing_generator"
+        "listing_generator",
+        "re_listing_acquisition_manager",
+        "re_listing_completeness_monitor",
+        "re_listing_copy_bilingual",
+        "re_listing_marketing_manager"
       ],
       "portals": [
         "listing_generator"
       ],
       "mortgage": [
-        "mortgage_prequal"
+        "mortgage_prequal",
+        "re_mortgage_affordability"
       ],
       "prequal": [
         "mortgage_prequal"
@@ -10933,6 +12843,165 @@
       ],
       "property": [
         "property_dossier"
+      ],
+      "after-sales": [
+        "re_aftersales_referral_agent"
+      ],
+      "branch": [
+        "re_branch_pipeline_manager"
+      ],
+      "management": [
+        "re_branch_pipeline_manager"
+      ],
+      "buyer": [
+        "re_buyer_advisor",
+        "re_property_matching_rank",
+        "re_requirements_normalization"
+      ],
+      "advisory": [
+        "re_buyer_advisor"
+      ],
+      "attribution": [
+        "re_campaign_attribution"
+      ],
+      "performance": [
+        "re_campaign_attribution"
+      ],
+      "commission": [
+        "re_commission_forecast",
+        "re_commission_net_proceeds"
+      ],
+      "net-proceeds": [
+        "re_commission_net_proceeds"
+      ],
+      "scenario": [
+        "re_commission_net_proceeds",
+        "re_mortgage_affordability"
+      ],
+      "range": [
+        "re_comparables_valuation"
+      ],
+      "consent": [
+        "re_consent_gdpr_handling",
+        "re_lead_enrichment"
+      ],
+      "dedupe": [
+        "re_crm_dedupe"
+      ],
+      "dormant": [
+        "re_dormant_lead_trigger"
+      ],
+      "trigger": [
+        "re_dormant_lead_trigger"
+      ],
+      "kyc": [
+        "re_kyc_aml_status_monitor",
+        "re_kyc_aml_triage"
+      ],
+      "aml": [
+        "re_kyc_aml_status_monitor",
+        "re_kyc_aml_triage"
+      ],
+      "monitor": [
+        "re_kyc_aml_status_monitor",
+        "re_offer_deadline_monitor"
+      ],
+      "lead": [
+        "re_lead_concierge",
+        "re_lead_enrichment",
+        "re_lead_qualification_bilingual",
+        "re_lead_scoring_explainable"
+      ],
+      "concierge": [
+        "re_lead_concierge"
+      ],
+      "bilingual": [
+        "re_lead_qualification_bilingual",
+        "re_listing_copy_bilingual"
+      ],
+      "explainable": [
+        "re_lead_scoring_explainable"
+      ],
+      "seller": [
+        "re_listing_acquisition_manager"
+      ],
+      "acquisition": [
+        "re_listing_acquisition_manager"
+      ],
+      "completeness": [
+        "re_listing_completeness_monitor"
+      ],
+      "marketing": [
+        "re_listing_marketing_manager"
+      ],
+      "price-change": [
+        "re_market_listing_watcher"
+      ],
+      "watcher": [
+        "re_market_listing_watcher"
+      ],
+      "refresh": [
+        "re_matching_refresh"
+      ],
+      "notes": [
+        "re_meeting_summary_crm"
+      ],
+      "affordability": [
+        "re_mortgage_affordability"
+      ],
+      "comparison": [
+        "re_offer_comparison_brief"
+      ],
+      "negotiation": [
+        "re_offer_comparison_brief",
+        "re_offer_negotiation_coordinator"
+      ],
+      "deadline": [
+        "re_offer_deadline_monitor"
+      ],
+      "territory": [
+        "re_office_routing",
+        "re_territory_routing"
+      ],
+      "normalization": [
+        "re_portal_field_normalization",
+        "re_requirements_normalization"
+      ],
+      "mapping": [
+        "re_portal_field_normalization"
+      ],
+      "syndication": [
+        "re_portal_syndication"
+      ],
+      "ranking": [
+        "re_property_matching_rank"
+      ],
+      "request": [
+        "re_referral_review_request"
+      ],
+      "requirements": [
+        "re_requirements_normalization"
+      ],
+      "transaction": [
+        "re_transaction_coordinator",
+        "re_transaction_doc_checklist"
+      ],
+      "coordination": [
+        "re_transaction_coordinator"
+      ],
+      "checklist": [
+        "re_transaction_doc_checklist"
+      ],
+      "decision-support": [
+        "re_valuation_analyst"
+      ],
+      "viewing": [
+        "re_viewing_coordinator",
+        "re_viewing_scheduling"
+      ],
+      "route": [
+        "re_viewing_scheduling",
+        "re_visit_route_sync"
       ]
     }
   },

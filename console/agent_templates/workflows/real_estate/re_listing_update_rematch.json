@@ -1,0 +1,121 @@
+{
+  "id": "re_listing_update_rematch",
+  "version": "0.13.5",
+  "vertical": "real-estate",
+  "title": "New/updated listing → buyer rematch",
+  "trigger": "event: listing.created_or_updated / market_listing.changed",
+  "participants": [
+    "re_market_listing_watcher",
+    "re_matching_refresh",
+    "re_property_matching_rank",
+    "re_consent_gdpr_handling",
+    "re_buyer_advisor",
+    "re_objection_followup"
+  ],
+  "steps": [
+    {
+      "order": 1,
+      "name": "detect_change",
+      "template_id": "re_market_listing_watcher",
+      "input_state": "market_signal",
+      "output_state": "change_event",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 2,
+      "name": "refresh_matches",
+      "template_id": "re_matching_refresh",
+      "input_state": "change_event",
+      "output_state": "updated_match_sets",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 3,
+      "name": "rank",
+      "template_id": "re_property_matching_rank",
+      "input_state": "buyer_brief",
+      "output_state": "ranked_matches",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 4,
+      "name": "consent_check",
+      "template_id": "re_consent_gdpr_handling",
+      "input_state": "buyer_contact",
+      "output_state": "consent_state",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 5,
+      "name": "prioritized_outreach",
+      "template_id": "re_buyer_advisor",
+      "input_state": "ranked_matches",
+      "output_state": "outreach_shortlist",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      },
+      "human_approval_gate": {
+        "required": true,
+        "approver_role": "human",
+        "gate_id": "human_agent_approves_outreach",
+        "note": "AI proposes; a named human approves. No autonomous send."
+      }
+    }
+  ],
+  "state_payload": {
+    "carried": [
+      "change_event",
+      "updated_match_sets",
+      "ranked_matches",
+      "consent_state",
+      "outreach_shortlist"
+    ],
+    "pii_minimization": "PII minimization: pass only the identifiers and fields each step needs. Cross-office and aggregate steps operate on pseudonymized lead IDs and office-level rollups, never raw client contact details. Consent state is checked before any outreach."
+  },
+  "human_approval_gates": [
+    "human_agent_approves_outreach"
+  ],
+  "sla": {
+    "outreach_window": "${REMATCH_OUTREACH_SLA_HOURS}"
+  },
+  "retries": {
+    "max_attempts": "${STEP_MAX_ATTEMPTS}",
+    "backoff": "exponential",
+    "dead_letter": "human_review_queue"
+  },
+  "terminal_states": [
+    "completed",
+    "failed",
+    "cancelled",
+    "expired"
+  ],
+  "audit_events": [
+    "re_listing_update_rematch.detect_change.completed",
+    "re_listing_update_rematch.refresh_matches.completed",
+    "re_listing_update_rematch.rank.completed",
+    "re_listing_update_rematch.consent_check.completed",
+    "re_listing_update_rematch.prioritized_outreach.completed",
+    "re_listing_update_rematch.human_agent_approves_outreach.approved"
+  ],
+  "outputs": {
+    "success": "re_listing_update_rematch.completed",
+    "failure": "re_listing_update_rematch.failed"
+  },
+  "notes": {
+    "compliance": "KYC/AML, GDPR/consent, and property-document checks are checklists and flags with mandatory human/legal review. No approval is ever automated.",
+    "no_invented_data": "SLAs, rates, fees and thresholds are configurable via ${VAR}; no market price, conversion rate or guarantee is invented."
+  }
+}

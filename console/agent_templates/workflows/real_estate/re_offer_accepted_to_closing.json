@@ -1,0 +1,146 @@
+{
+  "id": "re_offer_accepted_to_closing",
+  "version": "0.13.5",
+  "vertical": "real-estate",
+  "title": "Offer accepted → closing → after-sales",
+  "trigger": "event: offer.accepted",
+  "participants": [
+    "re_offer_negotiation_coordinator",
+    "re_kyc_aml_triage",
+    "re_kyc_aml_status_monitor",
+    "re_transaction_coordinator",
+    "re_transaction_doc_checklist",
+    "re_offer_deadline_monitor",
+    "closing_coordination",
+    "re_aftersales_referral_agent",
+    "re_referral_review_request"
+  ],
+  "steps": [
+    {
+      "order": 1,
+      "name": "kyc_triage",
+      "template_id": "re_kyc_aml_triage",
+      "input_state": "accepted_offer",
+      "output_state": "kyc_status",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 2,
+      "name": "kyc_signoff",
+      "template_id": "re_kyc_aml_status_monitor",
+      "input_state": "kyc_status",
+      "output_state": "kyc_cleared_flag",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      },
+      "human_approval_gate": {
+        "required": true,
+        "approver_role": "human",
+        "gate_id": "compliance_officer_clears_kyc_aml",
+        "note": "AI proposes; a named human approves. No autonomous send."
+      }
+    },
+    {
+      "order": 3,
+      "name": "coordinate",
+      "template_id": "re_transaction_coordinator",
+      "input_state": "accepted_offer",
+      "output_state": "transaction_plan",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 4,
+      "name": "track_deadlines",
+      "template_id": "re_offer_deadline_monitor",
+      "input_state": "transaction_plan",
+      "output_state": "deadline_alerts",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 5,
+      "name": "close",
+      "template_id": "closing_coordination",
+      "input_state": "transaction_plan",
+      "output_state": "closing_summary",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      },
+      "human_approval_gate": {
+        "required": true,
+        "approver_role": "human",
+        "gate_id": "human_completes_notary_and_completion",
+        "note": "AI proposes; a named human approves. No autonomous send."
+      }
+    },
+    {
+      "order": 6,
+      "name": "after_sales",
+      "template_id": "re_aftersales_referral_agent",
+      "input_state": "closing_summary",
+      "output_state": "aftersales_plan",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    }
+  ],
+  "state_payload": {
+    "carried": [
+      "kyc_status",
+      "kyc_cleared_flag",
+      "transaction_plan",
+      "deadline_alerts",
+      "closing_summary",
+      "aftersales_plan"
+    ],
+    "pii_minimization": "PII minimization: pass only the identifiers and fields each step needs. Cross-office and aggregate steps operate on pseudonymized lead IDs and office-level rollups, never raw client contact details. Consent state is checked before any outreach."
+  },
+  "human_approval_gates": [
+    "compliance_officer_clears_kyc_aml",
+    "human_completes_notary_and_completion"
+  ],
+  "sla": {
+    "kyc_review": "${KYC_REVIEW_SLA_HOURS}",
+    "deadline_buffer": "${DEADLINE_BUFFER_HOURS}"
+  },
+  "retries": {
+    "max_attempts": "${STEP_MAX_ATTEMPTS}",
+    "backoff": "exponential",
+    "dead_letter": "human_review_queue"
+  },
+  "terminal_states": [
+    "completed",
+    "failed",
+    "cancelled",
+    "expired"
+  ],
+  "audit_events": [
+    "re_offer_accepted_to_closing.kyc_triage.completed",
+    "re_offer_accepted_to_closing.kyc_signoff.completed",
+    "re_offer_accepted_to_closing.coordinate.completed",
+    "re_offer_accepted_to_closing.track_deadlines.completed",
+    "re_offer_accepted_to_closing.close.completed",
+    "re_offer_accepted_to_closing.after_sales.completed",
+    "re_offer_accepted_to_closing.compliance_officer_clears_kyc_aml.approved",
+    "re_offer_accepted_to_closing.human_completes_notary_and_completion.approved"
+  ],
+  "outputs": {
+    "success": "re_offer_accepted_to_closing.completed",
+    "failure": "re_offer_accepted_to_closing.failed"
+  },
+  "notes": {
+    "compliance": "KYC/AML, GDPR/consent, and property-document checks are checklists and flags with mandatory human/legal review. No approval is ever automated.",
+    "no_invented_data": "SLAs, rates, fees and thresholds are configurable via ${VAR}; no market price, conversion rate or guarantee is invented."
+  }
+}

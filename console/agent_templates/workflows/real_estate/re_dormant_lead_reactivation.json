@@ -1,0 +1,120 @@
+{
+  "id": "re_dormant_lead_reactivation",
+  "version": "0.13.5",
+  "vertical": "real-estate",
+  "title": "Dormant lead → reactivation → handoff",
+  "trigger": "schedule: ${DORMANT_SCAN_CRON}",
+  "participants": [
+    "re_dormant_lead_trigger",
+    "re_consent_gdpr_handling",
+    "re_lead_scoring_explainable",
+    "re_objection_followup",
+    "re_office_routing"
+  ],
+  "steps": [
+    {
+      "order": 1,
+      "name": "find_dormant",
+      "template_id": "re_dormant_lead_trigger",
+      "input_state": "lead_activity",
+      "output_state": "dormant_candidates",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 2,
+      "name": "consent_check",
+      "template_id": "re_consent_gdpr_handling",
+      "input_state": "dormant_candidates",
+      "output_state": "eligible_leads",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 3,
+      "name": "rescore",
+      "template_id": "re_lead_scoring_explainable",
+      "input_state": "eligible_leads",
+      "output_state": "rescored_leads",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 4,
+      "name": "draft_reactivation",
+      "template_id": "re_objection_followup",
+      "input_state": "rescored_leads",
+      "output_state": "reactivation_draft",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 5,
+      "name": "handoff",
+      "template_id": "re_office_routing",
+      "input_state": "rescored_leads",
+      "output_state": "agent_assignment",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      },
+      "human_approval_gate": {
+        "required": true,
+        "approver_role": "human",
+        "gate_id": "human_agent_accepts_handoff",
+        "note": "AI proposes; a named human approves. No autonomous send."
+      }
+    }
+  ],
+  "state_payload": {
+    "carried": [
+      "dormant_candidates",
+      "eligible_leads",
+      "rescored_leads",
+      "reactivation_draft",
+      "agent_assignment"
+    ],
+    "pii_minimization": "PII minimization: pass only the identifiers and fields each step needs. Cross-office and aggregate steps operate on pseudonymized lead IDs and office-level rollups, never raw client contact details. Consent state is checked before any outreach."
+  },
+  "human_approval_gates": [
+    "human_agent_accepts_handoff"
+  ],
+  "sla": {
+    "lead_age": "${DORMANT_LEAD_AGE_DAYS}"
+  },
+  "retries": {
+    "max_attempts": "${STEP_MAX_ATTEMPTS}",
+    "backoff": "exponential",
+    "dead_letter": "human_review_queue"
+  },
+  "terminal_states": [
+    "completed",
+    "failed",
+    "cancelled",
+    "expired"
+  ],
+  "audit_events": [
+    "re_dormant_lead_reactivation.find_dormant.completed",
+    "re_dormant_lead_reactivation.consent_check.completed",
+    "re_dormant_lead_reactivation.rescore.completed",
+    "re_dormant_lead_reactivation.draft_reactivation.completed",
+    "re_dormant_lead_reactivation.handoff.completed",
+    "re_dormant_lead_reactivation.human_agent_accepts_handoff.approved"
+  ],
+  "outputs": {
+    "success": "re_dormant_lead_reactivation.completed",
+    "failure": "re_dormant_lead_reactivation.failed"
+  },
+  "notes": {
+    "compliance": "KYC/AML, GDPR/consent, and property-document checks are checklists and flags with mandatory human/legal review. No approval is ever automated.",
+    "no_invented_data": "SLAs, rates, fees and thresholds are configurable via ${VAR}; no market price, conversion rate or guarantee is invented."
+  }
+}

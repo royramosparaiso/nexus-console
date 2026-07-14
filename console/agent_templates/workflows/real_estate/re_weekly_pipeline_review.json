@@ -1,0 +1,120 @@
+{
+  "id": "re_weekly_pipeline_review",
+  "version": "0.13.5",
+  "vertical": "real-estate",
+  "title": "Weekly branch pipeline review & forecast",
+  "trigger": "schedule: ${WEEKLY_REVIEW_CRON}",
+  "participants": [
+    "re_crm_dedupe",
+    "re_campaign_attribution",
+    "re_commission_forecast",
+    "re_commission_net_proceeds",
+    "re_branch_pipeline_manager"
+  ],
+  "steps": [
+    {
+      "order": 1,
+      "name": "hygiene",
+      "template_id": "re_crm_dedupe",
+      "input_state": "crm_snapshot",
+      "output_state": "data_quality_flags",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 2,
+      "name": "attribution",
+      "template_id": "re_campaign_attribution",
+      "input_state": "campaign_touches",
+      "output_state": "attribution_rollup",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 3,
+      "name": "forecast",
+      "template_id": "re_commission_forecast",
+      "input_state": "weighted_pipeline",
+      "output_state": "commission_forecast",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 4,
+      "name": "net_proceeds",
+      "template_id": "re_commission_net_proceeds",
+      "input_state": "pipeline_scenarios",
+      "output_state": "net_proceeds_scenarios",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      }
+    },
+    {
+      "order": 5,
+      "name": "review",
+      "template_id": "re_branch_pipeline_manager",
+      "input_state": "review_inputs",
+      "output_state": "weekly_review",
+      "retries": {
+        "max_attempts": "${STEP_MAX_ATTEMPTS}",
+        "backoff": "exponential"
+      },
+      "human_approval_gate": {
+        "required": true,
+        "approver_role": "human",
+        "gate_id": "branch_manager_signs_off_review",
+        "note": "AI proposes; a named human approves. No autonomous send."
+      }
+    }
+  ],
+  "state_payload": {
+    "carried": [
+      "data_quality_flags",
+      "attribution_rollup",
+      "commission_forecast",
+      "net_proceeds_scenarios",
+      "weekly_review"
+    ],
+    "pii_minimization": "PII minimization: pass only the identifiers and fields each step needs. Cross-office and aggregate steps operate on pseudonymized lead IDs and office-level rollups, never raw client contact details. Consent state is checked before any outreach."
+  },
+  "human_approval_gates": [
+    "branch_manager_signs_off_review"
+  ],
+  "sla": {
+    "review_publish": "${REVIEW_PUBLISH_SLA_HOURS}"
+  },
+  "retries": {
+    "max_attempts": "${STEP_MAX_ATTEMPTS}",
+    "backoff": "exponential",
+    "dead_letter": "human_review_queue"
+  },
+  "terminal_states": [
+    "completed",
+    "failed",
+    "cancelled",
+    "expired"
+  ],
+  "audit_events": [
+    "re_weekly_pipeline_review.hygiene.completed",
+    "re_weekly_pipeline_review.attribution.completed",
+    "re_weekly_pipeline_review.forecast.completed",
+    "re_weekly_pipeline_review.net_proceeds.completed",
+    "re_weekly_pipeline_review.review.completed",
+    "re_weekly_pipeline_review.branch_manager_signs_off_review.approved"
+  ],
+  "outputs": {
+    "success": "re_weekly_pipeline_review.completed",
+    "failure": "re_weekly_pipeline_review.failed"
+  },
+  "notes": {
+    "compliance": "KYC/AML, GDPR/consent, and property-document checks are checklists and flags with mandatory human/legal review. No approval is ever automated.",
+    "no_invented_data": "SLAs, rates, fees and thresholds are configurable via ${VAR}; no market price, conversion rate or guarantee is invented."
+  }
+}
