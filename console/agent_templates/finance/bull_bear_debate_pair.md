@@ -1,3 +1,19 @@
+---
+id: bull_bear_debate_pair
+name: bull_bear_debate_pair
+category: finance
+phase: null
+step: null
+role: debater
+mode: debate
+depends_on: [market_research_analyst, fundamental_analyst, macro_context_agent]
+produces: structured_json
+tools: []
+tags: [finance, debate, thesis, bull, bear, judge]
+gate: false
+optional: false
+---
+
 # bull_bear_debate_pair
 
 ## Identity

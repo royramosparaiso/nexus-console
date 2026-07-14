@@ -1,3 +1,19 @@
+---
+id: market_research_analyst
+name: market_research_analyst
+category: finance
+phase: null
+step: null
+role: analyst
+mode: single-shot
+depends_on: []
+produces: structured_json
+tools: [get_price_history, get_indicators, get_performance]
+tags: [finance, technical, equity, chart, openbb]
+gate: false
+optional: false
+---
+
 # market_research_analyst
 
 ## Identity

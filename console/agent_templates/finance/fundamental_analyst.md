@@ -1,3 +1,19 @@
+---
+id: fundamental_analyst
+name: fundamental_analyst
+category: finance
+phase: null
+step: null
+role: analyst
+mode: single-shot
+depends_on: []
+produces: structured_json
+tools: [get_income, get_balance, get_cashflow, get_estimates, get_recent_filings, get_insider_trading]
+tags: [finance, fundamentals, equity, filings, openbb, sec-edgar]
+gate: false
+optional: false
+---
+
 # fundamental_analyst
 
 ## Identity

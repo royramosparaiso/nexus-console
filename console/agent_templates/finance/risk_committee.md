@@ -1,3 +1,19 @@
+---
+id: risk_committee
+name: risk_committee
+category: finance
+phase: null
+step: null
+role: debater
+mode: debate
+depends_on: [bull_bear_debate_pair]
+produces: structured_json
+tools: [get_volatility_stats]
+tags: [finance, risk, sizing, committee, portfolio-manager]
+gate: false
+optional: false
+---
+
 # risk_committee
 
 ## Identity

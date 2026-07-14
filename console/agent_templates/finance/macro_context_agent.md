@@ -1,3 +1,19 @@
+---
+id: macro_context_agent
+name: macro_context_agent
+category: finance
+phase: null
+step: null
+role: analyst
+mode: single-shot
+depends_on: []
+produces: structured_json
+tools: [get_cpi, get_calendar, get_treasury_curve, get_reference_rates, get_commodity_spot]
+tags: [finance, macro, fred, rates, openbb]
+gate: false
+optional: false
+---
+
 # macro_context_agent
 
 ## Identity

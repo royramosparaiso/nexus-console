@@ -1,3 +1,19 @@
+---
+id: memory_reflector
+name: memory_reflector
+category: finance
+phase: null
+step: null
+role: reflector
+mode: reflector
+depends_on: [risk_committee]
+produces: reflection
+tools: [get_price_at, append_reflection, list_pending_reflections]
+tags: [finance, memory, postmortem, outcome, reflection]
+gate: false
+optional: false
+---
+
 # memory_reflector
 
 ## Identity
