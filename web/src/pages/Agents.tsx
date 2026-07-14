@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Cog, Puzzle, Search, X, Rocket, Check, AlertCircle } from "lucide-react";
+import { Bot, Cog, Puzzle, Search, X, Rocket, Check, AlertCircle, RotateCcw } from "lucide-react";
 import { apiFetch } from "../lib/api";
 import { useOptionalToast } from "../components/Toast";
 
@@ -585,7 +585,19 @@ function DeployDialog({
           >
             {terminalStatus ? "Close" : "Cancel"}
           </button>
-          {!accepted && (
+          {((terminalStatus && terminalStatus !== "applied") ||
+            (!accepted && deployError)) && (
+            <button
+              onClick={deploy}
+              disabled={!canDeploy || !selectedId || dispatching}
+              data-testid="button-retry-deploy"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded bg-primary text-white hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              {dispatching ? "Retrying…" : "Retry"}
+            </button>
+          )}
+          {!accepted && !deployError && (
             <button
               onClick={deploy}
               disabled={!canDeploy || !selectedId || dispatching}

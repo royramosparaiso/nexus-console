@@ -329,6 +329,92 @@ test("deploy shows failed stage and error toast when platform rejects", async ({
   await expect(page.getByTestId("toast-error")).toBeVisible();
   // Modal does NOT auto-close on failure — user should stay to read the error.
   await expect(page.getByTestId("dialog-deploy")).toBeVisible();
+  // Retry button appears on failed terminal state.
+  await expect(page.getByTestId("button-retry-deploy")).toBeVisible();
+});
+
+test("retry after failed deploy re-dispatches and succeeds", async ({
+  page,
+}) => {
+  // Track how many times the POST /command endpoint has been hit. The stub
+  // returns 'failed' on the first attempt (via statusSequence) and 'applied'
+  // on the retry by re-installing the route after the first request lands.
+  let postCount = 0;
+  const commandRequests: string[] = [];
+
+  await stubApi(page, { statusSequence: ["queued", "in_progress", "failed"] });
+
+  // Override the POST route to count attempts. First call keeps the default
+  // failed sequence, second call swaps in a fresh sequence ending in applied.
+  await page.route("**/api/instances/*/command", async (route: Route) => {
+    const body = route.request().postData();
+    if (body) commandRequests.push(body);
+    postCount += 1;
+    if (postCount === 2) {
+      // Second attempt: re-install the status polling route to return applied.
+      let cursor = 0;
+      const seq = ["queued", "in_progress", "applied"];
+      await page.route("**/api/instances/*/commands/*", async (r: Route) => {
+        const status = seq[Math.min(cursor, seq.length - 1)];
+        cursor += 1;
+        const url = new URL(r.request().url());
+        const parts = url.pathname.split("/");
+        await r.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            cmd_id: parts[parts.length - 1],
+            instance_id: parts[parts.length - 3],
+            kind: "deploy_agent",
+            status,
+            detail: null,
+            error_code: null,
+            created_at: "2026-07-14T00:00:00Z",
+            updated_at: "2026-07-14T00:00:01Z",
+            applied_at:
+              status === "applied" ? "2026-07-14T00:00:01Z" : null,
+          }),
+        });
+      });
+    }
+    await route.fulfill({
+      status: 202,
+      contentType: "application/json",
+      body: JSON.stringify({
+        accepted: true,
+        cmd_id: `cmd-attempt-${postCount}`,
+        status: "queued",
+        detail: null,
+      }),
+    });
+  });
+
+  await page.goto("/#/agents");
+  await page.getByTestId("card-banking_ops_agent").click();
+  await page.getByTestId("button-deploy").click();
+  await page.getByTestId("button-confirm-deploy").click();
+
+  // First attempt: fails.
+  await expect(page.getByTestId("text-deploy-error")).toBeVisible({
+    timeout: 10_000,
+  });
+  await expect(page.getByTestId("toast-error").first()).toBeVisible();
+
+  // Click Retry → second attempt should succeed.
+  await page.getByTestId("button-retry-deploy").click();
+  await expect(page.getByTestId("text-deploy-success")).toBeVisible({
+    timeout: 10_000,
+  });
+  await expect(page.getByTestId("toast-success")).toBeVisible();
+
+  // Modal auto-closes on the successful retry.
+  await expect(page.getByTestId("dialog-deploy")).toBeHidden({
+    timeout: 5_000,
+  });
+
+  // Both POSTs actually went out.
+  expect(postCount).toBe(2);
+  expect(commandRequests).toHaveLength(2);
 });
 
 test("deploy button is disabled for skills", async ({ page }) => {
@@ -375,4 +461,6 @@ test("deploy surfaces backend errors", async ({ page }) => {
   // block inside the dialog and the global error toast both show up.
   await expect(page.getByTestId("text-deploy-error")).toBeVisible();
   await expect(page.getByTestId("toast-error")).toBeVisible();
+  // Retry button also surfaces on POST-stage failures (before accepted).
+  await expect(page.getByTestId("button-retry-deploy")).toBeVisible();
 });
