@@ -19,7 +19,7 @@ export default function Instances() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const refresh = () => {
     apiFetch<Instance[]>("/instances")
       .then((data) => {
         setInstances(data);
@@ -27,6 +27,15 @@ export default function Instances() {
       })
       .catch((e) => setError(String(e)))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    refresh();
+    // Refresh when a deploy or other instance mutation completes anywhere in
+    // the app. Broadcast via CustomEvent so we don't need a store.
+    const handler = () => refresh();
+    window.addEventListener("nexus:instance-updated", handler);
+    return () => window.removeEventListener("nexus:instance-updated", handler);
   }, []);
 
   return (

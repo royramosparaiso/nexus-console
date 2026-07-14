@@ -42,6 +42,15 @@ async def client(session_factory) -> AsyncGenerator[AsyncClient, None]:
             yield s
 
     app.dependency_overrides[get_db] = _get_db
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-        yield c
-    app.dependency_overrides.clear()
+
+    # Background tasks (e.g. command dispatch) open their own session via
+    # app.db.SessionLocal — point it at the test factory too.
+    from app import db as db_module
+    original_session_local = db_module.SessionLocal
+    db_module.SessionLocal = session_factory
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+            yield c
+    finally:
+        db_module.SessionLocal = original_session_local
+        app.dependency_overrides.clear()

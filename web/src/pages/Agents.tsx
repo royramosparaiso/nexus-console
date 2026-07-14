@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Bot, Cog, Puzzle, Search, X, Rocket, Check, AlertCircle } from "lucide-react";
 import { apiFetch } from "../lib/api";
+import { useOptionalToast } from "../components/Toast";
 
 // ---------- Types ----------
 
@@ -69,7 +70,7 @@ type Instance = {
   created_at: string;
 };
 
-type CommandResponse = {
+type CommandAccepted = {
   accepted: boolean;
   cmd_id: string;
   status: string;
@@ -227,19 +228,43 @@ function CardRow({
 
 // ---------- Deploy dialog ----------
 
+type CommandStatus = "queued" | "in_progress" | "applied" | "failed" | "rejected";
+
+interface CommandLog {
+  cmd_id: string;
+  instance_id: string;
+  kind: string;
+  status: CommandStatus;
+  detail: string | null;
+  error_code: string | null;
+  created_at: string;
+  updated_at: string;
+  applied_at: string | null;
+}
+
+const TERMINAL: CommandStatus[] = ["applied", "failed", "rejected"];
+
 function DeployDialog({
   card,
   onClose,
+  onDeployed,
 }: {
   card: Card;
   onClose: () => void;
+  onDeployed?: (instanceId: string, status: CommandStatus) => void;
 }) {
+  const toast = useOptionalToast();
   const [instances, setInstances] = useState<Instance[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [deploying, setDeploying] = useState(false);
-  const [result, setResult] = useState<CommandResponse | null>(null);
+  const [dispatching, setDispatching] = useState(false);
+  const [accepted, setAccepted] = useState<CommandAccepted | null>(null);
+  const [progress, setProgress] = useState<CommandLog | null>(null);
   const [deployError, setDeployError] = useState<string | null>(null);
+  // Tracks the setTimeout that auto-closes the modal after success.
+  const autoCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollAbort = useRef(false);
+  const notifiedRef = useRef(false);
 
   useEffect(() => {
     apiFetch<Instance[]>("/instances")
@@ -251,15 +276,76 @@ function DeployDialog({
       .catch((e) => setLoadError(String(e)));
   }, []);
 
-  const canDeploy = card.artifact_type !== "skill";
+  useEffect(() => {
+    return () => {
+      pollAbort.current = true;
+      if (autoCloseTimer.current) {
+        clearTimeout(autoCloseTimer.current);
+        autoCloseTimer.current = null;
+      }
+    };
+  }, []);
 
+  const canDeploy = card.artifact_type !== "skill";
   const runningInstances = instances?.filter((i) => i.status === "running") ?? [];
+
+  const pollStatus = async (instanceId: string, cmdId: string) => {
+    pollAbort.current = false;
+    // Poll every 500ms; give up after 60s (120 attempts).
+    for (let attempt = 0; attempt < 120; attempt++) {
+      if (pollAbort.current) return null;
+      try {
+        const log = await apiFetch<CommandLog>(
+          `/instances/${instanceId}/commands/${cmdId}`,
+        );
+        setProgress(log);
+        if (TERMINAL.includes(log.status)) return log;
+      } catch (e) {
+        // Transient network hiccup — keep polling a few more times before
+        // surfacing the error to the user.
+        if (attempt > 5) {
+          setDeployError(`Lost connection while polling: ${String(e)}`);
+          return null;
+        }
+      }
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    setDeployError("Command polling timed out after 60s");
+    return null;
+  };
+
+  const notifyTerminal = (log: CommandLog) => {
+    if (notifiedRef.current) return;
+    notifiedRef.current = true;
+
+    const instanceName =
+      runningInstances.find((i) => i.instance_id === log.instance_id)?.name ??
+      "instance";
+    if (log.status === "applied") {
+      toast.push({
+        tone: "success",
+        title: `Deployed ${card.id}`,
+        description: `Applied on ${instanceName}. cmd_id ${log.cmd_id.slice(0, 8)}…`,
+        duration: 5000,
+      });
+    } else {
+      toast.push({
+        tone: "error",
+        title: `Deploy ${log.status}: ${card.id}`,
+        description: log.detail ?? log.error_code ?? "See Instances for details.",
+        duration: 8000,
+      });
+    }
+    onDeployed?.(log.instance_id, log.status);
+  };
 
   const deploy = async () => {
     if (!selectedId) return;
-    setDeploying(true);
+    setDispatching(true);
     setDeployError(null);
-    setResult(null);
+    setAccepted(null);
+    setProgress(null);
+    notifiedRef.current = false;
     try {
       const payload = {
         template_id: card.id,
@@ -273,20 +359,52 @@ function DeployDialog({
         depends_on: card.depends_on,
         verticals: card.verticals,
       };
-      const res = await apiFetch<CommandResponse>(
+      const res = await apiFetch<CommandAccepted>(
         `/instances/${selectedId}/command`,
         {
           method: "POST",
           body: JSON.stringify({ kind: "deploy_agent", payload }),
         },
       );
-      setResult(res);
+      setAccepted(res);
+      // Seed progress with the initial queued state before the first poll
+      // lands, so the UI shows the pipeline immediately.
+      setProgress({
+        cmd_id: res.cmd_id,
+        instance_id: selectedId,
+        kind: "deploy_agent",
+        status: (res.status as CommandStatus) ?? "queued",
+        detail: res.detail,
+        error_code: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        applied_at: null,
+      });
+      const final = await pollStatus(selectedId, res.cmd_id);
+      if (final) {
+        notifyTerminal(final);
+        if (final.status === "applied") {
+          // Give the user 2s to read the success state, then auto-close.
+          autoCloseTimer.current = setTimeout(() => {
+            onClose();
+          }, 2000);
+        }
+      }
     } catch (e) {
       setDeployError(String(e));
+      toast.push({
+        tone: "error",
+        title: `Deploy failed: ${card.id}`,
+        description: String(e),
+        duration: 8000,
+      });
     } finally {
-      setDeploying(false);
+      setDispatching(false);
     }
   };
+
+  const terminalStatus = progress && TERMINAL.includes(progress.status) ? progress.status : null;
+  const isSuccess = terminalStatus === "applied";
 
   return (
     <div
@@ -329,20 +447,44 @@ function DeployDialog({
             </div>
           )}
 
-          {result ? (
+          {accepted && (
+            <ProgressPipeline progress={progress} />
+          )}
+
+          {isSuccess && (
             <div
               className="flex items-start gap-2 p-3 rounded border border-success/30 bg-success/10 text-xs text-success"
               data-testid="text-deploy-success"
             >
               <Check className="w-4 h-4 shrink-0 mt-0.5" />
               <div className="space-y-1">
-                <div className="font-semibold">Command accepted</div>
-                <div className="font-mono break-all">cmd_id: {result.cmd_id}</div>
-                <div>status: {result.status}</div>
-                {result.detail && <div>{result.detail}</div>}
+                <div className="font-semibold">Applied</div>
+                <div className="font-mono break-all">cmd_id: {progress!.cmd_id}</div>
+                {progress?.applied_at && (
+                  <div>applied at {new Date(progress.applied_at).toLocaleTimeString()}</div>
+                )}
+                <div className="text-text-muted">This dialog will close automatically.</div>
               </div>
             </div>
-          ) : (
+          )}
+
+          {terminalStatus && terminalStatus !== "applied" && (
+            <div
+              className="flex items-start gap-2 p-3 rounded border border-error/30 bg-error/10 text-xs text-error"
+              data-testid="text-deploy-error"
+            >
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <div className="font-semibold">Command {terminalStatus}</div>
+                {progress?.detail && <div>{progress.detail}</div>}
+                {progress?.error_code && (
+                  <div className="font-mono">error_code: {progress.error_code}</div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {!accepted && (
             <>
               <div>
                 <div className="text-[11px] uppercase tracking-wide text-text-muted font-semibold mb-2">
@@ -441,17 +583,17 @@ function DeployDialog({
             data-testid="button-cancel-deploy"
             className="px-3 py-1.5 text-sm text-text-muted hover:text-text"
           >
-            {result ? "Close" : "Cancel"}
+            {terminalStatus ? "Close" : "Cancel"}
           </button>
-          {!result && (
+          {!accepted && (
             <button
               onClick={deploy}
-              disabled={!canDeploy || !selectedId || deploying}
+              disabled={!canDeploy || !selectedId || dispatching}
               data-testid="button-confirm-deploy"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded bg-primary text-white hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Rocket className="w-3.5 h-3.5" />
-              {deploying ? "Deploying…" : "Deploy"}
+              {dispatching ? "Sending…" : "Deploy"}
             </button>
           )}
         </div>
@@ -460,6 +602,66 @@ function DeployDialog({
   );
 }
 
+function ProgressPipeline({ progress }: { progress: CommandLog | null }) {
+  const stages: { key: CommandStatus; label: string }[] = [
+    { key: "queued", label: "Queued" },
+    { key: "in_progress", label: "Running" },
+    { key: "applied", label: "Applied" },
+  ];
+  const currentIndex = (() => {
+    if (!progress) return -1;
+    if (progress.status === "applied") return 2;
+    if (progress.status === "in_progress") return 1;
+    if (progress.status === "queued") return 0;
+    // failed / rejected → freeze at whichever stage we reached
+    return progress.status === "failed" || progress.status === "rejected" ? 1 : -1;
+  })();
+  const failed = progress?.status === "failed" || progress?.status === "rejected";
+
+  return (
+    <div
+      className="flex items-center gap-2"
+      data-testid="progress-pipeline"
+      data-status={progress?.status ?? "idle"}
+    >
+      {stages.map((s, i) => {
+        const done = i < currentIndex;
+        const active = i === currentIndex && !failed;
+        const stageFailed = failed && i === currentIndex;
+        return (
+          <div key={s.key} className="flex items-center gap-2 flex-1">
+            <div
+              data-testid={`stage-${s.key}`}
+              data-active={active}
+              data-done={done}
+              data-failed={stageFailed}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-medium ${
+                stageFailed
+                  ? "bg-error/15 text-error"
+                  : done
+                    ? "bg-primary/15 text-primary"
+                    : active
+                      ? "bg-primary/25 text-primary animate-pulse"
+                      : "bg-surface-alt text-text-muted"
+              }`}
+            >
+              {done ? <Check className="w-3 h-3" /> : null}
+              {stageFailed ? <AlertCircle className="w-3 h-3" /> : null}
+              {s.label}
+            </div>
+            {i < stages.length - 1 && (
+              <div
+                className={`h-px flex-1 ${
+                  done ? "bg-primary" : "bg-border"
+                }`}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 // ---------- Detail panel ----------
 
 function DetailPanel({
@@ -520,7 +722,18 @@ function DetailPanel({
         </div>
       </div>
       {detail && showDeploy && (
-        <DeployDialog card={detail.card} onClose={() => setShowDeploy(false)} />
+        <DeployDialog
+          card={detail.card}
+          onClose={() => setShowDeploy(false)}
+          onDeployed={(instanceId, status) => {
+            // Broadcast so any listening page (e.g. Instances) can refresh.
+            window.dispatchEvent(
+              new CustomEvent("nexus:instance-updated", {
+                detail: { instance_id: instanceId, status },
+              }),
+            );
+          }}
+        />
       )}
       <div className="overflow-auto p-4 flex-1">
         {error && <div className="text-error text-sm">{error}</div>}

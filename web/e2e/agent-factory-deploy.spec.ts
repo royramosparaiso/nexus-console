@@ -149,10 +149,26 @@ const RUNNING_INSTANCE = {
   bootstrapped_at: "2026-07-14T00:00:00Z",
 };
 
+const DEFAULT_CMD_ID = "11111111-1111-4111-8111-111111111111";
+
 async function stubApi(
   page: import("@playwright/test").Page,
-  opts: { instances?: unknown[]; commandStatus?: number; commandBody?: unknown } = {},
+  opts: {
+    instances?: unknown[];
+    commandStatus?: number;
+    commandBody?: unknown;
+    // Sequence of statuses returned by GET /commands/{cmd_id}. The last entry
+    // is returned indefinitely so the client eventually sees a terminal state.
+    statusSequence?: Array<
+      "queued" | "in_progress" | "applied" | "failed" | "rejected"
+    >;
+    cmdId?: string;
+  } = {},
 ) {
+  const cmdId = opts.cmdId ?? DEFAULT_CMD_ID;
+  const sequence = opts.statusSequence ?? ["queued", "in_progress", "applied"];
+  let cursor = 0;
+
   await page.route("**/api/agent-templates", async (route: Route) => {
     await route.fulfill({
       status: 200,
@@ -174,15 +190,38 @@ async function stubApi(
       body: JSON.stringify(opts.instances ?? [RUNNING_INSTANCE]),
     });
   });
+  await page.route("**/api/instances/*/commands/*", async (route: Route) => {
+    const status = sequence[Math.min(cursor, sequence.length - 1)];
+    cursor += 1;
+    const url = new URL(route.request().url());
+    const parts = url.pathname.split("/");
+    const returnedCmd = parts[parts.length - 1];
+    const instanceId = parts[parts.length - 3];
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        cmd_id: returnedCmd,
+        instance_id: instanceId,
+        kind: "deploy_agent",
+        status,
+        detail: status === "failed" ? "platform said no" : null,
+        error_code: null,
+        created_at: "2026-07-14T00:00:00Z",
+        updated_at: "2026-07-14T00:00:01Z",
+        applied_at: status === "applied" ? "2026-07-14T00:00:01Z" : null,
+      }),
+    });
+  });
   await page.route("**/api/instances/*/command", async (route: Route) => {
     await route.fulfill({
-      status: opts.commandStatus ?? 200,
+      status: opts.commandStatus ?? 202,
       contentType: "application/json",
       body: JSON.stringify(
         opts.commandBody ?? {
           accepted: true,
-          cmd_id: "11111111-1111-4111-8111-111111111111",
-          status: "accepted",
+          cmd_id: cmdId,
+          status: "queued",
           detail: null,
         },
       ),
@@ -209,19 +248,23 @@ test("artifact filter narrows results", async ({ page }) => {
   await expect(page.getByTestId("card-banking_ops_agent")).not.toBeVisible();
 });
 
-test("deploy button opens dialog and sends command", async ({ page }) => {
+test("deploy dispatches command then polls to applied with auto-close and toast", async ({
+  page,
+}) => {
   const commandRequests: string[] = [];
   await stubApi(page);
+  // Wrap the POST route so we can capture the outgoing body while still
+  // returning the 202 accepted envelope.
   await page.route("**/api/instances/*/command", async (route: Route) => {
     const body = route.request().postData();
     if (body) commandRequests.push(body);
     await route.fulfill({
-      status: 200,
+      status: 202,
       contentType: "application/json",
       body: JSON.stringify({
         accepted: true,
         cmd_id: "22222222-2222-4222-8222-222222222222",
-        status: "accepted",
+        status: "queued",
         detail: null,
       }),
     });
@@ -239,7 +282,26 @@ test("deploy button opens dialog and sends command", async ({ page }) => {
   ).toBeVisible();
 
   await page.getByTestId("button-confirm-deploy").click();
-  await expect(page.getByTestId("text-deploy-success")).toBeVisible();
+
+  // Pipeline should render (queued → in_progress → applied)
+  await expect(page.getByTestId("progress-pipeline")).toBeVisible();
+  await expect(page.getByTestId("text-deploy-success")).toBeVisible({
+    timeout: 10_000,
+  });
+
+  // Global toast pops from the ToastProvider portal, not from inside the modal.
+  await expect(page.getByTestId("toast-success")).toBeVisible();
+  await expect(page.getByTestId("toast-title")).toContainText(
+    "Deployed banking_ops_agent",
+  );
+
+  // Modal auto-closes ~2s after success.
+  await expect(page.getByTestId("dialog-deploy")).toBeHidden({
+    timeout: 5_000,
+  });
+
+  // Toast survives modal close (proves it's a global overlay).
+  await expect(page.getByTestId("toast-success")).toBeVisible();
 
   // Verify the request went out with kind=deploy_agent and correct template id
   expect(commandRequests).toHaveLength(1);
@@ -247,6 +309,26 @@ test("deploy button opens dialog and sends command", async ({ page }) => {
   expect(parsed.kind).toBe("deploy_agent");
   expect(parsed.payload.template_id).toBe("banking_ops_agent");
   expect(parsed.payload.artifact_type).toBe("agent");
+});
+
+test("deploy shows failed stage and error toast when platform rejects", async ({
+  page,
+}) => {
+  await stubApi(page, {
+    statusSequence: ["queued", "in_progress", "failed"],
+  });
+
+  await page.goto("/#/agents");
+  await page.getByTestId("card-banking_ops_agent").click();
+  await page.getByTestId("button-deploy").click();
+  await page.getByTestId("button-confirm-deploy").click();
+
+  await expect(page.getByTestId("text-deploy-error")).toBeVisible({
+    timeout: 10_000,
+  });
+  await expect(page.getByTestId("toast-error")).toBeVisible();
+  // Modal does NOT auto-close on failure — user should stay to read the error.
+  await expect(page.getByTestId("dialog-deploy")).toBeVisible();
 });
 
 test("deploy button is disabled for skills", async ({ page }) => {
@@ -289,5 +371,8 @@ test("deploy surfaces backend errors", async ({ page }) => {
   await page.getByTestId("card-banking_ops_agent").click();
   await page.getByTestId("button-deploy").click();
   await page.getByTestId("button-confirm-deploy").click();
+  // 409 rejects at the POST stage before we ever start polling — the error
+  // block inside the dialog and the global error toast both show up.
   await expect(page.getByTestId("text-deploy-error")).toBeVisible();
+  await expect(page.getByTestId("toast-error")).toBeVisible();
 });

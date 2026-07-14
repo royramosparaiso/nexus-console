@@ -103,3 +103,28 @@ class NotificationRow(Base):
     kind: Mapped[str] = mapped_column(String(64), index=True)
     payload: Mapped[dict] = mapped_column(JSON)
     verified: Mapped[bool] = mapped_column(default=False)
+
+
+class CommandLogRow(Base):
+    """Audit + status tracking for commands sent to Platform instances.
+
+    Each row represents a signed command envelope. Status transitions:
+        queued → in_progress → applied | failed | rejected
+
+    The Console sets `queued` on insert, `in_progress` right before POSTing
+    to the Platform, and then whatever the Platform returns. This lets the
+    UI poll for progress on commands that would otherwise look synchronous.
+    """
+
+    __tablename__ = "command_log"
+
+    cmd_id: Mapped[UUID] = mapped_column(_UUID(), primary_key=True)
+    instance_id: Mapped[UUID] = mapped_column(_UUID(), index=True)
+    kind: Mapped[str] = mapped_column(String(64), index=True)
+    payload: Mapped[dict] = mapped_column(JSON)
+    status: Mapped[str] = mapped_column(String(32), default="queued", index=True)
+    detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(default=_now, index=True)
+    updated_at: Mapped[datetime] = mapped_column(default=_now)
+    applied_at: Mapped[datetime | None] = mapped_column(nullable=True)

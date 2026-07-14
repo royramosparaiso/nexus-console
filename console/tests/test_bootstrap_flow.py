@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 from uuid import uuid4
 
@@ -78,7 +79,10 @@ class _MockPlatform:
             body = await request.body()
             payload = verify_token(body.decode(), self.console_pubkey)
             self.commands_received.append(payload["command"]["kind"])
-            return {"cmd_id": payload["cmd_id"], "status": "queued", "detail": None}
+            # The real Platform dispatcher applies synchronously and returns
+            # APPLIED. Match that contract so the Console’s command log ends
+            # in a terminal state.
+            return {"cmd_id": payload["cmd_id"], "status": "applied", "detail": None}
 
         self.app = app
 
@@ -134,9 +138,30 @@ async def test_full_bootstrap_and_command_roundtrip(client, session_factory):
             f"/instances/{iid}/command",
             json={"kind": CommandKind.CREATE_SPACE.value, "payload": {"name": "clients"}},
         )
-        assert r.status_code == 200, r.text
+        assert r.status_code == 202, r.text
         body = r.json()
         assert body["status"] == "queued"
+        assert body["accepted"] is True
+        cmd_id = body["cmd_id"]
+
+        # Background task dispatches asynchronously — poll until the mock
+        # actually receives the command.
+        for _ in range(50):
+            if mock.commands_received:
+                break
+            await asyncio.sleep(0.02)
+
+        # Poll the status endpoint until the command reaches a terminal state.
+        terminal = {"applied", "failed", "rejected"}
+        final_status = None
+        for _ in range(100):
+            sr = await client.get(f"/instances/{iid}/commands/{cmd_id}")
+            assert sr.status_code == 200, sr.text
+            final_status = sr.json()["status"]
+            if final_status in terminal:
+                break
+            await asyncio.sleep(0.02)
+        assert final_status == "applied", final_status
     finally:
         instances_mod.httpx.AsyncClient = original
 

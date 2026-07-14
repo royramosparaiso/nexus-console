@@ -351,7 +351,7 @@ def test_readme_lists_every_template() -> None:
 
 def test_catalog_json_is_wellformed_and_covers_every_card() -> None:
     payload = json.loads(CATALOG_JSON.read_text(encoding="utf-8"))
-    assert payload["version"] == "0.13.1"
+    assert payload["version"] == "0.13.2"
     assert payload["total"] == len(ALL_CARDS)
     ids_in_json = {c["id"] for c in payload["cards"]}
     ids_on_disk = {fm["id"] for _, fm in ALL_CARDS}
