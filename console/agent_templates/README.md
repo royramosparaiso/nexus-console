@@ -1,6 +1,6 @@
 # Agent Templates — Master Index
 
-Catalogue of **221 cards** across two independent axes: **46 project-lifecycle cards** (phases 0-5 + standalone finance) and **175 business-operations cards** (7 domains × 4 rollout stages × 3 autonomy levels). By artefact: **161 agents · 52 sidecars · 8 skills**.
+Catalogue of **222 cards** across two independent axes: **46 project-lifecycle cards** (phases 0-5 + standalone finance) and **176 business-operations cards** (7 domains × 4 rollout stages × 3 autonomy levels). By artefact: **161 agents · 52 sidecars · 9 skills**.
 
 Every card carries YAML frontmatter (see [`_schema.md`](_schema.md)). Regenerate this index and the machine-readable [`catalog.json`](catalog.json) via `scripts/build_agent_templates_index.py`.
 
@@ -118,7 +118,7 @@ Templates that operate a running business — organised by domain, then plotted 
 | [Sales](#sales) | 33 |
 | [Deals](#deals) | 28 |
 | [Marketing](#marketing) | 24 |
-| [Operations](#operations) | 31 |
+| [Operations](#operations) | 32 |
 | [Intelligence](#intelligence) | 21 |
 | [Customer](#customer) | 16 |
 | [Back Office](#back-office) | 22 |
@@ -247,7 +247,7 @@ Templates that operate a running business — organised by domain, then plotted 
 
 | Rollout \ Autonomy | human-led | human-assisted | fully-autonomous |
 | --- | --- | --- | --- |
-| 1-foundation | 🤖 [`architecture_decisions`](operations/architecture_decisions.md)<br/>🤖 [`scope_calls`](operations/scope_calls.md)<br/>🤖 [`sop_generation`](operations/sop_generation.md) | 🧩 [`local_inference`](skills/local_inference.md) |  |
+| 1-foundation | 🤖 [`architecture_decisions`](operations/architecture_decisions.md)<br/>🤖 [`scope_calls`](operations/scope_calls.md)<br/>🤖 [`sop_generation`](operations/sop_generation.md) | 🧩 [`local_inference`](skills/local_inference.md)<br/>🧩 [`voicebox_tts`](skills/voicebox_tts.md) |  |
 | 2-capture |  | 🤖 [`access_collection`](operations/access_collection.md)<br/>⚙️ [`data_migration`](operations/data_migration.md)<br/>🤖 [`qa_verification`](operations/qa_verification.md) | ⚙️ [`context_maintenance`](operations/context_maintenance.md)<br/>🧩 [`document_extraction`](skills/document_extraction.md)<br/>⚙️ [`transcript_processing`](operations/transcript_processing.md) |
 | 3-generate |  | 🤖 [`handoff_docs`](operations/handoff_docs.md)<br/>🤖 [`integration_builds`](operations/integration_builds.md) | 🤖 [`kickoff_pack`](operations/kickoff_pack.md)<br/>🤖 [`meeting_follow_ups`](operations/meeting_follow_ups.md)<br/>⚙️ [`project_scaffolding`](operations/project_scaffolding.md) |
 | 4-orchestrate | 🤖 [`client_trust`](operations/client_trust.md)<br/>🤖 [`final_ship_approval`](operations/final_ship_approval.md) | 🤖 [`agent_evaluation`](operations/agent_evaluation.md)<br/>🤖 [`incident_response`](operations/incident_response.md)<br/>⚙️ [`monitoring_alerting`](operations/monitoring_alerting.md) | ⚙️ [`cost_usage_tracking`](operations/cost_usage_tracking.md)<br/>⚙️ [`portal_sync`](operations/portal_sync.md)<br/>🤖 [`status_updates`](operations/status_updates.md) |
@@ -257,6 +257,7 @@ Templates that operate a running business — organised by domain, then plotted 
 | Stage | Autonomy | Kind | Id | Role | Mode | Produces |
 | --- | --- | --- | --- | --- | --- | --- |
 | 1-foundation | human-assisted | skill | [`local_inference`](skills/local_inference.md) | — | — | structured_json |
+| 1-foundation | human-assisted | skill | [`voicebox_tts`](skills/voicebox_tts.md) | — | — | structured_json |
 | 1-foundation | human-led | agent | [`architecture_decisions`](operations/architecture_decisions.md) | analyst | single-shot | markdown_report |
 | 1-foundation | human-led | agent | [`scope_calls`](operations/scope_calls.md) | writer | single-shot | markdown_report |
 | 1-foundation | human-led | agent | [`sop_generation`](operations/sop_generation.md) | writer | single-shot | markdown_report |
@@ -443,6 +444,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | [`fundraising_strategist`](scaling/fundraising_strategist.md) | scaling | — |
 | [`mobile_app_specifier`](scaling/mobile_app_specifier.md) | scaling | — |
 | [`startup_valuation_analyst`](scaling/startup_valuation_analyst.md) | scaling | — |
+| [`voicebox_tts`](skills/voicebox_tts.md) | operations | operations |
 
 ## Index by role
 
@@ -459,7 +461,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `reviewer` | 6 | `brand_voice_final_approvals`, `compliance_signoff`, `final_ship_approval`, `proposal_final_signoff`, `qa_verification`, `spend_authority` |
 | `worker` | 33 | `account_monitoring`, `analytics_rollup`, `bar_inventory`, `budget_tracking`, `calendar_management`, `call_capture`, `comment_cta_fulfillment`, `context_maintenance`, … (+25) |
 | `writer` | 67 | `access_collection`, `ad_creative_generator`, `agreement_drafting`, `banking_operations`, `brand_identity_writer`, `brand_voice_guide`, `brief_generation`, `client_reporting`, … (+59) |
-| `—` | 8 | `account_enrichment`, `contact_enrichment`, `data_visualization`, `document_extraction`, `email_verification`, `funding_financials_lookup`, `local_inference`, `tech_stack_detection` |
+| `—` | 9 | `account_enrichment`, `contact_enrichment`, `data_visualization`, `document_extraction`, `email_verification`, `funding_financials_lookup`, `local_inference`, `tech_stack_detection`, … (+1) |
 
 ## Index by tag
 
@@ -691,7 +693,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `list` | `list_building` |
 | `listing` | `listing_generator` |
 | `litertjs` | `local_inference` |
-| `local` | `web_maps_scraping` |
+| `local` | `voicebox_tts`, `web_maps_scraping` |
 | `logo` | `brand_identity_writer` |
 | `long-form` | `long_form_content_writer` |
 | `lookalike` | `lookalike_modeling` |
@@ -704,6 +706,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `market-sizing` | `tam_market_sizing` |
 | `matching` | `buyer_matching` |
 | `matrix` | `risk_assessor` |
+| `mcp` | `voicebox_tts` |
 | `meddpicc` | `buying_committee_mapping`, `lead_qualification` |
 | `meeting` | `meeting_booking` |
 | `meetings` | `meeting_follow_ups`, `transcript_processing` |
@@ -859,7 +862,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `shared-inbox` | `inbox_triage` |
 | `signals` | `account_monitoring`, `health_scoring`, `reading_between_lines`, `social_mining`, `trigger_detection` |
 | `sizing` | `risk_committee` |
-| `skill` | `account_enrichment`, `contact_enrichment`, `data_visualization`, `document_extraction`, `email_verification`, `funding_financials_lookup`, … (+2) |
+| `skill` | `account_enrichment`, `contact_enrichment`, `data_visualization`, `document_extraction`, `email_verification`, `funding_financials_lookup`, … (+3) |
 | `sla` | `hot_lead_routing` |
 | `social` | `comment_cta_fulfillment`, `social_mining`, `social_night_recap`, `social_posts_generator` |
 | `social-proof` | `proof_matching`, `ugc_pipeline` |
@@ -877,6 +880,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `status` | `status_updates` |
 | `strategic-accounts` | `key_account_relationships`, `strategic_account_calls`, `strategic_customer_accounts` |
 | `strategy` | `deal_strategy_big_accounts` |
+| `stt` | `voicebox_tts` |
 | `summary` | `call_capture` |
 | `swot` | `swot_analyst` |
 | `sync` | `crm_sync`, `database_mining`, `portal_sync` |
@@ -907,6 +911,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `triage` | `email_triage_office`, `inbox_triage`, `ticket_triage` |
 | `triggers` | `trigger_detection` |
 | `trust` | `client_trust` |
+| `tts` | `voicebox_tts` |
 | `ugc` | `ugc_pipeline` |
 | `unit-economics` | `ltv_cac_targeter` |
 | `upsell` | `expansion_playbook` |
@@ -921,11 +926,14 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `vertical` | `vertical_analysis` |
 | `video` | `video_prospecting` |
 | `viz` | `data_visualization` |
+| `voice` | `voicebox_tts` |
+| `voicebox` | `voicebox_tts` |
 | `warm-intro` | `warm_intro_pathing` |
 | `warm-path` | `warm_path_finding` |
 | `webgpu` | `local_inference` |
 | `webinar` | `webinar_producer` |
 | `weekly-update` | `status_updates` |
+| `whisper` | `voicebox_tts` |
 | `white-space` | `market_gap_analyst` |
 | `win-loss` | `win_loss_analysis` |
 | `xlsx` | `financial_excel_builder` |

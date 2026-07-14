@@ -1,6 +1,6 @@
 {
-  "version": "0.13.5",
-  "total": 221,
+  "version": "0.13.6",
+  "total": 222,
   "cards": [
     {
       "id": "banking_operations",
@@ -6376,6 +6376,43 @@
       "path": "skills/tech_stack_detection.md"
     },
     {
+      "id": "voicebox_tts",
+      "name": "voicebox_tts",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "operations",
+      "phase": null,
+      "step": null,
+      "domain": "operations",
+      "rollout_stage": "1-foundation",
+      "autonomy": "human-assisted",
+      "maturity": 1,
+      "verticals": [
+        "any"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "voicebox_rest",
+        "voicebox_mcp"
+      ],
+      "tags": [
+        "voice",
+        "tts",
+        "stt",
+        "whisper",
+        "mcp",
+        "local",
+        "voicebox",
+        "skill"
+      ],
+      "gate": false,
+      "optional": true,
+      "path": "skills/voicebox_tts.md"
+    },
+    {
       "id": "channel_economics_modeler",
       "name": "channel_economics_modeler",
       "artifact_type": "agent",
@@ -7503,7 +7540,8 @@
         "email_verification",
         "funding_financials_lookup",
         "local_inference",
-        "tech_stack_detection"
+        "tech_stack_detection",
+        "voicebox_tts"
       ]
     },
     "by_lifecycle": {
@@ -7678,6 +7716,7 @@
         "ugc_pipeline",
         "vertical_analysis",
         "video_prospecting",
+        "voicebox_tts",
         "warm_intro_pathing",
         "warm_path_finding",
         "web_maps_scraping",
@@ -7907,7 +7946,8 @@
         "scope_calls",
         "sop_generation",
         "status_updates",
-        "transcript_processing"
+        "transcript_processing",
+        "voicebox_tts"
       ],
       "sales": [
         "account_enrichment",
@@ -8195,7 +8235,8 @@
         "social_night_recap",
         "sop_generation",
         "status_updates",
-        "transcript_processing"
+        "transcript_processing",
+        "voicebox_tts"
       ],
       "sales": [
         "account_enrichment",
@@ -8415,6 +8456,7 @@
         "scope_calls",
         "social_mining",
         "sop_generation",
+        "voicebox_tts",
         "web_maps_scraping"
       ]
     },
@@ -8597,6 +8639,7 @@
         "tam_market_sizing",
         "ticket_triage",
         "trigger_detection",
+        "voicebox_tts",
         "warm_path_finding",
         "webinar_producer"
       ]
@@ -9264,6 +9307,7 @@
         "validation_hypotheses_analyst",
         "vertical_analysis",
         "video_prospecting",
+        "voicebox_tts",
         "warm_intro_pathing",
         "warm_path_finding",
         "web_maps_scraping",
@@ -10531,6 +10575,7 @@
         "web_maps_scraping"
       ],
       "local": [
+        "voicebox_tts",
         "web_maps_scraping"
       ],
       "data-model": [
@@ -10748,7 +10793,8 @@
         "email_verification",
         "funding_financials_lookup",
         "local_inference",
-        "tech_stack_detection"
+        "tech_stack_detection",
+        "voicebox_tts"
       ],
       "contact": [
         "contact_enrichment"
@@ -10776,6 +10822,24 @@
       ],
       "browser": [
         "local_inference"
+      ],
+      "voice": [
+        "voicebox_tts"
+      ],
+      "tts": [
+        "voicebox_tts"
+      ],
+      "stt": [
+        "voicebox_tts"
+      ],
+      "whisper": [
+        "voicebox_tts"
+      ],
+      "mcp": [
+        "voicebox_tts"
+      ],
+      "voicebox": [
+        "voicebox_tts"
       ],
       "channels": [
         "channel_economics_modeler"

@@ -52,6 +52,39 @@ docker compose up
 Console UI: [http://localhost:7000](http://localhost:7000)
 Platform UI (auto-desplegada): [http://localhost:7100](http://localhost:7100)
 
+## Ecosystem registry
+
+The **Ecosystem** page (`/ecosystem`, backed by `GET /ecosystem`) is an honest
+catalogue of the AI building blocks Nexus can plug into — LLMs, frameworks,
+vector databases, data extraction, open-model access, text embeddings, and
+evaluation — plus the two local-first capabilities this repo actually ships.
+Every entry carries an explicit **status** so nothing is oversold:
+
+- `available` — works today with what's in the repo, no setup.
+- `configurable` — supported, but needs an endpoint/key/flag first.
+- `experimental` — real code, early / behind a flag.
+- `planned` — a discoverable catalogue entry only; no integration code yet.
+
+Real, in-repo capabilities:
+
+- **LiteRT.js** (`experimental`, native) — small `.tflite` models run in the
+  browser via WebGPU with a deterministic CPU/WASM fallback. Backs the Silero
+  VAD slice in the Voice cockpit. Model access is gated by the
+  `agent_local_model` registry (`GET/POST /local-models`): every model carries
+  provenance (`sha256`, `license`, `size_bytes`) so an agent can only load
+  whitelisted URLs. Enabled per-instance via the `local_inference` flag.
+- **Voicebox** (`configurable`, external) — optional local voice sidecar
+  ([jamiepine/voicebox](https://github.com/jamiepine/voicebox)) for TTS/STT and
+  an HTTP MCP server. It runs as a **separate local process**; Nexus only talks
+  to a configured base URL and **never uploads audio**. Enable with
+  `CONSOLE_VOICEBOX_ENABLED=true` + `CONSOLE_VOICEBOX_BASE_URL`; check health at
+  `GET /voicebox/status`. **Voice cloning is opt-in** — gated behind
+  `CONSOLE_VOICEBOX_VOICE_CLONING_CONSENT=true` and only for voices you own.
+
+Everything from the reference ecosystem diagram (Chroma, Qdrant, LangChain,
+FireCrawl, Nomic, Giskard, …) is listed as `planned` with its setup
+requirements stated — discoverable, but never presented as working.
+
 ## Stack
 
 - **Backend:** FastAPI (Python 3.12+), SQLAlchemy 2.x, Postgres, Redis, JWT (Ed25519).

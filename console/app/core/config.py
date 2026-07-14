@@ -39,6 +39,24 @@ class Settings(BaseSettings):
         "http://localhost:7000", "http://localhost:5173", "http://localhost:3000",
     ]
 
+    # --- Voicebox (optional local-first TTS/STT sidecar) --------------------
+    # Voicebox (https://github.com/jamiepine/voicebox) runs *outside* Nexus as
+    # a local or self-hosted sidecar exposing a REST API + HTTP MCP server.
+    # Nexus never bundles it; it only talks to a configured endpoint. All voice
+    # data stays on the operator's Voicebox instance.
+    voicebox_enabled: bool = False
+    # Base URL of the operator's Voicebox REST API, e.g. http://localhost:5111.
+    voicebox_base_url: str | None = None
+    # Optional bearer/client key if the operator put Voicebox behind auth. Kept
+    # server-side only and never returned by the API (redacted).
+    voicebox_api_key: str | None = None
+    # Path Voicebox exposes for MCP (HTTP MCP server). Informational — surfaced
+    # so operators can point Claude Code / Cursor / Cline at it.
+    voicebox_mcp_path: str = "/mcp"
+    # Voice cloning is OFF unless the operator explicitly asserts they own the
+    # voice and consent to clone it. Nexus never uploads audio on its own.
+    voicebox_voice_cloning_consent: bool = False
+
 
 settings = Settings()
 

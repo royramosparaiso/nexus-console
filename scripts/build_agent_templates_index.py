@@ -264,7 +264,7 @@ def build_catalog(all_cards: list[dict]) -> dict:
         return {k: sorted(set(v)) for k, v in idx.items()}
 
     return {
-        "version": "0.13.5",
+        "version": "0.13.6",
         "total": len(all_cards),
         "cards": cards_public,
         "indexes": {
