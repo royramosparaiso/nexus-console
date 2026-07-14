@@ -328,12 +328,24 @@ Usage:
 # push harder
 RATE=100 COUNT=10000 ACTIVITIES=5 ./bench-postgres.sh
 
+# bundled spike scenario: 5-step ramp 5 -> 25 -> 50 -> 100 -> 200 wf/s,
+# ~30k workflows, ~6 min. Reveals adaptive capacity, not sustained peak.
+./bench-postgres.sh scenarios/spike-ramp.json
+
 # same stack, but point maru at the Cassandra compose instead
-ENGINE=cassandra ./bench-postgres.sh
+ENGINE=cassandra ./bench-postgres.sh scenarios/spike-ramp.json
 
 # keep the stack up so you can inspect the UI at http://127.0.0.1:8080
 KEEP_RUNNING=1 ./bench-postgres.sh
 ```
+
+**Spike ramp scenario** (`scenarios/spike-ramp.json`) is the go-to test
+for validating that a backend engine survives realistic bursty load
+— a Postgres node that comfortably handles 50 STPS sustained can still
+fall over when traffic doubles every 30 seconds. maru executes each
+step sequentially, so the ramp measures how the backend absorbs
+transitions between load levels, not steady-state peak. For
+steady-state numbers, run a single-step scenario at your target rate.
 
 Results land in `./results/<run-id>-summary.json` next to the raw
 histogram CSV. The script uses the modern `temporal` CLI

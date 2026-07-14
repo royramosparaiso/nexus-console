@@ -1,0 +1,41 @@
+{
+    "_comment": "Spike scenario: ramp from 5 workflows/sec to 200/sec across five stages. Total ~30k workflows, ~10 minutes on a healthy Postgres backend. Each step runs sequentially; maru's bench-workflow completes step N before starting step N+1, so this measures how fast the backend adapts to changing load, not sustained peak. For sustained-peak numbers, run a single-step scenario at the target rate.",
+    "steps": [
+        {
+            "count": 300,
+            "ratePerSecond": 5,
+            "concurrency": 3
+        },
+        {
+            "count": 1500,
+            "ratePerSecond": 25,
+            "concurrency": 5
+        },
+        {
+            "count": 3000,
+            "ratePerSecond": 50,
+            "concurrency": 10
+        },
+        {
+            "count": 6000,
+            "ratePerSecond": 100,
+            "concurrency": 20
+        },
+        {
+            "count": 20000,
+            "ratePerSecond": 200,
+            "concurrency": 40
+        }
+    ],
+    "workflow": {
+        "name": "basic-workflow",
+        "taskQueue": "temporal-basic",
+        "args": {
+            "sequenceCount": 3,
+            "parallelCount": 1
+        }
+    },
+    "report": {
+        "intervalInSeconds": 10
+    }
+}

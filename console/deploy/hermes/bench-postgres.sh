@@ -28,15 +28,18 @@
 #     ENGINE=cassandra to point at docker-compose.temporal.yml instead.
 #
 # USAGE
-#   ./bench-postgres.sh                       # basic scenario, 3000 workflows
-#   ./bench-postgres.sh scenarios/spike.json  # custom scenario
-#   RATE=100 COUNT=10000 ./bench-postgres.sh  # inline overrides for the
-#                                             #   auto-generated scenario
-#   ENGINE=cassandra ./bench-postgres.sh      # point at the Cassandra
-#                                             #   compose file instead
-#   KEEP_RUNNING=1 ./bench-postgres.sh        # don't tear the stack down
-#                                             #   afterwards, so you can
-#                                             #   poke around in the UI
+#   ./bench-postgres.sh                              # basic auto-generated
+#                                                    #   scenario, 3000 wfs
+#   ./bench-postgres.sh scenarios/spike-ramp.json    # bundled ramp scenario
+#                                                    #   5->200/s over 5 steps
+#   ./bench-postgres.sh path/to/custom.json          # your own scenario file
+#   RATE=100 COUNT=10000 ./bench-postgres.sh         # inline overrides for
+#                                                    #   the auto-generated
+#                                                    #   scenario
+#   ENGINE=cassandra ./bench-postgres.sh             # point at the Cassandra
+#                                                    #   compose file instead
+#   KEEP_RUNNING=1 ./bench-postgres.sh               # don't tear the stack
+#                                                    #   down afterwards
 #
 # DEPENDENCIES
 #   - docker + docker compose v2
@@ -50,7 +53,11 @@ set -euo pipefail
 # ───── config ────────────────────────────────────────────────────────────────
 
 ENGINE="${ENGINE:-postgres}"        # postgres | cassandra
-SCENARIO="${1:-}"                    # optional path to a maru scenario JSON
+SCENARIO="${1:-}"                    # optional path to a maru scenario JSON.
+                                     # Resolved relative to $HERE if the path
+                                     # doesn't exist as given (so
+                                     # 'scenarios/spike-ramp.json' works from
+                                     # anywhere).
 RATE="${RATE:-20}"                   # workflows/sec target when auto-generating
 COUNT="${COUNT:-3000}"               # total workflows when auto-generating
 ACTIVITIES="${ACTIVITIES:-3}"        # sequenceCount for the target workflow
@@ -184,6 +191,10 @@ docker run -d --name nexus-maru-target \
 sleep 5
 
 # ───── 5. scenario ───────────────────────────────────────────────────────────
+
+if [ -n "$SCENARIO" ] && [ ! -f "$SCENARIO" ] && [ -f "${HERE}/${SCENARIO}" ]; then
+    SCENARIO="${HERE}/${SCENARIO}"
+fi
 
 if [ -z "$SCENARIO" ]; then
     SCENARIO="${RESULTS_DIR}/scenario-${BENCH_WORKFLOW_ID}.json"
