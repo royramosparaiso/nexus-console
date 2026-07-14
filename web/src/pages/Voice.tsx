@@ -14,6 +14,7 @@ import {
   useVoiceStream,
   type SynthesizeRequest,
 } from "../hooks/useVoiceStream";
+import VadBenchmarkPanel from "../components/VadBenchmarkPanel";
 
 interface Instance {
   id: string;
@@ -299,6 +300,8 @@ export default function Voice() {
           )}
         </section>
       )}
+
+      <VadBenchmarkPanel />
     </div>
   );
 }

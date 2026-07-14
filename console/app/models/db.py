@@ -11,7 +11,9 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
-from sqlalchemy import JSON, String, Text
+from sqlalchemy import (
+    JSON, BigInteger, CheckConstraint, String, Text, UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.types import TypeDecorator, CHAR
@@ -90,8 +92,48 @@ class InstanceRow(Base):
 
     status: Mapped[str] = mapped_column(String(32), default="bootstrap-pending")
     error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Feature flag: when true this instance is allowed to serve browser-local
+    # inference models (LiteRT.js) to its agents. Defaults off so existing
+    # instances keep today's remote-only behaviour until explicitly enabled.
+    local_inference: Mapped[bool] = mapped_column(default=False, nullable=False)
+
     created_at: Mapped[datetime] = mapped_column(default=_now)
     bootstrapped_at: Mapped[datetime | None] = mapped_column(nullable=True)
+
+
+class AgentLocalModelRow(Base):
+    """Registry of browser-local inference models an agent template may load.
+
+    Linkage note: the catalogue has no `agents` SQL table — agents are markdown
+    cards in ``console/agent_templates/catalog.json`` keyed by a string ``id``.
+    ``template_id`` is therefore a *soft* reference to that catalogue card id,
+    not a foreign key. We deliberately avoid a fake FK to a non-table catalogue
+    identifier; integrity of the reference is enforced at the API/service layer.
+
+    Registering a model here is what lets the Platform decide which ``.tflite``
+    a given agent is permitted to fetch and run via LiteRT.js — without it any
+    agent could load an arbitrary model URL.
+    """
+
+    __tablename__ = "agent_local_model"
+    __table_args__ = (
+        # A given template references a given model URL at most once.
+        UniqueConstraint("template_id", "model_url", name="uq_agent_local_model_template_url"),
+        # sha256 is a hex digest — exactly 64 chars.
+        CheckConstraint("length(sha256) = 64", name="ck_agent_local_model_sha256_len"),
+        CheckConstraint("size_bytes >= 0", name="ck_agent_local_model_size_nonneg"),
+    )
+
+    id: Mapped[UUID] = mapped_column(_UUID(), primary_key=True, default=uuid4)
+    # Soft reference to an agent_templates catalogue card id (e.g. "voice_vad").
+    template_id: Mapped[str] = mapped_column(String(128), index=True)
+    model_url: Mapped[str] = mapped_column(Text)
+    sha256: Mapped[str] = mapped_column(String(64))
+    size_bytes: Mapped[int] = mapped_column(BigInteger)
+    license: Mapped[str] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(default=_now)
+    updated_at: Mapped[datetime] = mapped_column(default=_now, onupdate=_now)
 
 
 class NotificationRow(Base):

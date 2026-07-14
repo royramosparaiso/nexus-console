@@ -1,6 +1,6 @@
 {
-  "version": "0.13.3",
-  "total": 220,
+  "version": "0.13.4",
+  "total": 221,
   "cards": [
     {
       "id": "banking_operations",
@@ -6310,6 +6310,40 @@
       "path": "skills/funding_financials_lookup.md"
     },
     {
+      "id": "local_inference",
+      "name": "local_inference",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "operations",
+      "phase": null,
+      "step": null,
+      "domain": "operations",
+      "rollout_stage": "1-foundation",
+      "autonomy": "human-assisted",
+      "maturity": 1,
+      "verticals": [
+        "any"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "litertjs_runtime"
+      ],
+      "tags": [
+        "inference",
+        "webgpu",
+        "litertjs",
+        "vad",
+        "browser",
+        "skill"
+      ],
+      "gate": false,
+      "optional": false,
+      "path": "skills/local_inference.md"
+    },
+    {
       "id": "tech_stack_detection",
       "name": "tech_stack_detection",
       "artifact_type": "skill",
@@ -7468,6 +7502,7 @@
         "document_extraction",
         "email_verification",
         "funding_financials_lookup",
+        "local_inference",
         "tech_stack_detection"
       ]
     },
@@ -7572,6 +7607,7 @@
         "linkedin_messaging",
         "list_building",
         "listing_generator",
+        "local_inference",
         "long_form_content_writer",
         "lookalike_modeling",
         "macro_authoring",
@@ -7862,6 +7898,7 @@
         "incident_response",
         "integration_builds",
         "kickoff_pack",
+        "local_inference",
         "meeting_follow_ups",
         "monitoring_alerting",
         "portal_sync",
@@ -8147,6 +8184,7 @@
         "integration_builds",
         "kickoff_pack",
         "licensing_compliance",
+        "local_inference",
         "meeting_follow_ups",
         "monitoring_alerting",
         "portal_sync",
@@ -8368,6 +8406,7 @@
         "email_verification",
         "icp_definition",
         "list_building",
+        "local_inference",
         "lookalike_modeling",
         "market_mapping",
         "network_mapping",
@@ -8540,6 +8579,7 @@
         "influencer_outreach",
         "integration_builds",
         "landing_page_writer",
+        "local_inference",
         "long_form_content_writer",
         "lookalike_modeling",
         "monitoring_alerting",
@@ -9131,6 +9171,7 @@
         "legal_setup_cost_estimator",
         "linkedin_messaging",
         "list_building",
+        "local_inference",
         "long_form_content_writer",
         "lookalike_modeling",
         "ltv_cac_targeter",
@@ -10706,6 +10747,7 @@
         "document_extraction",
         "email_verification",
         "funding_financials_lookup",
+        "local_inference",
         "tech_stack_detection"
       ],
       "contact": [
@@ -10719,6 +10761,21 @@
       ],
       "funding": [
         "funding_financials_lookup"
+      ],
+      "inference": [
+        "local_inference"
+      ],
+      "webgpu": [
+        "local_inference"
+      ],
+      "litertjs": [
+        "local_inference"
+      ],
+      "vad": [
+        "local_inference"
+      ],
+      "browser": [
+        "local_inference"
       ],
       "channels": [
         "channel_economics_modeler"

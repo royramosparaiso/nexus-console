@@ -61,7 +61,7 @@ const INITIAL_STATE: VoiceStreamState = {
 function pcm16ToFloat32(bytes: ArrayBuffer): Float32Array<ArrayBuffer> {
   const view = new DataView(bytes);
   const sampleCount = bytes.byteLength / 2;
-  const out = new Float32Array(new ArrayBuffer(sampleCount * 4));
+  const out = new Float32Array(sampleCount);
   for (let i = 0; i < sampleCount; i++) {
     const s = view.getInt16(i * 2, true);
     out[i] = s < 0 ? s / 0x8000 : s / 0x7fff;

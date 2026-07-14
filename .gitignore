@@ -50,6 +50,9 @@ data/
 *.sqlite
 *.sqlite3
 
+# Provisioned model binaries (fetched + integrity-checked at setup time)
+web/public/models/
+
 # Runtime
 console/instance/
 console/deploy_state/

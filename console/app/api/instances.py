@@ -53,6 +53,7 @@ class InstanceOut(BaseModel):
     version: str | None
     status: str
     error_detail: str | None = None
+    local_inference: bool = False
     created_at: datetime
     bootstrapped_at: datetime | None = None
 
@@ -70,6 +71,7 @@ def _to_out(row: InstanceRow) -> InstanceOut:
         version=row.platform_version,
         status=row.status,
         error_detail=row.error_detail,
+        local_inference=row.local_inference,
         created_at=row.created_at,
         bootstrapped_at=row.bootstrapped_at,
     )
@@ -86,6 +88,31 @@ async def get_instance(instance_id: UUID, db: AsyncSession = Depends(get_db)):
     row = await db.get(InstanceRow, instance_id)
     if row is None:
         raise HTTPException(status_code=404, detail="instance not found")
+    return _to_out(row)
+
+
+class InstancePatch(BaseModel):
+    """Partial update for an instance. Only feature flags are mutable here.
+
+    All fields optional so old clients that omit them keep prior behaviour.
+    """
+
+    local_inference: bool | None = None
+
+
+@router.patch("/{instance_id}", response_model=InstanceOut)
+async def update_instance(
+    instance_id: UUID,
+    body: InstancePatch,
+    db: AsyncSession = Depends(get_db),
+):
+    row = await db.get(InstanceRow, instance_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="instance not found")
+    if body.local_inference is not None:
+        row.local_inference = body.local_inference
+    await db.commit()
+    await db.refresh(row)
     return _to_out(row)
 
 
