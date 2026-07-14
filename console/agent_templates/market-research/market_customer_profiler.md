@@ -1,9 +1,16 @@
 ---
 id: market_customer_profiler
 name: market_customer_profiler
+artifact_type: agent
+lifecycle: project
 category: market-research
 phase: 1
 step: 2
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [market_problem_analyst]

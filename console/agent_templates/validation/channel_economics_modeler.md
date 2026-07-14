@@ -1,9 +1,16 @@
 ---
 id: channel_economics_modeler
 name: channel_economics_modeler
+artifact_type: agent
+lifecycle: project
 category: validation
 phase: 3
 step: 17
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [validation_hypotheses_analyst]

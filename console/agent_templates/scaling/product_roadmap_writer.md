@@ -1,9 +1,16 @@
 ---
 id: product_roadmap_writer
 name: product_roadmap_writer
+artifact_type: agent
+lifecycle: project
 category: scaling
 phase: 4
 step: 23
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: writer
 mode: pipeline-stage
 depends_on: [scaling_gate_definer, mvp_scoper, kpis_okrs_framework_writer]

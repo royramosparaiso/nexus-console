@@ -1,9 +1,16 @@
 ---
 id: tranche_1_budgeter
 name: tranche_1_budgeter
+artifact_type: agent
+lifecycle: project
 category: validation
 phase: 3
 step: 20
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: integrator
 mode: pipeline-stage
 depends_on: [validation_experiment_designer, channel_economics_modeler]

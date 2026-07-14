@@ -1,9 +1,16 @@
 ---
 id: platform_areas_architect
 name: platform_areas_architect
+artifact_type: agent
+lifecycle: project
 category: scaling
 phase: 4
 step: 26
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [functional_specifier, user_roles_permissions_writer]

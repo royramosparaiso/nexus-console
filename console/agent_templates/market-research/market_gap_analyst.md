@@ -1,12 +1,20 @@
 ---
 id: market_gap_analyst
 name: market_gap_analyst
+artifact_type: agent
+lifecycle: project
 category: market-research
 phase: 1
 step: 9
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
-depends_on: [market_problem_analyst, market_customer_profiler, market_study_by_country_analyst, market_trends_timing_analyst, competitive_analyst, swot_analyst, pricing_strategist]
+depends_on: [market_problem_analyst, market_customer_profiler, market_study_by_country_analyst,
+  market_trends_timing_analyst, competitive_analyst, swot_analyst, pricing_strategist]
 produces: markdown_report
 tools: [read_prior_step]
 tags: [gap, white-space, blue-ocean, quadrant, phase-1]

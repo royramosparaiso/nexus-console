@@ -1,9 +1,16 @@
 ---
 id: kpis_okrs_framework_writer
 name: kpis_okrs_framework_writer
+artifact_type: agent
+lifecycle: project
 category: scaling
 phase: 4
 step: 22
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: writer
 mode: pipeline-stage
 depends_on: [scaling_gate_definer]

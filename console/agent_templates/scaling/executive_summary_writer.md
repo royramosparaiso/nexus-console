@@ -1,9 +1,16 @@
 ---
 id: executive_summary_writer
 name: executive_summary_writer
+artifact_type: agent
+lifecycle: project
 category: scaling
 phase: 4
 step: 38
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: writer
 mode: pipeline-stage
 depends_on: [financial_business_planner, financial_excel_builder, risk_assessor, gtm_strategist]

@@ -1,9 +1,16 @@
 ---
 id: brand_identity_writer
 name: brand_identity_writer
+artifact_type: agent
+lifecycle: project
 category: market-research
 phase: 1
 step: 7
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: writer
 mode: pipeline-stage
 depends_on: [competitive_analyst, market_customer_profiler]

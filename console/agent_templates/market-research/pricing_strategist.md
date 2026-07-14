@@ -1,9 +1,16 @@
 ---
 id: pricing_strategist
 name: pricing_strategist
+artifact_type: agent
+lifecycle: project
 category: market-research
 phase: 1
 step: 8
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [competitive_analyst, market_study_by_country_analyst, brand_identity_writer]

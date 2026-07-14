@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app import __version__
-from app.api import health, instances, platform_notify, providers, wizard
+from app.api import agent_templates, health, instances, platform_notify, providers, wizard
 from app.core.config import settings
 from app.db import engine
 from app.models.db import Base
@@ -41,6 +41,7 @@ app.include_router(instances.router, prefix="/instances", tags=["instances"])
 app.include_router(providers.router, prefix="/providers", tags=["providers"])
 app.include_router(wizard.router, prefix="/wizard", tags=["wizard"])
 app.include_router(platform_notify.router, prefix="/_platform", tags=["platform-callbacks"])
+app.include_router(agent_templates.router, prefix="/agent-templates", tags=["agent-templates"])
 
 
 @app.get("/", tags=["root"])

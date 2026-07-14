@@ -1,9 +1,16 @@
 ---
 id: market_research_analyst
 name: market_research_analyst
+artifact_type: agent
+lifecycle: none
 category: finance
 phase: null
 step: null
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: single-shot
 depends_on: []

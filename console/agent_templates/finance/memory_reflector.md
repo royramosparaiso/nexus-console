@@ -1,9 +1,16 @@
 ---
 id: memory_reflector
 name: memory_reflector
+artifact_type: agent
+lifecycle: none
 category: finance
 phase: null
 step: null
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: reflector
 mode: reflector
 depends_on: [risk_committee]

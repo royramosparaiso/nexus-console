@@ -1,9 +1,16 @@
 ---
 id: legal_setup_cost_estimator
 name: legal_setup_cost_estimator
+artifact_type: agent
+lifecycle: project
 category: mvs
 phase: 2
 step: 12
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [resource_inventory_analyst]

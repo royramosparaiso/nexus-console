@@ -1,9 +1,16 @@
 ---
 id: ltv_cac_targeter
 name: ltv_cac_targeter
+artifact_type: agent
+lifecycle: project
 category: validation
 phase: 3
 step: 18
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [pricing_strategist, channel_economics_modeler]

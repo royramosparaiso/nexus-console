@@ -1,9 +1,16 @@
 ---
 id: bull_bear_debate_pair
 name: bull_bear_debate_pair
+artifact_type: agent
+lifecycle: none
 category: finance
 phase: null
 step: null
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: debater
 mode: debate
 depends_on: [market_research_analyst, fundamental_analyst, macro_context_agent]

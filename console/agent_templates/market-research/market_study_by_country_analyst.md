@@ -1,9 +1,16 @@
 ---
 id: market_study_by_country_analyst
 name: market_study_by_country_analyst
+artifact_type: agent
+lifecycle: project
 category: market-research
 phase: 1
 step: 3
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [market_customer_profiler]

@@ -1,9 +1,16 @@
 ---
 id: mvp_scoper
 name: mvp_scoper
+artifact_type: agent
+lifecycle: project
 category: mvs
 phase: 2
 step: 13
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [strategic_decision_gate, market_customer_profiler, competitive_analyst]

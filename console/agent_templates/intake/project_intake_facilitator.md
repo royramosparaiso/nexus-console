@@ -1,9 +1,16 @@
 ---
 id: project_intake_facilitator
 name: project_intake_facilitator
+artifact_type: agent
+lifecycle: project
 category: intake
 phase: 0
 step: 0
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: writer
 mode: single-shot
 depends_on: []

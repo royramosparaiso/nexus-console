@@ -1,9 +1,16 @@
 ---
 id: fundraising_strategist
 name: fundraising_strategist
+artifact_type: agent
+lifecycle: project
 category: scaling
 phase: 4
 step: 37
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: writer
 mode: pipeline-stage
 depends_on: [startup_valuation_analyst]

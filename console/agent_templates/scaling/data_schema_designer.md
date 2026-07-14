@@ -1,9 +1,16 @@
 ---
 id: data_schema_designer
 name: data_schema_designer
+artifact_type: agent
+lifecycle: project
 category: scaling
 phase: 4
 step: 28
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [functional_specifier, user_roles_permissions_writer, platform_areas_architect]

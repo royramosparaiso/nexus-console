@@ -1,9 +1,16 @@
 ---
 id: legal_ip_analyst
 name: legal_ip_analyst
+artifact_type: agent
+lifecycle: project
 category: scaling
 phase: 4
 step: 32
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [legal_setup_cost_estimator, data_schema_designer, tech_stack_vendors_analyst]

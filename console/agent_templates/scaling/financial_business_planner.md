@@ -1,12 +1,20 @@
 ---
 id: financial_business_planner
 name: financial_business_planner
+artifact_type: agent
+lifecycle: project
 category: scaling
 phase: 4
 step: 34
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: writer
 mode: pipeline-stage
-depends_on: [gtm_strategist, tech_stack_vendors_analyst, legal_ip_analyst, risk_assessor, kpis_okrs_framework_writer]
+depends_on: [gtm_strategist, tech_stack_vendors_analyst, legal_ip_analyst, risk_assessor,
+  kpis_okrs_framework_writer]
 produces: markdown_report
 tools: [read_prior_step]
 tags: [business-plan, financials, revenue-model, hiring, phase-4]

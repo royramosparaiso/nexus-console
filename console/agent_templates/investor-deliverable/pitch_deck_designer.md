@@ -1,12 +1,20 @@
 ---
 id: pitch_deck_designer
 name: pitch_deck_designer
+artifact_type: agent
+lifecycle: project
 category: investor-deliverable
 phase: 5
 step: 39
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: writer
 mode: pipeline-stage
-depends_on: [executive_summary_writer, financial_excel_builder, gtm_strategist, risk_assessor, fundraising_strategist]
+depends_on: [executive_summary_writer, financial_excel_builder, gtm_strategist, risk_assessor,
+  fundraising_strategist]
 produces: pptx
 tools: [read_prior_step, write_pptx]
 tags: [pitch-deck, pptx, investor, phase-5]

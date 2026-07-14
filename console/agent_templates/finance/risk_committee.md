@@ -1,9 +1,16 @@
 ---
 id: risk_committee
 name: risk_committee
+artifact_type: agent
+lifecycle: none
 category: finance
 phase: null
 step: null
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: debater
 mode: debate
 depends_on: [bull_bear_debate_pair]

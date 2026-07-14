@@ -1,12 +1,20 @@
 ---
 id: swot_analyst
 name: swot_analyst
+artifact_type: agent
+lifecycle: project
 category: market-research
 phase: 1
 step: 6
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
-depends_on: [market_problem_analyst, market_customer_profiler, market_study_by_country_analyst, market_trends_timing_analyst, competitive_analyst]
+depends_on: [market_problem_analyst, market_customer_profiler, market_study_by_country_analyst,
+  market_trends_timing_analyst, competitive_analyst]
 produces: markdown_report
 tools: [read_prior_step]
 tags: [swot, dafo, synthesis, phase-1]

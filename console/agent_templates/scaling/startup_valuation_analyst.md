@@ -1,9 +1,16 @@
 ---
 id: startup_valuation_analyst
 name: startup_valuation_analyst
+artifact_type: agent
+lifecycle: project
 category: scaling
 phase: 4
 step: 36
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [financial_excel_builder]

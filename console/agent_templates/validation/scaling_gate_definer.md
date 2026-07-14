@@ -1,9 +1,16 @@
 ---
 id: scaling_gate_definer
 name: scaling_gate_definer
+artifact_type: agent
+lifecycle: project
 category: validation
 phase: 3
 step: 21
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: judge
 mode: gate
 depends_on: [ltv_cac_targeter, validation_experiment_designer, tranche_1_budgeter]

@@ -1,9 +1,16 @@
 ---
 id: validation_experiment_designer
 name: validation_experiment_designer
+artifact_type: agent
+lifecycle: project
 category: validation
 phase: 3
 step: 19
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [validation_hypotheses_analyst, channel_economics_modeler, ltv_cac_targeter]

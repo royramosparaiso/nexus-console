@@ -1,12 +1,20 @@
 ---
 id: validation_hypotheses_analyst
 name: validation_hypotheses_analyst
+artifact_type: agent
+lifecycle: project
 category: validation
 phase: 3
 step: 16
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
-depends_on: [strategic_decision_gate, market_customer_profiler, competitive_analyst, pricing_strategist, market_gap_analyst]
+depends_on: [strategic_decision_gate, market_customer_profiler, competitive_analyst,
+  pricing_strategist, market_gap_analyst]
 produces: markdown_report
 tools: [read_prior_step]
 tags: [hypothesis, validation, segment-channel-message, phase-3]

@@ -1,9 +1,16 @@
 ---
 id: minimal_tech_stack_cost_estimator
 name: minimal_tech_stack_cost_estimator
+artifact_type: agent
+lifecycle: project
 category: mvs
 phase: 2
 step: 14
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [mvp_scoper]

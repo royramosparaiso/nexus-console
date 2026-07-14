@@ -1,9 +1,16 @@
 ---
 id: resource_inventory_analyst
 name: resource_inventory_analyst
+artifact_type: agent
+lifecycle: project
 category: mvs
 phase: 2
 step: 11
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [strategic_decision_gate]

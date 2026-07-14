@@ -1,12 +1,20 @@
 ---
 id: gtm_strategist
 name: gtm_strategist
+artifact_type: agent
+lifecycle: project
 category: scaling
 phase: 4
 step: 30
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: writer
 mode: pipeline-stage
-depends_on: [scaling_gate_definer, market_customer_profiler, competitive_analyst, channel_economics_modeler, ux_platform_designer]
+depends_on: [scaling_gate_definer, market_customer_profiler, competitive_analyst,
+  channel_economics_modeler, ux_platform_designer]
 produces: markdown_report
 tools: [read_prior_step]
 tags: [gtm, go-to-market, launch, motion, phase-4]

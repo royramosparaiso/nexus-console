@@ -1,9 +1,16 @@
 ---
 id: mobile_app_specifier
 name: mobile_app_specifier
+artifact_type: agent
+lifecycle: project
 category: scaling
 phase: 4
 step: 27
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: writer
 mode: pipeline-stage
 depends_on: [platform_areas_architect]

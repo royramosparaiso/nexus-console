@@ -1,9 +1,16 @@
 ---
 id: tranche_0_budgeter
 name: tranche_0_budgeter
+artifact_type: agent
+lifecycle: project
 category: mvs
 phase: 2
 step: 15
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: integrator
 mode: pipeline-stage
 depends_on: [resource_inventory_analyst, legal_setup_cost_estimator, mvp_scoper, minimal_tech_stack_cost_estimator]

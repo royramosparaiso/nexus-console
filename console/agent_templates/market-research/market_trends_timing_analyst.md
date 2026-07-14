@@ -1,9 +1,16 @@
 ---
 id: market_trends_timing_analyst
 name: market_trends_timing_analyst
+artifact_type: agent
+lifecycle: project
 category: market-research
 phase: 1
 step: 4
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [market_study_by_country_analyst]

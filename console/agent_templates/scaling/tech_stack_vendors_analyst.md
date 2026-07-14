@@ -1,9 +1,16 @@
 ---
 id: tech_stack_vendors_analyst
 name: tech_stack_vendors_analyst
+artifact_type: agent
+lifecycle: project
 category: scaling
 phase: 4
 step: 31
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [platform_areas_architect, data_schema_designer]

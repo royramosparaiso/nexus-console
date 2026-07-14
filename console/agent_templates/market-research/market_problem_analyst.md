@@ -1,9 +1,16 @@
 ---
 id: market_problem_analyst
 name: market_problem_analyst
+artifact_type: agent
+lifecycle: project
 category: market-research
 phase: 1
 step: 1
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: analyst
 mode: pipeline-stage
 depends_on: [project_intake_facilitator]

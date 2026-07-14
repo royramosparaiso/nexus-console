@@ -1,9 +1,16 @@
 ---
 id: strategic_decision_gate
 name: strategic_decision_gate
+artifact_type: agent
+lifecycle: project
 category: market-research
 phase: 1
 step: 10
+domain: null
+rollout_stage: null
+autonomy: null
+maturity: null
+verticals: [any]
 role: judge
 mode: gate
 depends_on: [market_gap_analyst, swot_analyst]
