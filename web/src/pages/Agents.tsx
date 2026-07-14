@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bot, Cog, Puzzle, Search, X } from "lucide-react";
+import { Bot, Cog, Puzzle, Search, X, Rocket, Check, AlertCircle } from "lucide-react";
 import { apiFetch } from "../lib/api";
 
 // ---------- Types ----------
@@ -57,6 +57,24 @@ type Catalog = {
 };
 
 type Detail = { card: Card; body: string };
+
+type Instance = {
+  instance_id: string;
+  name: string;
+  persona_display_name: string;
+  modality: string;
+  endpoint: string | null;
+  version: string | null;
+  status: string;
+  created_at: string;
+};
+
+type CommandResponse = {
+  accepted: boolean;
+  cmd_id: string;
+  status: string;
+  detail: string | null;
+};
 
 // ---------- Icons + badges ----------
 
@@ -207,6 +225,241 @@ function CardRow({
   );
 }
 
+// ---------- Deploy dialog ----------
+
+function DeployDialog({
+  card,
+  onClose,
+}: {
+  card: Card;
+  onClose: () => void;
+}) {
+  const [instances, setInstances] = useState<Instance[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [deploying, setDeploying] = useState(false);
+  const [result, setResult] = useState<CommandResponse | null>(null);
+  const [deployError, setDeployError] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiFetch<Instance[]>("/instances")
+      .then((data) => {
+        setInstances(data);
+        const firstRunning = data.find((i) => i.status === "running");
+        if (firstRunning) setSelectedId(firstRunning.instance_id);
+      })
+      .catch((e) => setLoadError(String(e)));
+  }, []);
+
+  const canDeploy = card.artifact_type !== "skill";
+
+  const runningInstances = instances?.filter((i) => i.status === "running") ?? [];
+
+  const deploy = async () => {
+    if (!selectedId) return;
+    setDeploying(true);
+    setDeployError(null);
+    setResult(null);
+    try {
+      const payload = {
+        template_id: card.id,
+        artifact_type: card.artifact_type,
+        category: card.category,
+        domain: card.domain,
+        role: card.role,
+        mode: card.mode,
+        produces: card.produces,
+        tools: card.tools,
+        depends_on: card.depends_on,
+        verticals: card.verticals,
+      };
+      const res = await apiFetch<CommandResponse>(
+        `/instances/${selectedId}/command`,
+        {
+          method: "POST",
+          body: JSON.stringify({ kind: "deploy_agent", payload }),
+        },
+      );
+      setResult(res);
+    } catch (e) {
+      setDeployError(String(e));
+    } finally {
+      setDeploying(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      data-testid="dialog-deploy"
+      onClick={onClose}
+    >
+      <div
+        className="bg-surface border border-border rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <div className="flex items-center gap-2 min-w-0">
+            <Rocket className="w-4 h-4 text-primary" />
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-text">Deploy agent</div>
+              <div className="font-mono text-xs text-text-muted truncate">{card.id}</div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            data-testid="button-close-dialog"
+            className="text-text-muted hover:text-text p-1"
+            aria-label="Close dialog"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="p-4 overflow-auto flex-1 space-y-4">
+          {!canDeploy && (
+            <div className="flex items-start gap-2 p-3 rounded border border-warning/30 bg-warning/10 text-xs text-warning">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                Skills are reusable capabilities and are not deployed directly. Deploy an
+                agent that depends on this skill instead.
+              </div>
+            </div>
+          )}
+
+          {result ? (
+            <div
+              className="flex items-start gap-2 p-3 rounded border border-success/30 bg-success/10 text-xs text-success"
+              data-testid="text-deploy-success"
+            >
+              <Check className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <div className="font-semibold">Command accepted</div>
+                <div className="font-mono break-all">cmd_id: {result.cmd_id}</div>
+                <div>status: {result.status}</div>
+                {result.detail && <div>{result.detail}</div>}
+              </div>
+            </div>
+          ) : (
+            <>
+              <div>
+                <div className="text-[11px] uppercase tracking-wide text-text-muted font-semibold mb-2">
+                  Target instance
+                </div>
+                {loadError && (
+                  <div className="text-xs text-error" data-testid="text-instances-error">
+                    {loadError}
+                  </div>
+                )}
+                {!instances && !loadError && (
+                  <div className="text-xs text-text-muted">Loading instances…</div>
+                )}
+                {instances && runningInstances.length === 0 && (
+                  <div
+                    className="text-xs text-text-muted p-3 border border-dashed border-border rounded"
+                    data-testid="text-no-instances"
+                  >
+                    No running instances. Start or bootstrap an instance from the Instances
+                    page first.
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  {runningInstances.map((inst) => {
+                    const active = selectedId === inst.instance_id;
+                    return (
+                      <button
+                        key={inst.instance_id}
+                        onClick={() => setSelectedId(inst.instance_id)}
+                        data-testid={`option-instance-${inst.instance_id}`}
+                        className={`w-full text-left border rounded p-2.5 transition-colors ${
+                          active
+                            ? "border-primary bg-surface-alt"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium text-sm text-text truncate">
+                            {inst.name}
+                          </span>
+                          <Badge tone="success">{inst.status}</Badge>
+                        </div>
+                        <div className="text-[11px] text-text-muted mt-0.5 truncate">
+                          {inst.persona_display_name} · {inst.modality}
+                          {inst.version && <> · v{inst.version}</>}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <details className="text-xs">
+                <summary className="cursor-pointer text-text-muted hover:text-text">
+                  Payload preview
+                </summary>
+                <pre className="mt-2 p-2 bg-bg border border-border rounded font-mono text-[11px] text-text-muted overflow-auto">
+                  {JSON.stringify(
+                    {
+                      kind: "deploy_agent",
+                      payload: {
+                        template_id: card.id,
+                        artifact_type: card.artifact_type,
+                        category: card.category,
+                        domain: card.domain,
+                        role: card.role,
+                        mode: card.mode,
+                        produces: card.produces,
+                        tools: card.tools,
+                        depends_on: card.depends_on,
+                        verticals: card.verticals,
+                      },
+                    },
+                    null,
+                    2,
+                  )}
+                </pre>
+              </details>
+
+              {deployError && (
+                <div
+                  className="flex items-start gap-2 p-3 rounded border border-error/30 bg-error/10 text-xs text-error"
+                  data-testid="text-deploy-error"
+                >
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div>{deployError}</div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 p-3 border-t border-border">
+          <button
+            onClick={onClose}
+            data-testid="button-cancel-deploy"
+            className="px-3 py-1.5 text-sm text-text-muted hover:text-text"
+          >
+            {result ? "Close" : "Cancel"}
+          </button>
+          {!result && (
+            <button
+              onClick={deploy}
+              disabled={!canDeploy || !selectedId || deploying}
+              data-testid="button-confirm-deploy"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded bg-primary text-white hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Rocket className="w-3.5 h-3.5" />
+              {deploying ? "Deploying…" : "Deploy"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ---------- Detail panel ----------
 
 function DetailPanel({
@@ -218,36 +471,57 @@ function DetailPanel({
 }) {
   const [detail, setDetail] = useState<Detail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showDeploy, setShowDeploy] = useState(false);
 
   useEffect(() => {
     setDetail(null);
     setError(null);
+    setShowDeploy(false);
     apiFetch<Detail>(`/agent-templates/${cardId}`)
       .then(setDetail)
       .catch((e) => setError(String(e)));
   }, [cardId]);
+
+  const isSkill = detail?.card.artifact_type === "skill";
 
   return (
     <div
       className="border border-border bg-surface rounded-lg overflow-hidden flex flex-col"
       data-testid="detail-panel"
     >
-      <div className="flex items-center justify-between p-3 border-b border-border">
+      <div className="flex items-center justify-between gap-2 p-3 border-b border-border">
         <div className="flex items-center gap-2 min-w-0">
           {detail && <ArtifactIcon kind={detail.card.artifact_type} />}
           <span className="font-mono text-sm text-text truncate" data-testid="detail-id">
             {cardId}
           </span>
         </div>
-        <button
-          onClick={onClose}
-          data-testid="button-close-detail"
-          className="text-text-muted hover:text-text p-1"
-          aria-label="Close detail"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          {detail && (
+            <button
+              onClick={() => setShowDeploy(true)}
+              disabled={isSkill}
+              data-testid="button-deploy"
+              title={isSkill ? "Skills cannot be deployed directly" : "Deploy to instance"}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded bg-primary text-white hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <Rocket className="w-3 h-3" />
+              Deploy
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            data-testid="button-close-detail"
+            className="text-text-muted hover:text-text p-1"
+            aria-label="Close detail"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
+      {detail && showDeploy && (
+        <DeployDialog card={detail.card} onClose={() => setShowDeploy(false)} />
+      )}
       <div className="overflow-auto p-4 flex-1">
         {error && <div className="text-error text-sm">{error}</div>}
         {!detail && !error && <div className="text-text-muted text-sm">Loading…</div>}
