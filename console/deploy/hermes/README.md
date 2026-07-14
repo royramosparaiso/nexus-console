@@ -307,6 +307,151 @@ for exact hardware, tuning, and workload shape.
 
 ---
 
+## Reproducing these numbers yourself
+
+The [`bench-postgres.sh`](./bench-postgres.sh) script in this directory
+runs [temporalio/maru](https://github.com/temporalio/maru) against the
+bundled Postgres compose stack and extracts two metrics:
+
+- `workflows_per_sec_observed` — closed workflows / wall clock, from
+  maru's own `histogram_csv` query.
+- `backend_stps` — delta of the Temporal server's `persistence_requests`
+  counter (scraped from `:8000/metrics`) divided by wall clock. This is
+  the real STPS number to size the backend against.
+
+Usage:
+
+```bash
+# default: 3000 workflows at 20/s, 3 activities each, on the Postgres stack
+./bench-postgres.sh
+
+# push harder
+RATE=100 COUNT=10000 ACTIVITIES=5 ./bench-postgres.sh
+
+# same stack, but point maru at the Cassandra compose instead
+ENGINE=cassandra ./bench-postgres.sh
+
+# keep the stack up so you can inspect the UI at http://127.0.0.1:8080
+KEEP_RUNNING=1 ./bench-postgres.sh
+```
+
+Results land in `./results/<run-id>-summary.json` next to the raw
+histogram CSV. The script uses the modern `temporal` CLI
+([docs.temporal.io/cli](https://docs.temporal.io/cli)); `tctl` also
+works as a fallback.
+
+**Caveat:** the bundled compose files are single-node dev-grade. Numbers
+from this script are a *lower bound* for what a tuned production
+cluster does — they are useful for A/B comparing engines on identical
+hardware, not for capacity planning against real production traffic.
+
+---
+
+## Monthly cost estimates
+
+All figures are **rough anchors**, dated **July 2026**. Every real
+deployment differs; use these to compare engines on identical assumptions,
+not as a quote. Sources for every number are linked below the tables.
+
+**Assumed workload sizes per tier** (roughly aligned with `HERMES_ENGINES_BY_TIER`):
+
+| Tier       | Peak STPS | Sustained STPS | Actions/month (Cloud equivalent)¹ |
+| ---------- | --------- | -------------- | ---------------------------------- |
+| `hobby`    | ~5        | ~1             | ~2.6 M                             |
+| `standard` | ~50       | ~15            | ~40 M                              |
+| `scale`    | ~500      | ~150           | ~400 M                             |
+
+¹ STPS ≠ Actions 1:1. State transitions are persistence writes; Actions
+are the billing unit Temporal Cloud defines
+([Cloud Actions](https://docs.temporal.io/cloud/actions)). Assumed here:
+monthly Actions ≈ sustained STPS × 3600 × 24 × 30 rounded to a
+deploy-friendly bucket. Your ratio may differ — use the estimator in
+[docs.temporal.io/cloud/migrate/estimate-actions](https://docs.temporal.io/cloud/migrate/estimate-actions).
+
+### `hobby` tier
+
+| Engine                       | Compute (cloud VMs)               | Backend    | Managed fees | Estimated monthly (USD)          |
+| ---------------------------- | --------------------------------- | ---------- | ------------ | -------------------------------- |
+| `in_process`                 | Reuses platform Postgres + app VM | —          | —            | **$0 incremental**               |
+| `temporal_cloud`             | —                                 | —          | Not allowed on hobby tier | —                   |
+| `temporal_selfhost_postgres` | Not allowed on hobby tier         | —          | —            | —                                |
+| `temporal_selfhost`          | Not allowed on hobby tier         | —          | —            | —                                |
+
+On hobby the only engine allowed is `in_process`. Cost is dominated by
+the app VM you would run anyway.
+
+### `standard` tier (assume ~40 M actions/month, ~15 STPS sustained)
+
+| Engine                       | Compute (cloud VMs)                                   | Backend                                | Managed fees                     | Estimated monthly (USD)  |
+| ---------------------------- | ----------------------------------------------------- | -------------------------------------- | -------------------------------- | ------------------------ |
+| `in_process`                 | +0 (rides the app VMs)                                | Reuses `DATABASE_URL`                  | —                                | **~$0 incremental**      |
+| `temporal_cloud`             | —                                                     | —                                      | Essentials $100 + 39 M × ladder²  | **~$1,640 / mo**         |
+| `temporal_selfhost_postgres` | 2 × small VMs (Temporal + workers) ≈ $80              | Managed Postgres, ~4 vCPU / 16 GB ≈ $200 | —                              | **~$280 / mo**           |
+| `temporal_selfhost`          | 2 × small VMs ≈ $80 + 3-node Cassandra: overkill here | 3 × 4 vCPU nodes ≈ $450                 | —                                | **~$530 / mo (overkill)** |
+
+² Essentials plan: $100/mo base, includes 1 M Actions; overage at $50 per
+million for the next 5 M. 40 M actions/month lands squarely in the
+volume-discount ladder — the arithmetic is $100 + (5 M × $50) +
+(5 M × $45) + (10 M × $40) + (19 M × $35) = **$1,640**.
+
+At standard, **`temporal_selfhost_postgres` is the price-performance
+sweet spot** — roughly 6× cheaper than Cloud at this volume. Cassandra
+self-host does not pay off yet.
+
+### `scale` tier (assume ~400 M actions/month, ~150 STPS sustained)
+
+| Engine                       | Compute (cloud VMs)                                                                                       | Backend                                                | Managed fees                         | Estimated monthly (USD)         |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------ | ------------------------------- |
+| `in_process`                 | Not realistic at 150 STPS — blocked by design (matrix keeps it last)                                       | —                                                      | —                                    | —                               |
+| `temporal_cloud`             | —                                                                                                         | —                                                      | Business $500 + 397.5 M × volume rate³ | **~$11,400 / mo**             |
+| `temporal_selfhost_postgres` | 3 × medium VMs (Temporal frontend/history/matching) ≈ $450                                                 | Managed Postgres, ~8 vCPU / 32 GB w/ replicas ≈ $800    | —                                    | **~$1,250 / mo (tight fit)**    |
+| `temporal_selfhost`          | 3 × medium VMs ≈ $450                                                                                     | 3-node Cassandra, ~8 vCPU each ≈ $900 + OpenSearch ≈ $250 | —                                  | **~$1,600 / mo**                |
+
+³ Business plan: $500/mo base, 2.5 M included Actions, volume ladder
+starting at $50/M for the first 5 M then dropping to $25/M above 200 M.
+Arithmetic: $500 + (5 M × $50) + (5 M × $45) + (10 M × $40) + (30 M × $35) +
+(50 M × $30) + (100 M × $25) + (197.5 M × $25) = **$11,362**. Rounded to $11,400.
+
+At scale, **`temporal_selfhost` (Cassandra) becomes the cost floor** —
+but only when you can actually operate it. Postgres self-host is
+cheaper on paper at ~150 STPS but with no headroom above ~300 STPS
+(see benchmark table above). Cloud costs ~10× more than self-host at
+this volume (~9×), and the price of that ratio is the SRE labor you save.
+
+### Cost-model caveats
+
+- **VM prices** are approximations for AWS `t3.medium` / `m6i.large`
+  and RDS `db.m6g.large` sizes in `us-east-1`, on-demand, July 2026.
+  Substitute your provider's list price.
+- **Egress, backups, snapshots, and OpenSearch** are excluded except
+  where noted. Real bills add 10–30% for those depending on retention
+  policy.
+- **SRE labor is the invisible line item.** Cassandra self-host adds
+  the equivalent of a fractional SRE headcount — material for a small
+  team, invisible for a platform team already running Cassandra.
+- **Egress from Temporal Cloud** is a common surprise: workers stream
+  workflow histories back to your VPC. Budget it explicitly.
+- **Storage costs** on Temporal Cloud are separate: Active $0.042/GBh,
+  Retained $0.00105/GBh
+  ([Cloud pricing](https://docs.temporal.io/cloud/pricing)). At 400 M
+  actions/month with modest history sizes this is small compared to
+  Action pricing, but big long-running workflows can flip the ratio.
+
+### Cost sources
+
+- Temporal Cloud plan tiers, base fees and Action ladder:
+  [temporal.io/pricing](https://temporal.io/pricing) and
+  [docs.temporal.io/cloud/pricing](https://docs.temporal.io/cloud/pricing).
+- Startup credits ($6,000 free) via the Temporal for Startups program —
+  factor in if applicable.
+- 2024 pricing update context (Actions floor rose from $25/M to $50/M,
+  effective Feb 2025 for existing customers):
+  [temporal.io/blog/temporal-cloud-pricing-update](https://temporal.io/blog/temporal-cloud-pricing-update).
+- Managed Cassandra cost anecdote (Astra DB "very expensive" vs 3-node
+  self-host being ~3× cheaper): [Temporal Replay 2026 talk](https://www.youtube.com/watch?v=H1wkzi_bdTU).
+
+---
+
 ## Where each engine is defined in code
 
 - Engine literal + tier matrix: [`console/app/models/kernel.py`](../../app/models/kernel.py)

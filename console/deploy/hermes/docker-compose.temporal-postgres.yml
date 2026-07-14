@@ -25,6 +25,10 @@ x-temporal-env: &temporal_env
   TEMPORAL_CLI_ADDRESS: temporal:7233
   DEFAULT_NAMESPACE: ${TEMPORAL_NAMESPACE:-hermes}
   DEFAULT_NAMESPACE_RETENTION: 72h
+  # Expose Prometheus metrics on :8000 so bench-postgres.sh can read
+  # persistence_requests directly for real STPS measurement. Harmless
+  # in non-bench runs — just an extra port bound on loopback.
+  PROMETHEUS_ENDPOINT: 0.0.0.0:8000
 
 services:
   postgres:
@@ -59,6 +63,7 @@ services:
       <<: *temporal_env
     ports:
       - "${TEMPORAL_BIND:-127.0.0.1}:7233:7233"
+      - "${TEMPORAL_METRICS_BIND:-127.0.0.1}:8000:8000"
     healthcheck:
       test: ["CMD", "tctl", "--address", "temporal:7233", "cluster", "health"]
       interval: 15s
