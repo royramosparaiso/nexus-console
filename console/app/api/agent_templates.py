@@ -14,6 +14,13 @@ from functools import lru_cache
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
+
+from app.services.area_recommender import (
+    RecommendationResult,
+    area_options,
+    recommend_areas,
+)
 
 router = APIRouter()
 
@@ -39,6 +46,40 @@ def _load_catalog() -> dict:
 async def list_agent_templates() -> dict:
     """Full catalogue payload: cards + indexes + enum vocab."""
     return _load_catalog()
+
+
+class RecommendAreasRequest(BaseModel):
+    template_ids: list[str] = Field(
+        default_factory=list,
+        description="Selected template ids to propose areas for.",
+    )
+
+
+@router.post("/recommend-areas", response_model=RecommendationResult)
+async def recommend_areas_endpoint(body: RecommendAreasRequest) -> RecommendationResult:
+    """Propose an area/department for each selected agent template.
+
+    Deterministic + metadata-driven (see ``area_recommender``). Unknown ids
+    are reported back in ``unknown_template_ids`` rather than 404ing the whole
+    batch, so a partially-stale selection still returns useful proposals.
+    """
+    catalog = _load_catalog()
+    by_id = {c["id"]: c for c in catalog["cards"]}
+
+    cards: list[dict] = []
+    unknown: list[str] = []
+    for tid in body.template_ids:
+        card = by_id.get(tid)
+        if card is None:
+            unknown.append(tid)
+        else:
+            cards.append(card)
+
+    return RecommendationResult(
+        recommendations=recommend_areas(cards),
+        areas=area_options(),
+        unknown_template_ids=unknown,
+    )
 
 
 @router.get("/{card_id}")

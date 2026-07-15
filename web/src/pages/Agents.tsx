@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Cog, Puzzle, Search, X, Rocket, Check, AlertCircle, RotateCcw } from "lucide-react";
+import { Bot, Cog, Puzzle, Search, X, Rocket, Check, AlertCircle, RotateCcw, Sparkles } from "lucide-react";
 import { apiFetch } from "../lib/api";
 import { useOptionalToast } from "../components/Toast";
+import DeployPlanDialog from "../components/DeployPlanDialog";
 
 // ---------- Types ----------
 
@@ -177,10 +178,14 @@ function CardRow({
   card,
   active,
   onClick,
+  selected,
+  onToggleSelect,
 }: {
   card: Card;
   active: boolean;
   onClick: () => void;
+  selected: boolean;
+  onToggleSelect: () => void;
 }) {
   const tone =
     card.artifact_type === "agent"
@@ -188,6 +193,7 @@ function CardRow({
       : card.artifact_type === "sidecar"
         ? "warning"
         : "success";
+  const selectable = card.artifact_type !== "skill";
   return (
     <button
       onClick={onClick}
@@ -198,6 +204,20 @@ function CardRow({
     >
       <div className="flex items-start justify-between gap-2 mb-1.5">
         <div className="flex items-center gap-2 min-w-0">
+          {selectable && (
+            <input
+              type="checkbox"
+              checked={selected}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => {
+                e.stopPropagation();
+                onToggleSelect();
+              }}
+              data-testid={`select-card-${card.id}`}
+              aria-label={`Select ${card.id} for deployment`}
+              className="shrink-0"
+            />
+          )}
           <ArtifactIcon kind={card.artifact_type} />
           <span className="font-mono text-sm text-text truncate">{card.id}</span>
         </div>
@@ -844,12 +864,32 @@ export default function Agents() {
   const [selVertical, setSelVertical] = useState<Set<string>>(new Set());
   const [selTag, setSelTag] = useState<Set<string>>(new Set());
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [selectedForDeploy, setSelectedForDeploy] = useState<Set<string>>(new Set());
+  const [showPlan, setShowPlan] = useState(false);
 
   useEffect(() => {
     apiFetch<Catalog>("/agent-templates")
       .then(setCatalog)
       .catch((e) => setLoadError(String(e)));
   }, []);
+
+  const toggleDeploySelect = (id: string) =>
+    setSelectedForDeploy((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const deployCards = useMemo(
+    () =>
+      catalog
+        ? catalog.cards
+            .filter((c) => selectedForDeploy.has(c.id))
+            .map((c) => ({ id: c.id, artifact_type: c.artifact_type }))
+        : [],
+    [catalog, selectedForDeploy],
+  );
 
   const toggle =
     (setFn: React.Dispatch<React.SetStateAction<Set<string>>>) => (v: string) => {
@@ -1076,6 +1116,28 @@ export default function Agents() {
               <span data-testid="text-result-count">{filtered.length}</span>
             </p>
           </div>
+          {selectedForDeploy.size > 0 && (
+            <div className="flex items-center gap-2" data-testid="deploy-batch-bar">
+              <span className="text-xs text-text-muted" data-testid="text-selected-count">
+                {selectedForDeploy.size} selected
+              </span>
+              <button
+                onClick={() => setSelectedForDeploy(new Set())}
+                data-testid="button-clear-selection"
+                className="px-2.5 py-1 text-xs border border-border rounded text-text-muted hover:text-text hover:border-primary/50"
+              >
+                Clear
+              </button>
+              <button
+                onClick={() => setShowPlan(true)}
+                data-testid="button-open-deploy-plan"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded bg-primary text-white hover:bg-primary-hover"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Deploy selected ({selectedForDeploy.size})
+              </button>
+            </div>
+          )}
         </header>
 
         <div className="flex-1 flex min-h-0">
@@ -1092,6 +1154,8 @@ export default function Agents() {
                     card={c}
                     active={activeId === c.id}
                     onClick={() => setActiveId(c.id)}
+                    selected={selectedForDeploy.has(c.id)}
+                    onToggleSelect={() => toggleDeploySelect(c.id)}
                   />
                 ))}
               </div>
@@ -1104,6 +1168,20 @@ export default function Agents() {
           )}
         </div>
       </div>
+
+      {showPlan && deployCards.length > 0 && (
+        <DeployPlanDialog
+          cards={deployCards}
+          onClose={() => setShowPlan(false)}
+          onDeployed={(instanceId, status) => {
+            window.dispatchEvent(
+              new CustomEvent("nexus:instance-updated", {
+                detail: { instance_id: instanceId, status },
+              }),
+            );
+          }}
+        />
+      )}
     </div>
   );
 }
