@@ -136,6 +136,40 @@ class AgentLocalModelRow(Base):
     updated_at: Mapped[datetime] = mapped_column(default=_now, onupdate=_now)
 
 
+class IntegrationProfileRow(Base):
+    """An operator-configured instance of an integration adapter.
+
+    Secrets are **never** stored here as plaintext. ``secret_refs`` maps an
+    adapter's logical secret key (e.g. ``"api_key"``) to the *name* of the
+    environment variable the value is read from at probe/resolve time. This is
+    the documented limitation of the current model: without a dedicated vault,
+    Nexus holds references, not values.
+
+    ``adapter_id`` is a soft reference to an :class:`app.services.integrations`
+    registry adapter (data, not a SQL table), validated at the API layer.
+    """
+
+    __tablename__ = "integration_profile"
+    __table_args__ = (
+        UniqueConstraint("adapter_id", "name", name="uq_integration_profile_adapter_name"),
+    )
+
+    id: Mapped[UUID] = mapped_column(_UUID(), primary_key=True, default=uuid4)
+    adapter_id: Mapped[str] = mapped_column(String(64), index=True)
+    name: Mapped[str] = mapped_column(String(120))
+    base_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Non-secret config fields (e.g. region, model tag).
+    config_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    # Logical secret key -> environment variable NAME (never a value).
+    secret_refs_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    # Soft references to agent_templates catalogue card ids this profile serves.
+    # Empty ⇒ available to every agent on the instance.
+    template_ids_json: Mapped[list] = mapped_column(JSON, default=list)
+    enabled: Mapped[bool] = mapped_column(default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(default=_now)
+    updated_at: Mapped[datetime] = mapped_column(default=_now, onupdate=_now)
+
+
 class NotificationRow(Base):
     __tablename__ = "notification"
 

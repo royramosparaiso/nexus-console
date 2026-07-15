@@ -1,6 +1,6 @@
 {
-  "version": "0.13.5",
-  "total": 221,
+  "version": "0.13.7",
+  "total": 229,
   "cards": [
     {
       "id": "banking_operations",
@@ -6277,6 +6277,82 @@
       "path": "skills/email_verification.md"
     },
     {
+      "id": "embeddings_provider",
+      "name": "embeddings_provider",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "operations",
+      "phase": null,
+      "step": null,
+      "domain": "operations",
+      "rollout_stage": "1-foundation",
+      "autonomy": "human-assisted",
+      "maturity": 1,
+      "verticals": [
+        "any"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "integration_profile",
+        "embeddings_endpoint"
+      ],
+      "tags": [
+        "embeddings",
+        "nomic",
+        "sbert",
+        "openai",
+        "voyage",
+        "google",
+        "cohere",
+        "integration",
+        "skill"
+      ],
+      "gate": false,
+      "optional": true,
+      "path": "skills/embeddings_provider.md"
+    },
+    {
+      "id": "framework_bridge",
+      "name": "framework_bridge",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "operations",
+      "phase": null,
+      "step": null,
+      "domain": "operations",
+      "rollout_stage": "2-capture",
+      "autonomy": "human-assisted",
+      "maturity": 1,
+      "verticals": [
+        "any"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "integration_profile",
+        "framework_service"
+      ],
+      "tags": [
+        "framework",
+        "langchain",
+        "llamaindex",
+        "haystack",
+        "txtai",
+        "sidecar",
+        "mcp",
+        "integration",
+        "skill"
+      ],
+      "gate": false,
+      "optional": true,
+      "path": "skills/framework_bridge.md"
+    },
+    {
       "id": "funding_financials_lookup",
       "name": "funding_financials_lookup",
       "artifact_type": "skill",
@@ -6308,6 +6384,47 @@
       "gate": false,
       "optional": false,
       "path": "skills/funding_financials_lookup.md"
+    },
+    {
+      "id": "llm_provider",
+      "name": "llm_provider",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "operations",
+      "phase": null,
+      "step": null,
+      "domain": "operations",
+      "rollout_stage": "1-foundation",
+      "autonomy": "human-assisted",
+      "maturity": 1,
+      "verticals": [
+        "any"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "integration_profile",
+        "openai_compatible_chat"
+      ],
+      "tags": [
+        "llm",
+        "chat",
+        "openai",
+        "anthropic",
+        "gemini",
+        "mistral",
+        "bedrock",
+        "cohere",
+        "groq",
+        "together",
+        "integration",
+        "skill"
+      ],
+      "gate": false,
+      "optional": true,
+      "path": "skills/llm_provider.md"
     },
     {
       "id": "local_inference",
@@ -6344,6 +6461,85 @@
       "path": "skills/local_inference.md"
     },
     {
+      "id": "model_evaluation",
+      "name": "model_evaluation",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "operations",
+      "phase": null,
+      "step": null,
+      "domain": "intelligence",
+      "rollout_stage": "3-generate",
+      "autonomy": "human-assisted",
+      "maturity": 1,
+      "verticals": [
+        "any"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "integration_profile",
+        "evaluation_service"
+      ],
+      "tags": [
+        "evaluation",
+        "giskard",
+        "ragas",
+        "deepeval",
+        "testing",
+        "sidecar",
+        "integration",
+        "skill"
+      ],
+      "gate": false,
+      "optional": true,
+      "path": "skills/model_evaluation.md"
+    },
+    {
+      "id": "open_model_gateway",
+      "name": "open_model_gateway",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "operations",
+      "phase": null,
+      "step": null,
+      "domain": "operations",
+      "rollout_stage": "1-foundation",
+      "autonomy": "human-assisted",
+      "maturity": 1,
+      "verticals": [
+        "any"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [
+        "llm_provider"
+      ],
+      "produces": "structured_json",
+      "tools": [
+        "integration_profile",
+        "ollama_runtime",
+        "huggingface_inference"
+      ],
+      "tags": [
+        "open-model",
+        "phi4",
+        "gemma3",
+        "llama4",
+        "qwen3",
+        "ollama",
+        "huggingface",
+        "local",
+        "integration",
+        "skill"
+      ],
+      "gate": false,
+      "optional": true,
+      "path": "skills/open_model_gateway.md"
+    },
+    {
       "id": "tech_stack_detection",
       "name": "tech_stack_detection",
       "artifact_type": "skill",
@@ -6374,6 +6570,124 @@
       "gate": false,
       "optional": false,
       "path": "skills/tech_stack_detection.md"
+    },
+    {
+      "id": "vector_store",
+      "name": "vector_store",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "operations",
+      "phase": null,
+      "step": null,
+      "domain": "operations",
+      "rollout_stage": "1-foundation",
+      "autonomy": "human-assisted",
+      "maturity": 1,
+      "verticals": [
+        "any"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [
+        "embeddings_provider"
+      ],
+      "produces": "structured_json",
+      "tools": [
+        "integration_profile",
+        "vector_index"
+      ],
+      "tags": [
+        "vector-db",
+        "chroma",
+        "pinecone",
+        "qdrant",
+        "weaviate",
+        "milvus",
+        "pgvector",
+        "cassandra",
+        "opensearch",
+        "integration",
+        "skill"
+      ],
+      "gate": false,
+      "optional": true,
+      "path": "skills/vector_store.md"
+    },
+    {
+      "id": "voicebox_tts",
+      "name": "voicebox_tts",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "operations",
+      "phase": null,
+      "step": null,
+      "domain": "operations",
+      "rollout_stage": "1-foundation",
+      "autonomy": "human-assisted",
+      "maturity": 1,
+      "verticals": [
+        "any"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "voicebox_rest",
+        "voicebox_mcp"
+      ],
+      "tags": [
+        "voice",
+        "tts",
+        "stt",
+        "whisper",
+        "mcp",
+        "local",
+        "voicebox",
+        "skill"
+      ],
+      "gate": false,
+      "optional": true,
+      "path": "skills/voicebox_tts.md"
+    },
+    {
+      "id": "web_extraction",
+      "name": "web_extraction",
+      "artifact_type": "skill",
+      "lifecycle": "ops",
+      "category": "operations",
+      "phase": null,
+      "step": null,
+      "domain": "intelligence",
+      "rollout_stage": "2-capture",
+      "autonomy": "human-assisted",
+      "maturity": 1,
+      "verticals": [
+        "any"
+      ],
+      "role": null,
+      "mode": null,
+      "depends_on": [],
+      "produces": "structured_json",
+      "tools": [
+        "integration_profile",
+        "extraction_service"
+      ],
+      "tags": [
+        "data-extraction",
+        "crawl4ai",
+        "firecrawl",
+        "scrapegraphai",
+        "megaparser",
+        "docling",
+        "llamaparse",
+        "extractthinker",
+        "integration",
+        "skill"
+      ],
+      "gate": false,
+      "optional": true,
+      "path": "skills/web_extraction.md"
     },
     {
       "id": "channel_economics_modeler",
@@ -7501,9 +7815,17 @@
         "data_visualization",
         "document_extraction",
         "email_verification",
+        "embeddings_provider",
+        "framework_bridge",
         "funding_financials_lookup",
+        "llm_provider",
         "local_inference",
-        "tech_stack_detection"
+        "model_evaluation",
+        "open_model_gateway",
+        "tech_stack_detection",
+        "vector_store",
+        "voicebox_tts",
+        "web_extraction"
       ]
     },
     "by_lifecycle": {
@@ -7572,6 +7894,7 @@
         "email_nurture_writer",
         "email_triage_office",
         "email_verification",
+        "embeddings_provider",
         "engagement_replies",
         "entity_compliance",
         "escalations",
@@ -7584,6 +7907,7 @@
         "fit_scoring",
         "follow_up_drafting",
         "forecasting",
+        "framework_bridge",
         "funding_financials_lookup",
         "goal_pacing",
         "guest_list_management",
@@ -7607,6 +7931,7 @@
         "linkedin_messaging",
         "list_building",
         "listing_generator",
+        "llm_provider",
         "local_inference",
         "long_form_content_writer",
         "lookalike_modeling",
@@ -7614,6 +7939,7 @@
         "market_mapping",
         "meeting_booking",
         "meeting_follow_ups",
+        "model_evaluation",
         "monitoring_alerting",
         "mortgage_prequal",
         "network_mapping",
@@ -7625,6 +7951,7 @@
         "onboarding_journeys",
         "onboarding_training",
         "open_house_coordination",
+        "open_model_gateway",
         "paid_ads_optimizer",
         "payment_tracking",
         "person_research",
@@ -7676,10 +8003,13 @@
         "trigger_detection",
         "trusting_the_call",
         "ugc_pipeline",
+        "vector_store",
         "vertical_analysis",
         "video_prospecting",
+        "voicebox_tts",
         "warm_intro_pathing",
         "warm_path_finding",
+        "web_extraction",
         "web_maps_scraping",
         "webinar_producer",
         "win_loss_analysis"
@@ -7893,21 +8223,29 @@
         "cost_usage_tracking",
         "data_migration",
         "document_extraction",
+        "embeddings_provider",
         "final_ship_approval",
+        "framework_bridge",
         "handoff_docs",
         "incident_response",
         "integration_builds",
         "kickoff_pack",
+        "llm_provider",
         "local_inference",
         "meeting_follow_ups",
+        "model_evaluation",
         "monitoring_alerting",
+        "open_model_gateway",
         "portal_sync",
         "project_scaffolding",
         "qa_verification",
         "scope_calls",
         "sop_generation",
         "status_updates",
-        "transcript_processing"
+        "transcript_processing",
+        "vector_store",
+        "voicebox_tts",
+        "web_extraction"
       ],
       "sales": [
         "account_enrichment",
@@ -8124,6 +8462,7 @@
         "competitor_teardown",
         "data_visualization",
         "funding_financials_lookup",
+        "model_evaluation",
         "network_mapping",
         "news_mention_tracking",
         "person_research",
@@ -8136,7 +8475,8 @@
         "trusting_the_call",
         "vertical_analysis",
         "warm_intro_pathing",
-        "warm_path_finding"
+        "warm_path_finding",
+        "web_extraction"
       ],
       "marketing": [
         "ad_creative_generator",
@@ -8176,7 +8516,9 @@
         "data_migration",
         "dj_booking_pipeline",
         "document_extraction",
+        "embeddings_provider",
         "final_ship_approval",
+        "framework_bridge",
         "guest_list_management",
         "handoff_docs",
         "incident_book",
@@ -8184,9 +8526,11 @@
         "integration_builds",
         "kickoff_pack",
         "licensing_compliance",
+        "llm_provider",
         "local_inference",
         "meeting_follow_ups",
         "monitoring_alerting",
+        "open_model_gateway",
         "portal_sync",
         "project_scaffolding",
         "qa_verification",
@@ -8195,7 +8539,9 @@
         "social_night_recap",
         "sop_generation",
         "status_updates",
-        "transcript_processing"
+        "transcript_processing",
+        "vector_store",
+        "voicebox_tts"
       ],
       "sales": [
         "account_enrichment",
@@ -8309,6 +8655,7 @@
         "entity_compliance",
         "expense_categorization",
         "fit_scoring",
+        "framework_bridge",
         "funding_financials_lookup",
         "guest_list_management",
         "health_scoring",
@@ -8337,7 +8684,8 @@
         "trigger_detection",
         "ugc_pipeline",
         "warm_intro_pathing",
-        "warm_path_finding"
+        "warm_path_finding",
+        "web_extraction"
       ],
       "3-generate": [
         "ad_creative_generator",
@@ -8372,6 +8720,7 @@
         "macro_authoring",
         "meeting_booking",
         "meeting_follow_ups",
+        "model_evaluation",
         "objection_response",
         "offer_letter_drafting",
         "onboarding_training",
@@ -8404,17 +8753,22 @@
         "content_calendar",
         "database_mining",
         "email_verification",
+        "embeddings_provider",
         "icp_definition",
         "list_building",
+        "llm_provider",
         "local_inference",
         "lookalike_modeling",
         "market_mapping",
         "network_mapping",
+        "open_model_gateway",
         "personalization_research",
         "research_prioritization",
         "scope_calls",
         "social_mining",
         "sop_generation",
+        "vector_store",
+        "voicebox_tts",
         "web_maps_scraping"
       ]
     },
@@ -8566,11 +8920,13 @@
         "data_migration",
         "deliverability",
         "dj_booking_pipeline",
+        "embeddings_provider",
         "escalations",
         "event_coordination",
         "event_planning",
         "expense_categorization",
         "forecasting",
+        "framework_bridge",
         "handoff_docs",
         "health_scoring",
         "hr_policy_assistant",
@@ -8579,15 +8935,18 @@
         "influencer_outreach",
         "integration_builds",
         "landing_page_writer",
+        "llm_provider",
         "local_inference",
         "long_form_content_writer",
         "lookalike_modeling",
+        "model_evaluation",
         "monitoring_alerting",
         "news_mention_tracking",
         "objection_library",
         "objection_response",
         "offer_letter_drafting",
         "open_house_coordination",
+        "open_model_gateway",
         "paid_ads_optimizer",
         "pitch_deck_generator",
         "pr_press_kit",
@@ -8597,7 +8956,10 @@
         "tam_market_sizing",
         "ticket_triage",
         "trigger_detection",
+        "vector_store",
+        "voicebox_tts",
         "warm_path_finding",
+        "web_extraction",
         "webinar_producer"
       ]
     },
@@ -9130,6 +9492,7 @@
         "email_nurture_writer",
         "email_triage_office",
         "email_verification",
+        "embeddings_provider",
         "engagement_replies",
         "entity_compliance",
         "escalations",
@@ -9145,6 +9508,7 @@
         "fit_scoring",
         "follow_up_drafting",
         "forecasting",
+        "framework_bridge",
         "functional_specifier",
         "fundamental_analyst",
         "funding_financials_lookup",
@@ -9171,6 +9535,7 @@
         "legal_setup_cost_estimator",
         "linkedin_messaging",
         "list_building",
+        "llm_provider",
         "local_inference",
         "long_form_content_writer",
         "lookalike_modeling",
@@ -9189,6 +9554,7 @@
         "memory_reflector",
         "minimal_tech_stack_cost_estimator",
         "mobile_app_specifier",
+        "model_evaluation",
         "monitoring_alerting",
         "mvp_scoper",
         "network_mapping",
@@ -9198,6 +9564,7 @@
         "offer_positioning",
         "onboarding_journeys",
         "onboarding_training",
+        "open_model_gateway",
         "paid_ads_optimizer",
         "payment_tracking",
         "person_research",
@@ -9262,10 +9629,13 @@
         "ux_platform_designer",
         "validation_experiment_designer",
         "validation_hypotheses_analyst",
+        "vector_store",
         "vertical_analysis",
         "video_prospecting",
+        "voicebox_tts",
         "warm_intro_pathing",
         "warm_path_finding",
+        "web_extraction",
         "web_maps_scraping",
         "webinar_producer",
         "win_loss_analysis"
@@ -10328,7 +10698,14 @@
         "incident_response"
       ],
       "integration": [
-        "integration_builds"
+        "embeddings_provider",
+        "framework_bridge",
+        "integration_builds",
+        "llm_provider",
+        "model_evaluation",
+        "open_model_gateway",
+        "vector_store",
+        "web_extraction"
       ],
       "api": [
         "integration_builds"
@@ -10531,6 +10908,8 @@
         "web_maps_scraping"
       ],
       "local": [
+        "open_model_gateway",
+        "voicebox_tts",
         "web_maps_scraping"
       ],
       "data-model": [
@@ -10746,9 +11125,17 @@
         "data_visualization",
         "document_extraction",
         "email_verification",
+        "embeddings_provider",
+        "framework_bridge",
         "funding_financials_lookup",
+        "llm_provider",
         "local_inference",
-        "tech_stack_detection"
+        "model_evaluation",
+        "open_model_gateway",
+        "tech_stack_detection",
+        "vector_store",
+        "voicebox_tts",
+        "web_extraction"
       ],
       "contact": [
         "contact_enrichment"
@@ -10759,8 +11146,78 @@
       "extraction": [
         "document_extraction"
       ],
+      "embeddings": [
+        "embeddings_provider"
+      ],
+      "nomic": [
+        "embeddings_provider"
+      ],
+      "sbert": [
+        "embeddings_provider"
+      ],
+      "openai": [
+        "embeddings_provider",
+        "llm_provider"
+      ],
+      "voyage": [
+        "embeddings_provider"
+      ],
+      "google": [
+        "embeddings_provider"
+      ],
+      "cohere": [
+        "embeddings_provider",
+        "llm_provider"
+      ],
+      "framework": [
+        "framework_bridge"
+      ],
+      "langchain": [
+        "framework_bridge"
+      ],
+      "llamaindex": [
+        "framework_bridge"
+      ],
+      "haystack": [
+        "framework_bridge"
+      ],
+      "txtai": [
+        "framework_bridge"
+      ],
+      "sidecar": [
+        "framework_bridge",
+        "model_evaluation"
+      ],
+      "mcp": [
+        "framework_bridge",
+        "voicebox_tts"
+      ],
       "funding": [
         "funding_financials_lookup"
+      ],
+      "llm": [
+        "llm_provider"
+      ],
+      "chat": [
+        "llm_provider"
+      ],
+      "anthropic": [
+        "llm_provider"
+      ],
+      "gemini": [
+        "llm_provider"
+      ],
+      "mistral": [
+        "llm_provider"
+      ],
+      "bedrock": [
+        "llm_provider"
+      ],
+      "groq": [
+        "llm_provider"
+      ],
+      "together": [
+        "llm_provider"
       ],
       "inference": [
         "local_inference"
@@ -10776,6 +11233,108 @@
       ],
       "browser": [
         "local_inference"
+      ],
+      "evaluation": [
+        "model_evaluation"
+      ],
+      "giskard": [
+        "model_evaluation"
+      ],
+      "ragas": [
+        "model_evaluation"
+      ],
+      "deepeval": [
+        "model_evaluation"
+      ],
+      "testing": [
+        "model_evaluation"
+      ],
+      "open-model": [
+        "open_model_gateway"
+      ],
+      "phi4": [
+        "open_model_gateway"
+      ],
+      "gemma3": [
+        "open_model_gateway"
+      ],
+      "llama4": [
+        "open_model_gateway"
+      ],
+      "qwen3": [
+        "open_model_gateway"
+      ],
+      "ollama": [
+        "open_model_gateway"
+      ],
+      "huggingface": [
+        "open_model_gateway"
+      ],
+      "vector-db": [
+        "vector_store"
+      ],
+      "chroma": [
+        "vector_store"
+      ],
+      "pinecone": [
+        "vector_store"
+      ],
+      "qdrant": [
+        "vector_store"
+      ],
+      "weaviate": [
+        "vector_store"
+      ],
+      "milvus": [
+        "vector_store"
+      ],
+      "pgvector": [
+        "vector_store"
+      ],
+      "cassandra": [
+        "vector_store"
+      ],
+      "opensearch": [
+        "vector_store"
+      ],
+      "voice": [
+        "voicebox_tts"
+      ],
+      "tts": [
+        "voicebox_tts"
+      ],
+      "stt": [
+        "voicebox_tts"
+      ],
+      "whisper": [
+        "voicebox_tts"
+      ],
+      "voicebox": [
+        "voicebox_tts"
+      ],
+      "data-extraction": [
+        "web_extraction"
+      ],
+      "crawl4ai": [
+        "web_extraction"
+      ],
+      "firecrawl": [
+        "web_extraction"
+      ],
+      "scrapegraphai": [
+        "web_extraction"
+      ],
+      "megaparser": [
+        "web_extraction"
+      ],
+      "docling": [
+        "web_extraction"
+      ],
+      "llamaparse": [
+        "web_extraction"
+      ],
+      "extractthinker": [
+        "web_extraction"
       ],
       "channels": [
         "channel_economics_modeler"

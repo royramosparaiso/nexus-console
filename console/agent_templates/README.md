@@ -1,6 +1,6 @@
 # Agent Templates — Master Index
 
-Catalogue of **221 cards** across two independent axes: **46 project-lifecycle cards** (phases 0-5 + standalone finance) and **175 business-operations cards** (7 domains × 4 rollout stages × 3 autonomy levels). By artefact: **161 agents · 52 sidecars · 8 skills**.
+Catalogue of **229 cards** across two independent axes: **46 project-lifecycle cards** (phases 0-5 + standalone finance) and **183 business-operations cards** (7 domains × 4 rollout stages × 3 autonomy levels). By artefact: **161 agents · 52 sidecars · 16 skills**.
 
 Every card carries YAML frontmatter (see [`_schema.md`](_schema.md)). Regenerate this index and the machine-readable [`catalog.json`](catalog.json) via `scripts/build_agent_templates_index.py`.
 
@@ -118,8 +118,8 @@ Templates that operate a running business — organised by domain, then plotted 
 | [Sales](#sales) | 33 |
 | [Deals](#deals) | 28 |
 | [Marketing](#marketing) | 24 |
-| [Operations](#operations) | 31 |
-| [Intelligence](#intelligence) | 21 |
+| [Operations](#operations) | 37 |
+| [Intelligence](#intelligence) | 23 |
 | [Customer](#customer) | 16 |
 | [Back Office](#back-office) | 22 |
 
@@ -247,8 +247,8 @@ Templates that operate a running business — organised by domain, then plotted 
 
 | Rollout \ Autonomy | human-led | human-assisted | fully-autonomous |
 | --- | --- | --- | --- |
-| 1-foundation | 🤖 [`architecture_decisions`](operations/architecture_decisions.md)<br/>🤖 [`scope_calls`](operations/scope_calls.md)<br/>🤖 [`sop_generation`](operations/sop_generation.md) | 🧩 [`local_inference`](skills/local_inference.md) |  |
-| 2-capture |  | 🤖 [`access_collection`](operations/access_collection.md)<br/>⚙️ [`data_migration`](operations/data_migration.md)<br/>🤖 [`qa_verification`](operations/qa_verification.md) | ⚙️ [`context_maintenance`](operations/context_maintenance.md)<br/>🧩 [`document_extraction`](skills/document_extraction.md)<br/>⚙️ [`transcript_processing`](operations/transcript_processing.md) |
+| 1-foundation | 🤖 [`architecture_decisions`](operations/architecture_decisions.md)<br/>🤖 [`scope_calls`](operations/scope_calls.md)<br/>🤖 [`sop_generation`](operations/sop_generation.md) | 🧩 [`embeddings_provider`](skills/embeddings_provider.md)<br/>🧩 [`llm_provider`](skills/llm_provider.md)<br/>🧩 [`local_inference`](skills/local_inference.md)<br/>🧩 [`open_model_gateway`](skills/open_model_gateway.md)<br/>🧩 [`vector_store`](skills/vector_store.md)<br/>🧩 [`voicebox_tts`](skills/voicebox_tts.md) |  |
+| 2-capture |  | 🤖 [`access_collection`](operations/access_collection.md)<br/>⚙️ [`data_migration`](operations/data_migration.md)<br/>🧩 [`framework_bridge`](skills/framework_bridge.md)<br/>🤖 [`qa_verification`](operations/qa_verification.md) | ⚙️ [`context_maintenance`](operations/context_maintenance.md)<br/>🧩 [`document_extraction`](skills/document_extraction.md)<br/>⚙️ [`transcript_processing`](operations/transcript_processing.md) |
 | 3-generate |  | 🤖 [`handoff_docs`](operations/handoff_docs.md)<br/>🤖 [`integration_builds`](operations/integration_builds.md) | 🤖 [`kickoff_pack`](operations/kickoff_pack.md)<br/>🤖 [`meeting_follow_ups`](operations/meeting_follow_ups.md)<br/>⚙️ [`project_scaffolding`](operations/project_scaffolding.md) |
 | 4-orchestrate | 🤖 [`client_trust`](operations/client_trust.md)<br/>🤖 [`final_ship_approval`](operations/final_ship_approval.md) | 🤖 [`agent_evaluation`](operations/agent_evaluation.md)<br/>🤖 [`incident_response`](operations/incident_response.md)<br/>⚙️ [`monitoring_alerting`](operations/monitoring_alerting.md) | ⚙️ [`cost_usage_tracking`](operations/cost_usage_tracking.md)<br/>⚙️ [`portal_sync`](operations/portal_sync.md)<br/>🤖 [`status_updates`](operations/status_updates.md) |
 
@@ -256,7 +256,12 @@ Templates that operate a running business — organised by domain, then plotted 
 
 | Stage | Autonomy | Kind | Id | Role | Mode | Produces |
 | --- | --- | --- | --- | --- | --- | --- |
+| 1-foundation | human-assisted | skill | [`embeddings_provider`](skills/embeddings_provider.md) | — | — | structured_json |
+| 1-foundation | human-assisted | skill | [`llm_provider`](skills/llm_provider.md) | — | — | structured_json |
 | 1-foundation | human-assisted | skill | [`local_inference`](skills/local_inference.md) | — | — | structured_json |
+| 1-foundation | human-assisted | skill | [`open_model_gateway`](skills/open_model_gateway.md) | — | — | structured_json |
+| 1-foundation | human-assisted | skill | [`vector_store`](skills/vector_store.md) | — | — | structured_json |
+| 1-foundation | human-assisted | skill | [`voicebox_tts`](skills/voicebox_tts.md) | — | — | structured_json |
 | 1-foundation | human-led | agent | [`architecture_decisions`](operations/architecture_decisions.md) | analyst | single-shot | markdown_report |
 | 1-foundation | human-led | agent | [`scope_calls`](operations/scope_calls.md) | writer | single-shot | markdown_report |
 | 1-foundation | human-led | agent | [`sop_generation`](operations/sop_generation.md) | writer | single-shot | markdown_report |
@@ -265,6 +270,7 @@ Templates that operate a running business — organised by domain, then plotted 
 | 2-capture | fully-autonomous | sidecar | [`transcript_processing`](operations/transcript_processing.md) | worker | event-driven | side_effect |
 | 2-capture | human-assisted | agent | [`access_collection`](operations/access_collection.md) | writer | single-shot | markdown_report |
 | 2-capture | human-assisted | sidecar | [`data_migration`](operations/data_migration.md) | worker | event-driven | side_effect |
+| 2-capture | human-assisted | skill | [`framework_bridge`](skills/framework_bridge.md) | — | — | structured_json |
 | 2-capture | human-assisted | agent | [`qa_verification`](operations/qa_verification.md) | reviewer | single-shot | markdown_report |
 | 3-generate | fully-autonomous | agent | [`kickoff_pack`](operations/kickoff_pack.md) | writer | single-shot | pdf |
 | 3-generate | fully-autonomous | agent | [`meeting_follow_ups`](operations/meeting_follow_ups.md) | writer | event-driven | structured_json |
@@ -287,8 +293,8 @@ Templates that operate a running business — organised by domain, then plotted 
 | Rollout \ Autonomy | human-led | human-assisted | fully-autonomous |
 | --- | --- | --- | --- |
 | 1-foundation | 🤖 [`network_mapping`](intelligence/network_mapping.md)<br/>🤖 [`research_prioritization`](intelligence/research_prioritization.md) |  |  |
-| 2-capture | 🤖 [`reading_between_lines`](intelligence/reading_between_lines.md)<br/>🤖 [`warm_intro_pathing`](intelligence/warm_intro_pathing.md) | 🤖 [`buying_committee_mapping`](intelligence/buying_committee_mapping.md)<br/>⚙️ [`warm_path_finding`](intelligence/warm_path_finding.md) | 🧩 [`funding_financials_lookup`](skills/funding_financials_lookup.md)<br/>🧩 [`tech_stack_detection`](skills/tech_stack_detection.md) |
-| 3-generate |  | 🤖 [`tam_market_sizing`](intelligence/tam_market_sizing.md) | 🤖 [`company_deep_dive`](intelligence/company_deep_dive.md)<br/>🤖 [`competitor_teardown`](intelligence/competitor_teardown.md)<br/>🧩 [`data_visualization`](skills/data_visualization.md)<br/>🤖 [`person_research`](intelligence/person_research.md)<br/>🤖 [`pricing_research`](intelligence/pricing_research.md)<br/>🤖 [`research_reports`](intelligence/research_reports.md)<br/>🤖 [`vertical_analysis`](intelligence/vertical_analysis.md) |
+| 2-capture | 🤖 [`reading_between_lines`](intelligence/reading_between_lines.md)<br/>🤖 [`warm_intro_pathing`](intelligence/warm_intro_pathing.md) | 🤖 [`buying_committee_mapping`](intelligence/buying_committee_mapping.md)<br/>⚙️ [`warm_path_finding`](intelligence/warm_path_finding.md)<br/>🧩 [`web_extraction`](skills/web_extraction.md) | 🧩 [`funding_financials_lookup`](skills/funding_financials_lookup.md)<br/>🧩 [`tech_stack_detection`](skills/tech_stack_detection.md) |
+| 3-generate |  | 🧩 [`model_evaluation`](skills/model_evaluation.md)<br/>🤖 [`tam_market_sizing`](intelligence/tam_market_sizing.md) | 🤖 [`company_deep_dive`](intelligence/company_deep_dive.md)<br/>🤖 [`competitor_teardown`](intelligence/competitor_teardown.md)<br/>🧩 [`data_visualization`](skills/data_visualization.md)<br/>🤖 [`person_research`](intelligence/person_research.md)<br/>🤖 [`pricing_research`](intelligence/pricing_research.md)<br/>🤖 [`research_reports`](intelligence/research_reports.md)<br/>🤖 [`vertical_analysis`](intelligence/vertical_analysis.md) |
 | 4-orchestrate | 🤖 [`trusting_the_call`](intelligence/trusting_the_call.md) | ⚙️ [`account_monitoring`](intelligence/account_monitoring.md)<br/>⚙️ [`news_mention_tracking`](intelligence/news_mention_tracking.md) | 🤖 [`adversarial_verification`](intelligence/adversarial_verification.md)<br/>⚙️ [`alert_routing`](intelligence/alert_routing.md) |
 
 <details><summary>Full list</summary>
@@ -301,6 +307,7 @@ Templates that operate a running business — organised by domain, then plotted 
 | 2-capture | fully-autonomous | skill | [`tech_stack_detection`](skills/tech_stack_detection.md) | — | — | structured_json |
 | 2-capture | human-assisted | agent | [`buying_committee_mapping`](intelligence/buying_committee_mapping.md) | analyst | single-shot | structured_json |
 | 2-capture | human-assisted | sidecar | [`warm_path_finding`](intelligence/warm_path_finding.md) | worker | event-driven | structured_json |
+| 2-capture | human-assisted | skill | [`web_extraction`](skills/web_extraction.md) | — | — | structured_json |
 | 2-capture | human-led | agent | [`reading_between_lines`](intelligence/reading_between_lines.md) | analyst | single-shot | markdown_report |
 | 2-capture | human-led | agent | [`warm_intro_pathing`](intelligence/warm_intro_pathing.md) | analyst | single-shot | markdown_report |
 | 3-generate | fully-autonomous | agent | [`company_deep_dive`](intelligence/company_deep_dive.md) | analyst | single-shot | markdown_report |
@@ -310,6 +317,7 @@ Templates that operate a running business — organised by domain, then plotted 
 | 3-generate | fully-autonomous | agent | [`pricing_research`](intelligence/pricing_research.md) | analyst | single-shot | markdown_report |
 | 3-generate | fully-autonomous | agent | [`research_reports`](intelligence/research_reports.md) | writer | single-shot | pdf |
 | 3-generate | fully-autonomous | agent | [`vertical_analysis`](intelligence/vertical_analysis.md) | analyst | single-shot | markdown_report |
+| 3-generate | human-assisted | skill | [`model_evaluation`](skills/model_evaluation.md) | — | — | structured_json |
 | 3-generate | human-assisted | agent | [`tam_market_sizing`](intelligence/tam_market_sizing.md) | analyst | single-shot | markdown_report |
 | 4-orchestrate | fully-autonomous | agent | [`adversarial_verification`](intelligence/adversarial_verification.md) | judge | debate | decision |
 | 4-orchestrate | fully-autonomous | sidecar | [`alert_routing`](intelligence/alert_routing.md) | connector | event-driven | side_effect |
@@ -440,9 +448,17 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 
 | Id | Category | Domain |
 | --- | --- | --- |
+| [`embeddings_provider`](skills/embeddings_provider.md) | operations | operations |
+| [`framework_bridge`](skills/framework_bridge.md) | operations | operations |
 | [`fundraising_strategist`](scaling/fundraising_strategist.md) | scaling | — |
+| [`llm_provider`](skills/llm_provider.md) | operations | operations |
 | [`mobile_app_specifier`](scaling/mobile_app_specifier.md) | scaling | — |
+| [`model_evaluation`](skills/model_evaluation.md) | operations | intelligence |
+| [`open_model_gateway`](skills/open_model_gateway.md) | operations | operations |
 | [`startup_valuation_analyst`](scaling/startup_valuation_analyst.md) | scaling | — |
+| [`vector_store`](skills/vector_store.md) | operations | operations |
+| [`voicebox_tts`](skills/voicebox_tts.md) | operations | operations |
+| [`web_extraction`](skills/web_extraction.md) | operations | intelligence |
 
 ## Index by role
 
@@ -459,7 +475,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `reviewer` | 6 | `brand_voice_final_approvals`, `compliance_signoff`, `final_ship_approval`, `proposal_final_signoff`, `qa_verification`, `spend_authority` |
 | `worker` | 33 | `account_monitoring`, `analytics_rollup`, `bar_inventory`, `budget_tracking`, `calendar_management`, `call_capture`, `comment_cta_fulfillment`, `context_maintenance`, … (+25) |
 | `writer` | 67 | `access_collection`, `ad_creative_generator`, `agreement_drafting`, `banking_operations`, `brand_identity_writer`, `brand_voice_guide`, `brief_generation`, `client_reporting`, … (+59) |
-| `—` | 8 | `account_enrichment`, `contact_enrichment`, `data_visualization`, `document_extraction`, `email_verification`, `funding_financials_lookup`, `local_inference`, `tech_stack_detection` |
+| `—` | 16 | `account_enrichment`, `contact_enrichment`, `data_visualization`, `document_extraction`, `email_verification`, `embeddings_provider`, `framework_bridge`, `funding_financials_lookup`, … (+8) |
 
 ## Index by tag
 
@@ -484,6 +500,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `analyst-led` | `reading_between_lines`, `research_prioritization`, `trusting_the_call` |
 | `analytics` | `analytics_rollup` |
 | `android` | `mobile_app_specifier` |
+| `anthropic` | `llm_provider` |
 | `api` | `integration_builds` |
 | `approval` | `creative_approval_flow`, `final_ship_approval`, `proposal_final_signoff`, `spend_authority` |
 | `ar` | `collections` |
@@ -496,6 +513,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `bant` | `lead_qualification` |
 | `bar` | `bar_inventory` |
 | `bear` | `bull_bear_debate_pair` |
+| `bedrock` | `llm_provider` |
 | `benchmarks` | `channel_economics_modeler` |
 | `berkus` | `startup_valuation_analyst` |
 | `big-accounts` | `deal_strategy_big_accounts` |
@@ -528,10 +546,13 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `capture` | `referral_capture` |
 | `case-study` | `proof_matching` |
 | `cash-flow` | `cash_flow_forecasting`, `tranche_0_budgeter` |
+| `cassandra` | `vector_store` |
 | `change-order` | `scope_change_control` |
 | `channels` | `channel_economics_modeler` |
 | `chart` | `data_visualization`, `market_research_analyst` |
+| `chat` | `llm_provider` |
 | `checkpoint` | `scaling_gate_definer`, `strategic_decision_gate` |
+| `chroma` | `vector_store` |
 | `churn` | `churn_prediction`, `save_calls` |
 | `classification` | `reply_classification` |
 | `cleanup` | `crm_hygiene` |
@@ -540,6 +561,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `closed-lost` | `reactivation` |
 | `closing` | `closing_coordination`, `closing_the_deal` |
 | `cloud` | `tech_stack_vendors_analyst` |
+| `cohere` | `embeddings_provider`, `llm_provider` |
 | `cold` | `cold_email_drafting` |
 | `cold-call` | `cold_call_scripting` |
 | `collections` | `collections` |
@@ -562,6 +584,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `cpc` | `channel_economics_modeler` |
 | `cpl` | `channel_economics_modeler` |
 | `cpm` | `channel_economics_modeler` |
+| `crawl4ai` | `web_extraction` |
 | `creative` | `ad_creative_generator`, `brief_generation`, `creative_approval_flow` |
 | `creator` | `influencer_outreach` |
 | `credentials` | `access_collection` |
@@ -573,6 +596,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `cx` | `community_moderation_cx`, `escalations`, `ticket_triage` |
 | `dafo` | `swot_analyst` |
 | `dashboard` | `pipeline_reporting` |
+| `data-extraction` | `web_extraction` |
 | `data-model` | `data_schema_designer` |
 | `database` | `database_mining` |
 | `dcf` | `startup_valuation_analyst` |
@@ -581,6 +605,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `debrief` | `post_call_debrief` |
 | `decision` | `trusting_the_call` |
 | `deep-dive` | `company_deep_dive` |
+| `deepeval` | `model_evaluation` |
 | `deliverability` | `deliverability`, `email_verification`, `send_optimization` |
 | `demo` | `demo_prototyping` |
 | `dependencies` | `risk_assessor` |
@@ -590,6 +615,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `dkim` | `deliverability` |
 | `dm` | `linkedin_messaging` |
 | `dmarc` | `deliverability` |
+| `docling` | `web_extraction` |
 | `documentation` | `handoff_docs` |
 | `documents` | `document_extraction`, `document_filing` |
 | `docx` | `project_intake_facilitator` |
@@ -600,6 +626,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `eaa` | `calendar_management` |
 | `elasticity` | `pricing_strategist` |
 | `email` | `cold_email_drafting`, `deliverability`, `email_nurture_writer`, `email_verification`, `follow_up_drafting` |
+| `embeddings` | `embeddings_provider` |
 | `enablement` | `objection_library` |
 | `engagement` | `deal_room_assembly` |
 | `enrichment` | `account_enrichment`, `contact_enrichment` |
@@ -610,6 +637,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `escrow` | `closing_coordination` |
 | `etl` | `data_migration` |
 | `evals` | `agent_evaluation` |
+| `evaluation` | `model_evaluation` |
 | `events` | `event_coordination`, `event_planning`, `webinar_producer` |
 | `exec` | `email_triage_office` |
 | `executive-summary` | `executive_summary_writer` |
@@ -617,12 +645,14 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `expense` | `expense_categorization` |
 | `experiments` | `validation_experiment_designer` |
 | `extraction` | `document_extraction` |
+| `extractthinker` | `web_extraction` |
 | `features` | `competitive_analyst` |
 | `filing` | `document_filing` |
 | `filings` | `fundamental_analyst` |
 | `finance` | `bull_bear_debate_pair`, `fundamental_analyst`, `macro_context_agent`, `market_research_analyst`, `memory_reflector`, `risk_committee` |
 | `financials` | `financial_business_planner`, `financial_excel_builder`, `funding_financials_lookup` |
 | `finops` | `cost_usage_tracking` |
+| `firecrawl` | `web_extraction` |
 | `firmographics` | `account_enrichment`, `icp_definition` |
 | `fit` | `fit_scoring` |
 | `flows` | `data_schema_designer` |
@@ -630,6 +660,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `forecast` | `cash_flow_forecasting`, `forecasting` |
 | `founder-led` | `banking_operations`, `brand_voice_final_approvals`, `brand_voice_guide`, `candidate_sourcing`, `compliance_signoff`, `deal_strategy_big_accounts`, … (+6) |
 | `founder-onboarding` | `project_intake_facilitator` |
+| `framework` | `framework_bridge` |
 | `fred` | `macro_context_agent` |
 | `functional-spec` | `functional_specifier` |
 | `fundamentals` | `fundamental_analyst` |
@@ -639,18 +670,25 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `gate` | `final_ship_approval`, `strategic_decision_gate` |
 | `gate-1` | `scaling_gate_definer` |
 | `gdpr` | `legal_ip_analyst` |
+| `gemini` | `llm_provider` |
+| `gemma3` | `open_model_gateway` |
 | `geo` | `market_study_by_country_analyst`, `web_maps_scraping` |
+| `giskard` | `model_evaluation` |
 | `go-no-go` | `strategic_decision_gate` |
 | `go-to-market` | `gtm_strategist` |
+| `google` | `embeddings_provider` |
 | `graph` | `network_mapping` |
+| `groq` | `llm_provider` |
 | `gtm` | `gtm_strategist` |
 | `guest-list` | `guest_list_management` |
 | `handoff` | `handoff_docs` |
+| `haystack` | `framework_bridge` |
 | `health` | `health_scoring` |
 | `helpdesk` | `engagement_replies`, `macro_authoring` |
 | `hiring` | `candidate_sourcing`, `financial_business_planner`, `hiring_decisions`, `screening_scheduling` |
 | `hooks` | `personalization_research` |
 | `hr` | `hr_policy_assistant`, `onboarding_training` |
+| `huggingface` | `open_model_gateway` |
 | `hygiene` | `crm_hygiene` |
 | `hypothesis` | `validation_hypotheses_analyst` |
 | `iam` | `user_roles_permissions_writer` |
@@ -666,7 +704,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `influencer` | `influencer_outreach` |
 | `information-architecture` | `ux_platform_designer` |
 | `intake` | `project_intake_facilitator` |
-| `integration` | `integration_builds` |
+| `integration` | `embeddings_provider`, `framework_bridge`, `integration_builds`, `llm_provider`, `model_evaluation`, `open_model_gateway`, … (+2) |
 | `interpretation` | `reading_between_lines` |
 | `inventory` | `bar_inventory`, `resource_inventory_analyst` |
 | `investor` | `pitch_deck_designer` |
@@ -682,6 +720,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `landing` | `validation_experiment_designer` |
 | `landing-page` | `landing_page_writer` |
 | `landscape` | `market_mapping` |
+| `langchain` | `framework_bridge` |
 | `launch` | `campaign_launch`, `gtm_strategist` |
 | `legal` | `legal_ip_analyst`, `legal_setup_cost_estimator` |
 | `library` | `objection_library` |
@@ -691,7 +730,11 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `list` | `list_building` |
 | `listing` | `listing_generator` |
 | `litertjs` | `local_inference` |
-| `local` | `web_maps_scraping` |
+| `llama4` | `open_model_gateway` |
+| `llamaindex` | `framework_bridge` |
+| `llamaparse` | `web_extraction` |
+| `llm` | `llm_provider` |
+| `local` | `open_model_gateway`, `voicebox_tts`, `web_maps_scraping` |
 | `logo` | `brand_identity_writer` |
 | `long-form` | `long_form_content_writer` |
 | `lookalike` | `lookalike_modeling` |
@@ -704,15 +747,19 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `market-sizing` | `tam_market_sizing` |
 | `matching` | `buyer_matching` |
 | `matrix` | `risk_assessor` |
+| `mcp` | `framework_bridge`, `voicebox_tts` |
 | `meddpicc` | `buying_committee_mapping`, `lead_qualification` |
 | `meeting` | `meeting_booking` |
 | `meetings` | `meeting_follow_ups`, `transcript_processing` |
+| `megaparser` | `web_extraction` |
 | `memory` | `memory_reflector` |
 | `messaging` | `linkedin_messaging` |
 | `metrics` | `kpis_okrs_framework_writer` |
 | `migration` | `data_migration` |
 | `milestones` | `product_roadmap_writer` |
+| `milvus` | `vector_store` |
 | `mining` | `database_mining` |
+| `mistral` | `llm_provider` |
 | `mitigation` | `risk_assessor` |
 | `mobile` | `mobile_app_specifier` |
 | `modeling` | `lookalike_modeling` |
@@ -730,16 +777,21 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `new-business` | `pitch_deck_generator` |
 | `news` | `news_mention_tracking` |
 | `nightclub` | `bar_inventory`, `bottle_service_pricing`, `dj_booking_pipeline`, `guest_list_management`, `incident_book`, `licensing_compliance`, … (+2) |
+| `nomic` | `embeddings_provider` |
 | `north-star` | `kpis_okrs_framework_writer` |
 | `nurture` | `email_nurture_writer` |
 | `objection` | `objection_response` |
 | `objections` | `objection_library` |
 | `offer` | `offer_letter_drafting`, `offer_positioning` |
 | `okr` | `kpis_okrs_framework_writer` |
+| `ollama` | `open_model_gateway` |
 | `onboarding` | `access_collection`, `kickoff_pack`, `onboarding_journeys`, `onboarding_training` |
 | `one-pager` | `executive_summary_writer` |
 | `open-house` | `open_house_coordination` |
+| `open-model` | `open_model_gateway` |
+| `openai` | `embeddings_provider`, `llm_provider` |
 | `openbb` | `fundamental_analyst`, `macro_context_agent`, `market_research_analyst` |
+| `opensearch` | `vector_store` |
 | `operator-led` | `architecture_decisions`, `client_trust`, `final_ship_approval`, `scope_calls`, `sop_generation` |
 | `optimization` | `paid_ads_optimizer` |
 | `optional` | `fundraising_strategist`, `mobile_app_specifier`, `startup_valuation_analyst` |
@@ -757,12 +809,15 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `person` | `person_research` |
 | `personalization` | `personalization_research` |
 | `personas` | `market_customer_profiler` |
+| `pgvector` | `vector_store` |
 | `phase-1` | `brand_identity_writer`, `competitive_analyst`, `market_customer_profiler`, `market_gap_analyst`, `market_problem_analyst`, `market_study_by_country_analyst`, … (+4) |
 | `phase-2` | `legal_setup_cost_estimator`, `minimal_tech_stack_cost_estimator`, `mvp_scoper`, `resource_inventory_analyst`, `tranche_0_budgeter` |
 | `phase-3` | `channel_economics_modeler`, `ltv_cac_targeter`, `scaling_gate_definer`, `tranche_1_budgeter`, `validation_experiment_designer`, `validation_hypotheses_analyst` |
 | `phase-4` | `data_schema_designer`, `executive_summary_writer`, `financial_business_planner`, `financial_excel_builder`, `functional_specifier`, `fundraising_strategist`, … (+11) |
 | `phase-5` | `pitch_deck_designer` |
 | `phase-boundary` | `scaling_gate_definer`, `strategic_decision_gate`, `tranche_0_budgeter` |
+| `phi4` | `open_model_gateway` |
+| `pinecone` | `vector_store` |
 | `pipeline` | `creative_pipeline`, `forecasting`, `pipeline_reporting` |
 | `pitch` | `pitch_deck_generator` |
 | `pitch-deck` | `pitch_deck_designer` |
@@ -795,6 +850,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `pwa` | `mobile_app_specifier` |
 | `qa` | `qa_verification` |
 | `qbr` | `qbr_prep` |
+| `qdrant` | `vector_store` |
 | `quadrant` | `market_gap_analyst` |
 | `qualification` | `lead_qualification` |
 | `quality` | `adversarial_verification` |
@@ -802,6 +858,8 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `quarters` | `product_roadmap_writer` |
 | `questionnaire` | `project_intake_facilitator` |
 | `quote` | `pricing_support` |
+| `qwen3` | `open_model_gateway` |
+| `ragas` | `model_evaluation` |
 | `rates` | `macro_context_agent` |
 | `rbac` | `user_roles_permissions_writer` |
 | `reactivation` | `reactivation` |
@@ -836,6 +894,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `safety` | `incident_book` |
 | `sam` | `market_study_by_country_analyst` |
 | `save` | `save_calls` |
+| `sbert` | `embeddings_provider` |
 | `scaffolding` | `project_scaffolding` |
 | `scaling` | `scaling_gate_definer` |
 | `scheduling` | `meeting_booking` |
@@ -843,6 +902,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `scope` | `mvp_scoper`, `scope_calls`, `scope_change_control` |
 | `scorecard` | `startup_valuation_analyst` |
 | `scoring` | `fit_scoring` |
+| `scrapegraphai` | `web_extraction` |
 | `scraping` | `web_maps_scraping` |
 | `screening` | `screening_scheduling` |
 | `script` | `cold_call_scripting` |
@@ -857,9 +917,10 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `seo` | `seo_briefs`, `validation_experiment_designer` |
 | `sequences` | `cold_email_drafting` |
 | `shared-inbox` | `inbox_triage` |
+| `sidecar` | `framework_bridge`, `model_evaluation` |
 | `signals` | `account_monitoring`, `health_scoring`, `reading_between_lines`, `social_mining`, `trigger_detection` |
 | `sizing` | `risk_committee` |
-| `skill` | `account_enrichment`, `contact_enrichment`, `data_visualization`, `document_extraction`, `email_verification`, `funding_financials_lookup`, … (+2) |
+| `skill` | `account_enrichment`, `contact_enrichment`, `data_visualization`, `document_extraction`, `email_verification`, `embeddings_provider`, … (+10) |
 | `sla` | `hot_lead_routing` |
 | `social` | `comment_cta_fulfillment`, `social_mining`, `social_night_recap`, `social_posts_generator` |
 | `social-proof` | `proof_matching`, `ugc_pipeline` |
@@ -877,6 +938,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `status` | `status_updates` |
 | `strategic-accounts` | `key_account_relationships`, `strategic_account_calls`, `strategic_customer_accounts` |
 | `strategy` | `deal_strategy_big_accounts` |
+| `stt` | `voicebox_tts` |
 | `summary` | `call_capture` |
 | `swot` | `swot_analyst` |
 | `sync` | `crm_sync`, `database_mining`, `portal_sync` |
@@ -888,6 +950,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `technical` | `market_research_analyst` |
 | `term-sheet` | `fundraising_strategist` |
 | `terms` | `legal_ip_analyst` |
+| `testing` | `model_evaluation` |
 | `thesis` | `bull_bear_debate_pair` |
 | `threshold` | `ltv_cac_targeter` |
 | `throttle` | `send_optimization` |
@@ -895,6 +958,7 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `tiers` | `pricing_strategist` |
 | `timesheets` | `timesheet_reconciliation` |
 | `timing` | `market_trends_timing_analyst` |
+| `together` | `llm_provider` |
 | `tone` | `brand_identity_writer` |
 | `trademark` | `legal_ip_analyst`, `legal_setup_cost_estimator` |
 | `training` | `onboarding_training` |
@@ -907,6 +971,8 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `triage` | `email_triage_office`, `inbox_triage`, `ticket_triage` |
 | `triggers` | `trigger_detection` |
 | `trust` | `client_trust` |
+| `tts` | `voicebox_tts` |
+| `txtai` | `framework_bridge` |
 | `ugc` | `ugc_pipeline` |
 | `unit-economics` | `ltv_cac_targeter` |
 | `upsell` | `expansion_playbook` |
@@ -916,16 +982,22 @@ Cards tuned to a specific vertical. They complement the domain-agnostic ops cata
 | `vad` | `local_inference` |
 | `validation` | `validation_hypotheses_analyst` |
 | `valuation` | `startup_valuation_analyst` |
+| `vector-db` | `vector_store` |
 | `vendors` | `tech_stack_vendors_analyst` |
 | `verification` | `adversarial_verification`, `email_verification`, `qa_verification` |
 | `vertical` | `vertical_analysis` |
 | `video` | `video_prospecting` |
 | `viz` | `data_visualization` |
+| `voice` | `voicebox_tts` |
+| `voicebox` | `voicebox_tts` |
+| `voyage` | `embeddings_provider` |
 | `warm-intro` | `warm_intro_pathing` |
 | `warm-path` | `warm_path_finding` |
+| `weaviate` | `vector_store` |
 | `webgpu` | `local_inference` |
 | `webinar` | `webinar_producer` |
 | `weekly-update` | `status_updates` |
+| `whisper` | `voicebox_tts` |
 | `white-space` | `market_gap_analyst` |
 | `win-loss` | `win_loss_analysis` |
 | `xlsx` | `financial_excel_builder` |

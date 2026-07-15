@@ -52,6 +52,70 @@ docker compose up
 Console UI: [http://localhost:7000](http://localhost:7000)
 Platform UI (auto-desplegada): [http://localhost:7100](http://localhost:7100)
 
+## Ecosystem registry
+
+The **Ecosystem** page (`/ecosystem`, backed by `GET /ecosystem`) is an honest
+catalogue of the AI building blocks Nexus can plug into — LLMs, frameworks,
+vector databases, data extraction, open-model access, text embeddings, and
+evaluation — plus the two local-first capabilities this repo actually ships.
+Every entry carries an explicit **status** so nothing is oversold:
+
+- `available` — works today with what's in the repo, no setup.
+- `configurable` — supported, but needs an endpoint/key/flag first.
+- `experimental` — real code, early / behind a flag.
+- `planned` — a discoverable catalogue entry only; no integration code yet.
+
+Real, in-repo capabilities:
+
+- **LiteRT.js** (`experimental`, native) — small `.tflite` models run in the
+  browser via WebGPU with a deterministic CPU/WASM fallback. Backs the Silero
+  VAD slice in the Voice cockpit. Model access is gated by the
+  `agent_local_model` registry (`GET/POST /local-models`): every model carries
+  provenance (`sha256`, `license`, `size_bytes`) so an agent can only load
+  whitelisted URLs. Enabled per-instance via the `local_inference` flag.
+- **Voicebox** (`configurable`, external) — optional local voice sidecar
+  ([jamiepine/voicebox](https://github.com/jamiepine/voicebox)) for TTS/STT and
+  an HTTP MCP server. It runs as a **separate local process**; Nexus only talks
+  to a configured base URL and **never uploads audio**. Enable with
+  `CONSOLE_VOICEBOX_ENABLED=true` + `CONSOLE_VOICEBOX_BASE_URL`; check health at
+  `GET /voicebox/status`. **Voice cloning is opt-in** — gated behind
+  `CONSOLE_VOICEBOX_VOICE_CLONING_CONSENT=true` and only for voices you own.
+
+### Integration adapters
+
+Everything else in the reference ecosystem diagram (Chroma, Qdrant, LangChain,
+Firecrawl, Nomic, Giskard, …) is now a real **`configurable`** integration
+rather than a logo-only `planned` row. A single generic adapter layer
+(`app/services/integrations`) describes each provider as data — typed config
+fields, secret **references**, capability metadata, a docs link, and a health
+probe — so no per-vendor SDK is vendored. Manage them on **Ecosystem →
+Integrations** or via the API:
+
+- `GET  /integrations/adapters` — the adapter catalogue (fields + secret env
+  names; never any secret values).
+- `POST /integrations/profiles` — create a connection profile (endpoint +
+  secret env-name references + optional agent-template scoping).
+- `POST /integrations/profiles/{id}/test` — run the adapter's health probe
+  (OpenAI-compatible, header/query key, basic auth, HTTP health, or Postgres
+  `SELECT 1`, depending on the provider). Bedrock is config-only (`no_probe`).
+- `GET  /integrations/capabilities` / `GET /integrations/resolve` — the enabled
+  capabilities exposed to agents/sidecars, with secrets redacted to presence
+  flags.
+
+Coverage: LLMs (OpenAI, Anthropic, Gemini, Mistral, Bedrock, DeepSeek, Cohere,
+Groq, Together, Ollama), open-weight families via an OpenAI-compatible runtime
+(Phi-4, Gemma 3, Llama 4, Qwen 3, Hugging Face), embeddings (Nomic, SBERT,
+OpenAI, Voyage, Google, Cohere), vector stores (Chroma, Pinecone, Qdrant,
+Weaviate, Milvus, pgvector, Cassandra, OpenSearch), framework bridges
+(LangChain, LlamaIndex, Haystack, txtai), data extraction (Crawl4AI, Firecrawl,
+ScrapeGraphAI, MegaParser, Docling, LlamaParse, ExtractThinker), and evaluation
+(Giskard, Ragas, DeepEval).
+
+**Secret model.** There is no encrypted vault in this repo, so profiles store
+environment-variable **names**, not values. Secret values are read from the
+process environment only at probe/resolve time and are never persisted to the
+database nor returned by the API. See `.env.example` for the provider env vars.
+
 ## Stack
 
 - **Backend:** FastAPI (Python 3.12+), SQLAlchemy 2.x, Postgres, Redis, JWT (Ed25519).
