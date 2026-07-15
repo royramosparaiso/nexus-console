@@ -34,6 +34,7 @@ from nexus_core.jwt import sign_command
 from app import db as db_module
 from app.db import get_db
 from app.models.db import CommandLogRow, InstanceRow
+from app.services.area_recommender import is_valid_area
 from app.services.keypair import get_or_create_keypair
 
 router = APIRouter()
@@ -184,6 +185,19 @@ async def send_command(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"instance not running (status={row.status})",
         )
+
+    # Per-agent area/department placement (optional, backwards-compatible):
+    # deploy_agent payloads may carry an ``area`` slug so the deployment
+    # manifest records where the agent lives. Validate it at deploy time; an
+    # omitted / null area means "unassigned", which is allowed.
+    kind_value = body.kind.value if hasattr(body.kind, "value") else str(body.kind)
+    if kind_value == "deploy_agent":
+        area = body.payload.get("area")
+        if area is not None and not is_valid_area(str(area)):
+            raise HTTPException(
+                status_code=422,
+                detail=f"unknown area slug: {area!r}",
+            )
 
     cmd_id = uuid4()
     log = CommandLogRow(
