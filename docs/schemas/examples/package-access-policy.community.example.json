@@ -1,0 +1,16 @@
+{
+  "apiVersion": "nexus.io/v1alpha2",
+  "kind": "PackageAccessPolicy",
+  "metadata": {
+    "package": "budget-tracker",
+    "version": "0.4.1"
+  },
+  "spec": {
+    "visibility": "community",
+    "publisher_verification": "community",
+    "license": "MIT",
+    "mirrorable": true,
+    "requires_hub_account": false,
+    "distribution": "direct_download"
+  }
+}

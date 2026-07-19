@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha2/entitlement.schema.json",
+  "title": "Signed capability entitlement (v1alpha2)",
+  "description": "Signed, capability-based document the Hub issues and the Runtime's embedded Entitlement Verifier checks LOCALLY (no mandatory network call). TARGET-STATE contract. The entitlement authorises Runtime capabilities; it is NOT a secret, carries NO business data, and grants NO access to data by itself. It is integrity-protected (Ed25519), not encrypted. It encodes edition + capabilities + package scopes + expiry/grace + nonce/revision + signature. It NEVER embeds plan names or prices.",
+  "x-nexus-contract-version": "v1alpha2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec", "signature"],
+  "allOf": [
+    {
+      "$comment": "organization_id binds a team/organization entitlement to its org; personal (single owner) never carries one. Enforces the description on metadata.organization_id.",
+      "if": {
+        "properties": { "metadata": { "properties": { "edition": { "enum": ["team", "organization"] } }, "required": ["edition"] } }
+      },
+      "then": {
+        "properties": { "metadata": { "required": ["organization_id"] } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "metadata": { "properties": { "edition": { "const": "personal" } }, "required": ["edition"] } }
+      },
+      "then": {
+        "properties": { "metadata": { "not": { "required": ["organization_id"] } } }
+      }
+    }
+  ],
+  "properties": {
+    "apiVersion": { "const": "nexus.io/v1alpha2" },
+    "kind": { "const": "Entitlement" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instance_id", "edition", "issued_at", "expires_at", "revision", "nonce"],
+      "properties": {
+        "instance_id": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/InstanceId" },
+        "edition": { "$ref": "common.defs.schema.json#/$defs/Edition" },
+        "organization_id": {
+          "$ref": "common.defs.schema.json#/$defs/OrganizationId",
+          "description": "Present for team/organization editions; absent for personal (single owner)."
+        },
+        "issued_at": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/Timestamp" },
+        "expires_at": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/Timestamp" },
+        "grace_period_days": { "$ref": "common.defs.schema.json#/$defs/GracePeriodDays" },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Monotonic revision; the verifier ignores a revision lower than the last accepted one (rollback protection)."
+        },
+        "nonce": {
+          "type": "string",
+          "minLength": 8,
+          "description": "Single-use random value binding this issuance; the verifier rejects a replay of a superseded document."
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capabilities"],
+      "properties": {
+        "capabilities": {
+          "type": "array",
+          "description": "Stable capability identifiers the Runtime activates. Personal may be an empty list (base capabilities are always free and are NOT gated by entitlement).",
+          "items": { "$ref": "common.defs.schema.json#/$defs/CapabilityId" },
+          "uniqueItems": true
+        },
+        "package_scopes": {
+          "type": "array",
+          "description": "Registry lanes this entitlement unlocks. 'public'/'community' are always available and need not be listed.",
+          "items": { "$ref": "common.defs.schema.json#/$defs/PackageScope" },
+          "uniqueItems": true
+        },
+        "seats": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Soft capacity hints for additional users/instances. Enforcement is a product boundary in the Team Capability Pack, never a data-hostage lever.",
+          "properties": {
+            "max_additional_users": { "type": "integer", "minimum": 0 },
+            "max_instances": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "offline_verification": { "$ref": "common.defs.schema.json#/$defs/OfflineVerification" }
+      }
+    },
+    "signature": {
+      "description": "Ed25519 detached signature over the canonicalised document. Constrained to ed25519 so the Runtime verifies offline with a pinned Hub key; sigstore/age are rejected. trust_domain is required and must match spec.offline_verification.trust_domain.",
+      "allOf": [
+        { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/Signature" },
+        {
+          "properties": {
+            "algorithm": { "const": "ed25519" },
+            "key_custody": { "enum": ["kms", "hsm", "local_file"] }
+          },
+          "required": ["trust_domain"]
+        }
+      ]
+    }
+  }
+}

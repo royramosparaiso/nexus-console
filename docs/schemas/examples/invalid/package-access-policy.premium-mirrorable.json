@@ -1,0 +1,17 @@
+{
+  "apiVersion": "nexus.io/v1alpha2",
+  "kind": "PackageAccessPolicy",
+  "metadata": {
+    "package": "legal-vertical",
+    "version": "2.1.0"
+  },
+  "spec": {
+    "visibility": "verified-premium",
+    "publisher_verification": "verified",
+    "license": "LicenseRef-Ironbat-Commercial-1.0",
+    "required_entitlements": ["premium_pack_access"],
+    "mirrorable": true,
+    "requires_hub_account": true,
+    "distribution": "short_lived_grant"
+  }
+}

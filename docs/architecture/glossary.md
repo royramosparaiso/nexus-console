@@ -37,6 +37,23 @@ marca y término técnico formal, se indican ambos.
 | **SPDX license** | Expresión SPDX que identifica la licencia del **contenido**. **Obligatoria por pack.** | `metadata.license`; no concede derechos de **marca** (bloque `trademark`). |
 | **Break-glass** | Aplicación excepcional de estado deseado con clave Ed25519 de emergencia pineada si el KMS del Hub no está disponible; auditada y con rotación forzada posterior. | Ver [ADR-0002](../adr/0002-signing-and-verification.md). |
 
+<a id="v1alpha2"></a>
+## Términos de producto Personal + Hub (`v1alpha2`, aprobados)
+
+| Término | Definición | Contrato |
+|---|---|---|
+| **Edition (Edición)** | Eje declarado `personal / team / organization`. Personal es libre, un propietario, sin Hub. **Ortogonal a la modalidad de despliegue.** | `edition.declaration.schema.json` |
+| **Entitlement** | Documento de **capacidad** firmado (Ed25519), verificable offline con clave del Hub pineada por `trust_domain`; lleva `expires_at`, gracia, `nonce`, `revision`. **Nunca** codifica precio ni plan. | `entitlement.schema.json` |
+| **Capability (Capacidad)** | Unidad de habilitación con id estable (`team_collaboration`, `fleet_management`, `premium_pack_access`, ...). El entitlement concede capacidades, no planes. | `common.defs#/$defs/CapabilityId` |
+| **SubscriptionState** | Estado de suscripción y sus **efectos de degradación graciosa**. `owner_access` siempre `preserved`, `export_available` siempre `true`; premium y tareas se **pausan**, no se borran. | `subscription-state.schema.json` |
+| **Grace period (Gracia)** | Ventana (0-90 días) en la que una instancia opera offline con un entitlement cacheado antes de degradar. | `common.defs#/$defs/GracePeriodDays` |
+| **Package visibility (Visibilidad de paquete)** | Carril de distribución: `public / community` (OSS, replicable, sin cuenta) o `verified-premium / private-organization` (entitlement + grant). | `package-access-policy.schema.json` |
+| **Package download grant (Grant de descarga)** | Autorización firmada de **vida corta** para descargar un artefacto premium/privado. **No es DRM ni un secreto persistente.** | `package-download-grant.schema.json` |
+| **Deployment modality (Modalidad de despliegue)** | `self_hosted / byoc / managed`. **Ortogonal a la edición**; única combinación prohibida: managed + personal. | `deployment-modality.schema.json` |
+| **Organization policy (Política de organización)** | Membresías (rol `owner/admin/member/readonly/guest`), `team_policy` y capacidades requeridas de una organización. | `organization-policy.schema.json` |
+| **Offline verification** | Parámetros para verificar entitlements sin red: `trust_domain`, `verifier_key_id`, canonicalización; `network_check_required` fijado a `false`. | `common.defs#/$defs/OfflineVerification` |
+| **OrganizationId / UserRef** | Identificadores opacos, sin PII. **Lowercase-canónicos** (`^org_[a-z0-9]{4,40}$` / `^usr_[a-z0-9]{4,40}$`): el Hub que los emite y el Runtime/Registry que los consumen deben normalizarlos a minúsculas para que un `org_id` viaje sin cambios dentro de un `PackageScope` `private-organization:<org_id>`. Un id con mayúsculas se rechaza por contrato. | `common.defs#/$defs/OrganizationId`, `#/$defs/UserRef` |
+
 **Notas de coherencia con el repo actual:** `artifact_type` de una plantilla de agente
 (`agent | sidecar | skill`) se define en `console/agent_templates/_schema.md`; un **skill** es una
 capacidad reutilizable que agentes y sidecars invocan (no runnable independiente). Las áreas

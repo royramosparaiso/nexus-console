@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha2/subscription-state.schema.json",
+  "title": "Subscription lifecycle / degradation state (v1alpha2)",
+  "description": "Declarative snapshot of a subscription's lifecycle state and the resulting graceful degradation effects on an instance. TARGET-STATE contract. NON-NEGOTIABLE invariant encoded here: owner access and full export are preserved in EVERY state; additional users degrade to read-only; premium agents and scheduled tasks are PAUSED, not deleted; Personal capabilities always continue. No plan names, no prices, no data deletion.",
+  "x-nexus-contract-version": "v1alpha2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "nexus.io/v1alpha2" },
+    "kind": { "const": "SubscriptionState" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instance_id", "state", "evaluated_at"],
+      "properties": {
+        "instance_id": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/InstanceId" },
+        "organization_id": { "$ref": "common.defs.schema.json#/$defs/OrganizationId" },
+        "state": { "$ref": "common.defs.schema.json#/$defs/SubscriptionState" },
+        "evaluated_at": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/Timestamp" },
+        "grace_expires_at": {
+          "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/Timestamp",
+          "description": "When the offline grace window ends (only meaningful in past_due/grace)."
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["owner_access", "export_available", "effects"],
+      "properties": {
+        "owner_access": {
+          "type": "string",
+          "const": "preserved",
+          "description": "Owner ALWAYS retains access. Pinned by construction; a document that revokes owner access is invalid."
+        },
+        "export_available": {
+          "type": "boolean",
+          "const": true,
+          "description": "Full export ALWAYS available. Pinned true by construction (data is never held hostage)."
+        },
+        "effects": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["additional_users", "premium_agents", "scheduled_tasks", "new_invitations", "updates"],
+          "properties": {
+            "additional_users": {
+              "type": "string",
+              "enum": ["normal", "read_only"],
+              "description": "Additional (non-owner) users. Degrade to read_only when suspended/cancelled/expired; never deleted."
+            },
+            "premium_agents": {
+              "type": "string",
+              "enum": ["running", "paused"],
+              "description": "Premium/entitlement-gated agents. `paused` means disabled from execution but present and reactivable; never uninstalled."
+            },
+            "scheduled_tasks": {
+              "type": "string",
+              "enum": ["running", "paused"],
+              "description": "Scheduled tasks. `paused` means retained and reactivable; never cancelled/deleted."
+            },
+            "new_invitations": {
+              "type": "string",
+              "enum": ["allowed", "blocked"],
+              "description": "Ability to invite new users. FORCED to blocked in suspended/cancelled/expired (see the state conditionals below and Spec G). In active/past_due/grace it is permitted but NOT forced: an active instance normally allows invitations, while a lapsing state (e.g. grace) may still choose to block adding seats. The schema pins only the blocked-forcing states; the allowed states are left to policy."
+            },
+            "updates": {
+              "type": "string",
+              "enum": ["automatic", "security_only", "manual"],
+              "description": "Update cadence available in this state."
+            }
+          }
+        },
+        "notice": {
+          "type": "string",
+          "description": "Non-blocking user-facing notice text (e.g. urgent renewal reminder). Never blocks Personal capabilities."
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "metadata": { "properties": { "state": { "enum": ["active", "past_due", "grace"] } }, "required": ["state"] } } },
+      "then": {
+        "properties": {
+          "spec": {
+            "properties": {
+              "effects": {
+                "properties": {
+                  "additional_users": { "const": "normal" },
+                  "premium_agents": { "const": "running" },
+                  "scheduled_tasks": { "const": "running" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "metadata": { "properties": { "state": { "enum": ["suspended", "cancelled", "expired"] } }, "required": ["state"] } } },
+      "then": {
+        "properties": {
+          "spec": {
+            "properties": {
+              "effects": {
+                "properties": {
+                  "additional_users": { "const": "read_only" },
+                  "premium_agents": { "const": "paused" },
+                  "scheduled_tasks": { "const": "paused" },
+                  "new_invitations": { "const": "blocked" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

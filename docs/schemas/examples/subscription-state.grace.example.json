@@ -1,0 +1,23 @@
+{
+  "apiVersion": "nexus.io/v1alpha2",
+  "kind": "SubscriptionState",
+  "metadata": {
+    "instance_id": "inst_costahomes01",
+    "organization_id": "org_4b91e0",
+    "state": "grace",
+    "evaluated_at": "2026-07-03T09:00:00Z",
+    "grace_expires_at": "2026-07-08T00:00:00Z"
+  },
+  "spec": {
+    "owner_access": "preserved",
+    "export_available": true,
+    "effects": {
+      "additional_users": "normal",
+      "premium_agents": "running",
+      "scheduled_tasks": "running",
+      "new_invitations": "blocked",
+      "updates": "automatic"
+    },
+    "notice": "La suscripcion esta en periodo de gracia. Renueva antes del 2026-07-08 para evitar la pausa de agentes premium y tareas programadas."
+  }
+}

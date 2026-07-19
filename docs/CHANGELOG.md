@@ -1,0 +1,94 @@
+# Changelog de documentación y contratos de NexusOS
+
+Registra cambios en la documentación de arquitectura/producto y en los contratos machine-readable
+(`docs/schemas/`). No sigue la versión del paquete `nexus-console` (SemVer del código); los contratos se
+versionan por separado (`x-nexus-contract-version`). Formato inspirado en Keep a Changelog.
+
+## [v1alpha2] - 2026-07-19 — Capa de producto Personal + Hub por suscripción
+
+**Estado:** diseño aprobado, no implementado (TARGET-STATE). Aditivo y backward compatible sobre
+`v1alpha1`.
+
+### Añadido
+
+- **Visión:** [Personal + Hub por suscripción](vision/nexus-os-vision-personal-hub-subscription.md)
+  (ediciones, audiencias, propuesta de valor, fronteras, monetización por capacidad, cuatro carriles de
+  paquete, modalidades de despliegue, ciclo de vida ante expiración, promesa OSS, no-objetivos).
+- **Especificaciones (a–j):** [`docs/specs/`](specs/README.md) — Personal Runtime, Hub, Team/Org,
+  Operator/ciclo de vida, Registry/distribución, modelo de paquetes/artefactos, entitlements/suscripción/
+  degradación, seguridad/firma/secretos, Studio y modalidades de despliegue.
+- **ADR:** [ADR-0009](adr/0009-editions-entitlements-and-subscription-degradation.md) (ediciones,
+  entitlements de capacidad, degradación graciosa) y
+  [ADR-0010](adr/0010-edition-vs-deployment-modality.md) (edición ortogonal a modalidad).
+- **Esquemas `v1alpha2`** ([`docs/schemas/v1alpha2/`](schemas/v1alpha2/)): `common.defs`,
+  `edition.declaration`, `entitlement`, `subscription-state`, `organization-policy`,
+  `package-access-policy`, `package-download-grant`, `deployment-modality`.
+- **Fixtures:** 17 ejemplos válidos `v1alpha2` y 15 negativos en [`examples/invalid/`](schemas/examples/invalid/)
+  con su índice; `examples/index.json` gana `contract_versions` y el campo `version` por caso. Cada
+  negativo falla por **una sola** invariante (fixtures mínimos).
+- **Tests:** `console/tests/test_managed_platform_schemas.py` valida ambas versiones, resuelve `$ref`
+  cross-version por `$id`, rechaza los fixtures negativos y comprueba invariantes de producto (firma
+  Ed25519, anti-replay, preservación del owner/exportación, pausa-no-borrado, mirrorabilidad pública,
+  entitlements premium, managed≠personal, cardinalidad de owner, acoplamiento edición/source,
+  organization_id por edición, grant de un solo uso).
+
+### Corregido (endurecimiento de invariantes de contrato)
+
+- **`edition.declaration`:** el conditional estaba **inerte** (apuntaba a `spec.edition`, inexistente).
+  Movido a nivel raíz sobre `metadata.edition`: `personal_base` fuerza edición `personal` y prohíbe
+  `entitlement_ref`; `verified_entitlement`/`cached_entitlement` exigen `entitlement_ref` y edición
+  team/organization.
+- **`organization-policy`:** se exige **exactamente un owner** (`contains`/`minContains`/`maxContains`);
+  cero o dos owners se rechazan.
+- **`package-access-policy`:** las lanes public/community **requieren** `mirrorable`/`requires_hub_account`/
+  `distribution` (no basta con que estén ausentes); las restringidas fijan `mirrorable:false` y
+  `requires_hub_account:true` (un pack con grant no puede anunciarse como replicable sin cuenta).
+- **`common.defs.OrganizationId`/`UserRef`:** ahora lowercase-canónicos (`^org_[a-z0-9]{4,40}$`) para que
+  un `org_id` viaje sin cambios dentro de un `PackageScope` `private-organization:<org_id>`.
+- **`entitlement`:** `organization_id` es obligatorio para team/organization y prohibido para personal.
+- **`package-download-grant`:** `max_uses` fijado a `1` (un solo uso por construcción) y `scope`
+  restringido a lanes premium/privadas.
+- **`deployment-modality`:** el modo `managed` **requiere** `managed_by`.
+- **`nexus.pack` (`v1alpha1`):** las lanes OSS explícitas (public/community) prohíben
+  `required_entitlements`; `publisher.verification` reconcilia su vocabulario con v1alpha2 añadiendo
+  `unverified` (aditivo).
+- **Docs:** cabeceras de versión de `migration-and-compatibility` y ADR-0008 actualizadas; Spec H asigna
+  las invariantes de campo cruzado (enlace de clave, orden temporal, anti-replay) al Entitlement Verifier
+  en runtime y resuelve la rotación de claves con un keyring por `trust_domain` con solapamiento.
+- **`edition.declaration`:** `personal_base` fija `subscription_state` a `active` cuando está presente
+  (una instancia Personal no tiene suscripción que pueda degradarse); ausente sigue siendo válido. Nuevo
+  fixture negativo `edition.personal-base-degraded.json`.
+- **`subscription-state`:** `new_invitations` se fija a `blocked` **solo** en suspended/cancelled/expired;
+  en active/past_due/grace es política (no fijado), con cobertura de regresión que documenta el porqué.
+- **`package-download-grant`:** `max_uses` pasa a ser **obligatorio** (además de `const 1`) para que el
+  carácter de un solo uso sea auditable en el propio documento, sin depender de un default implícito.
+- **Fixtures negativos mínimos:** `entitlement.missing-nonce` (añade `organization_id` válido) y
+  `entitlement.wrong-algorithm` (`key_custody: kms`) vuelven a fallar por **una sola** razón.
+- **Normalización de identificadores documentada** en Hub (Spec B), Registry (Spec E), modelo de paquete
+  (Spec F), migración y glosario: `OrganizationId`/`UserRef` se normalizan en el borde de **emisión**
+  (Hub), nunca en el de consumo.
+
+### Cambiado
+
+- **`nexus.pack.schema.json` (`v1alpha1`)**, extensión **aditiva**: `publisher.verification` añade
+  `official`; nuevos opcionales `metadata.visibility`, `metadata.commercial_terms_ref`,
+  `spec.required_entitlements`; conditional que exige entitlements para visibilidad premium/privada. Los
+  packs y ejemplos existentes siguen validando.
+- **ADR revisadas:** 0006 (visibilidad/entitlements de pack), 0007 (cadencia de actualización como efecto
+  de suscripción + políticas de organización), 0008 (Team Capability Pack propietario + Entitlement
+  Verifier OSS).
+- **Índices y guías:** `docs/README.md`, `docs/schemas/README.md`, `docs/architecture/glossary.md`
+  (sección `v1alpha2`), `docs/architecture/migration-and-compatibility.md` (transición
+  `v1alpha1`→`v1alpha2` y política de downgrade), `docs/architecture/product-oss-boundary.md` (nota de
+  producto por capacidad).
+
+### Sin cambios (invariantes preservadas)
+
+- Nada de seguridad, exportación o portabilidad se retira del OSS. La edición Personal es libre y
+  gratuita, sin Hub. No se hardcodean precios ni planes. El repositorio mixto **permanece MIT** hasta la
+  auditoría legal ([ADR-0008](adr/0008-oss-commercial-boundary-and-license.md)).
+
+## [v1alpha1] - 2026-07-19 — Portal Gestionado (línea base)
+
+- Arquitectura de cuatro partes (Hub/Operator/Runtime/Registry), ADR-0001..0008, esquemas `v1alpha1` y
+  fixtures. Ver [Visión del Portal Gestionado](vision/nexus-os-vision-managed-portal.md).

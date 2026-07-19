@@ -7,6 +7,26 @@
   "type": "object",
   "additionalProperties": false,
   "required": ["apiVersion", "kind", "metadata", "spec"],
+  "allOf": [
+    {
+      "$comment": "Restricted lanes must declare required entitlements. Backward compatible: packs without visibility (=public) are unaffected.",
+      "if": {
+        "properties": { "metadata": { "properties": { "visibility": { "enum": ["verified-premium", "private-organization"] } }, "required": ["visibility"] } }
+      },
+      "then": {
+        "properties": { "spec": { "required": ["required_entitlements"], "properties": { "required_entitlements": { "minItems": 1 } } } }
+      }
+    },
+    {
+      "$comment": "OSS lanes must NOT gate on entitlements, matching v1alpha2/package-access-policy. Only fires when visibility is EXPLICITLY public/community; absent visibility (legacy default=public) is untouched, preserving backward compatibility with existing packs.",
+      "if": {
+        "properties": { "metadata": { "properties": { "visibility": { "enum": ["public", "community"] } }, "required": ["visibility"] } }
+      },
+      "then": {
+        "properties": { "spec": { "properties": { "required_entitlements": { "maxItems": 0 } } } }
+      }
+    }
+  ],
   "properties": {
     "apiVersion": { "const": "nexus.io/v1alpha1" },
     "kind": { "const": "Pack" },
@@ -30,14 +50,23 @@
             "display_name": { "type": "string" },
             "verification": {
               "type": "string",
-              "enum": ["verified", "community"],
-              "description": "Curation status shown in the catalogue (single Registry, two states — see decision #7)."
+              "enum": ["unverified", "community", "verified", "official"],
+              "description": "Curation status shown in the catalogue. `official` marks Ironbat-published packs. Vocabulary reconciled with v1alpha2 PublisherVerification (adds `unverified`): the two versions now share one set. Additive and backward compatible (no existing value removed). See v1alpha2/common.defs PublisherVerification and ADR-0006."
             }
           }
         },
         "license": {
           "$ref": "common.defs.schema.json#/$defs/SpdxLicense",
           "description": "REQUIRED SPDX license expression of the pack CONTENT. A pack may be Apache/community, commercial/proprietary (LicenseRef-...), or another declared compatible license. This grants no rights over NexusOS/Ironbat trademarks (see 'trademark')."
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public", "community", "verified-premium", "private-organization"],
+          "description": "OPTIONAL Registry distribution lane (additive over v1alpha1). Full access semantics live in v1alpha2/package-access-policy. public/community are OSS and mirrorable without a Hub account; verified-premium/private-organization require an entitlement scope and a short-lived download grant (never DRM). Absent means public."
+        },
+        "commercial_terms_ref": {
+          "type": "string",
+          "description": "OPTIONAL reference to external commercial terms when the pack is not purely OSS. Never embeds the terms themselves."
         },
         "trademark": {
           "type": "object",
@@ -80,6 +109,17 @@
           "type": "string",
           "enum": ["area", "agent", "flow", "sidecar", "skull", "vertical"],
           "description": "Primary artifact the pack centres on; a vertical pack composes several."
+        },
+        "required_entitlements": {
+          "type": "array",
+          "description": "OPTIONAL capability identifiers the installing instance must hold to install/run this pack (additive over v1alpha1). MUST be present and non-empty when metadata.visibility is verified-premium/private-organization. Stable, plan-independent ids (e.g. 'premium_pack_access').",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$",
+            "minLength": 2,
+            "maxLength": 64
+          },
+          "uniqueItems": true
         },
         "compatibility": {
           "type": "object",

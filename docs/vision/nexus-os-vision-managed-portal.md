@@ -2,6 +2,7 @@
 
 **Estado:** Aprobado como dirección de arquitectura · **Versión de arquitectura:** `v1alpha1` · **Fecha:** 2026-07-19
 **Autor:** Ironbat Digital LLC
+**Extensión de producto:** la capa Personal + Hub por suscripción (ediciones, entitlements, suscripción, acceso a paquetes) se especifica en la [Visión Personal + Hub (`v1alpha2`)](nexus-os-vision-personal-hub-subscription.md), aditiva sobre esta arquitectura.
 **Reconciliado con:** `main` (Console v0.13.8), RFC-002 (Protocolo Console ↔ Platform), catálogo de agentes/áreas, ecosystem registry.
 
 > **Nota sobre canonicidad.** La Visión canónica de Nexus OS (`01_Nexus_OS_Vision.md` / `docs/vision.md`)

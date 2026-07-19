@@ -1,0 +1,21 @@
+{
+  "apiVersion": "nexus.io/v1alpha2",
+  "kind": "SubscriptionState",
+  "metadata": {
+    "instance_id": "inst_costahomes01",
+    "organization_id": "org_4b91e0",
+    "state": "active",
+    "evaluated_at": "2026-07-19T09:00:00Z"
+  },
+  "spec": {
+    "owner_access": "preserved",
+    "export_available": true,
+    "effects": {
+      "additional_users": "normal",
+      "premium_agents": "running",
+      "scheduled_tasks": "running",
+      "new_invitations": "allowed",
+      "updates": "automatic"
+    }
+  }
+}

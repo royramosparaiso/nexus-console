@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha2/organization-policy.schema.json",
+  "title": "Organization / team membership and role policy (v1alpha2)",
+  "description": "Runtime-local governance boundary for a Team/Organization instance: memberships, roles and team policy. TARGET-STATE contract. Enforced INSIDE the Runtime by the Team Capability Pack; the Hub never arbitrates per-action business permissions and never receives user content. References users by opaque handle only (no PII). Requires an active team/organization entitlement to take effect; on degradation, additional members become read-only (never deleted).",
+  "x-nexus-contract-version": "v1alpha2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "nexus.io/v1alpha2" },
+    "kind": { "const": "OrganizationPolicy" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["organization_id", "instance_id", "revision"],
+      "properties": {
+        "organization_id": { "$ref": "common.defs.schema.json#/$defs/OrganizationId" },
+        "instance_id": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/InstanceId" },
+        "revision": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["memberships"],
+      "properties": {
+        "memberships": {
+          "type": "array",
+          "minItems": 1,
+          "description": "User-organization relations with a role. Exactly one member MUST have role 'owner' (enforced by contains/minContains/maxContains): the single instance owner whose access is preserved in every degradation state.",
+          "contains": { "properties": { "role": { "const": "owner" } }, "required": ["role"] },
+          "minContains": 1,
+          "maxContains": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["user_ref", "role"],
+            "properties": {
+              "user_ref": { "$ref": "common.defs.schema.json#/$defs/UserRef" },
+              "role": { "$ref": "common.defs.schema.json#/$defs/OrgRole" },
+              "areas": {
+                "type": "array",
+                "description": "Optional area-scoped restriction for light collaborators.",
+                "items": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/Slug" }
+              }
+            }
+          }
+        },
+        "team_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Governance defaults for the team/organization instance.",
+          "properties": {
+            "default_role": { "$ref": "common.defs.schema.json#/$defs/OrgRole" },
+            "require_owner_approval_for_invites": { "type": "boolean", "default": true },
+            "shared_spaces": { "type": "boolean", "default": true },
+            "audit_retention_days": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "requires_capabilities": {
+          "type": "array",
+          "description": "Capabilities that must be present for this policy to be enforced (e.g. 'team_collaboration'). On degradation the policy persists but additional members become read-only.",
+          "items": { "$ref": "common.defs.schema.json#/$defs/CapabilityId" },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}

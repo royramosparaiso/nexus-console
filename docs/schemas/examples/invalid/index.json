@@ -1,0 +1,20 @@
+{
+  "description": "Negative fixtures: each MUST FAIL validation against its schema. Consumed by console/tests/test_managed_platform_schemas.py::test_invalid_examples_are_rejected. `version` selects the schema directory (defaults to v1alpha1).",
+  "cases": [
+    { "example": "entitlement.wrong-algorithm.json", "schema": "entitlement.schema.json", "version": "v1alpha2", "reason": "entitlement signature must be ed25519, not sigstore-cosign" },
+    { "example": "entitlement.missing-nonce.json", "schema": "entitlement.schema.json", "version": "v1alpha2", "reason": "metadata.nonce is required (replay protection)" },
+    { "example": "subscription-state.revokes-owner.json", "schema": "subscription-state.schema.json", "version": "v1alpha2", "reason": "owner_access must be preserved and export_available true in every state" },
+    { "example": "subscription-state.expired-still-running.json", "schema": "subscription-state.schema.json", "version": "v1alpha2", "reason": "expired must pause premium agents/tasks and read-only additional users" },
+    { "example": "package-access-policy.public-not-mirrorable.json", "schema": "package-access-policy.schema.json", "version": "v1alpha2", "reason": "public lane pins mirrorable true (only mirrorable is flipped: fails the mirrorable const alone)" },
+    { "example": "package-access-policy.public-missing-mirrorable.json", "schema": "package-access-policy.schema.json", "version": "v1alpha2", "reason": "public lane REQUIRES mirrorable/requires_hub_account/distribution; omitting mirrorable must fail (item 3)" },
+    { "example": "package-access-policy.premium-no-entitlements.json", "schema": "package-access-policy.schema.json", "version": "v1alpha2", "reason": "verified-premium requires a non-empty required_entitlements" },
+    { "example": "package-access-policy.premium-mirrorable.json", "schema": "package-access-policy.schema.json", "version": "v1alpha2", "reason": "restricted lane pins mirrorable false; a grant-gated pack cannot be freely mirrorable (item 4)" },
+    { "example": "edition.personal-base-team.json", "schema": "edition.declaration.schema.json", "version": "v1alpha2", "reason": "source personal_base MUST declare edition personal (item 1)" },
+    { "example": "edition.entitlement-missing-ref.json", "schema": "edition.declaration.schema.json", "version": "v1alpha2", "reason": "source verified_entitlement MUST carry entitlement_ref (item 1 reciprocal)" },
+    { "example": "edition.personal-base-degraded.json", "schema": "edition.declaration.schema.json", "version": "v1alpha2", "reason": "personal_base pins subscription_state to active when present; a degraded state (suspended) is rejected (N1)" },
+    { "example": "organization-policy.no-owner.json", "schema": "organization-policy.schema.json", "version": "v1alpha2", "reason": "memberships must contain exactly one owner; zero owners is rejected (item 2)" },
+    { "example": "organization-policy.two-owners.json", "schema": "organization-policy.schema.json", "version": "v1alpha2", "reason": "memberships must contain exactly one owner; two owners is rejected (item 2)" },
+    { "example": "organization-policy.mixed-case-org-id.json", "schema": "organization-policy.schema.json", "version": "v1alpha2", "reason": "OrganizationId is lowercase-canonical so it round-trips inside a PackageScope (item 5)" },
+    { "example": "deployment-modality.managed-personal.json", "schema": "deployment-modality.schema.json", "version": "v1alpha2", "reason": "managed modality presupposes team/organization edition, not personal" }
+  ]
+}

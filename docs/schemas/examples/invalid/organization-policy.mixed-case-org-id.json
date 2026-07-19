@@ -1,0 +1,14 @@
+{
+  "apiVersion": "nexus.io/v1alpha2",
+  "kind": "OrganizationPolicy",
+  "metadata": {
+    "organization_id": "org_AbC123",
+    "instance_id": "inst_costahomes01",
+    "revision": 3
+  },
+  "spec": {
+    "memberships": [
+      { "user_ref": "usr_owner01", "role": "owner" }
+    ]
+  }
+}

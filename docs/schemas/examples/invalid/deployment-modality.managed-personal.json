@@ -1,0 +1,15 @@
+{
+  "apiVersion": "nexus.io/v1alpha2",
+  "kind": "DeploymentModality",
+  "metadata": {
+    "instance_id": "inst_personal8f3a2c",
+    "declared_at": "2026-07-19T09:00:00Z"
+  },
+  "spec": {
+    "modality": "managed",
+    "edition": "personal",
+    "operator": "required",
+    "managed_by": "ironbat",
+    "data_region": "eu-madrid"
+  }
+}

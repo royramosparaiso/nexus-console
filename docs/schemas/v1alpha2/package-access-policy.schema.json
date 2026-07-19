@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha2/package-access-policy.schema.json",
+  "title": "Package visibility / access policy (v1alpha2)",
+  "description": "Declares the distribution lane and access rule for a Registry package. TARGET-STATE contract. `public`/`community` are OSS: installable with NO Hub account and MUST be mirrorable. `verified-premium`/`private-organization` require a matching entitlement scope and are fetched via a short-lived download grant (see package-download-grant.schema.json) — NEVER DRM in the artifact. Carries NO secret values.",
+  "x-nexus-contract-version": "v1alpha2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "nexus.io/v1alpha2" },
+    "kind": { "const": "PackageAccessPolicy" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["package", "version"],
+      "properties": {
+        "package": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/Slug" },
+        "version": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/SemVer" }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["visibility", "publisher_verification", "license"],
+      "properties": {
+        "visibility": { "$ref": "common.defs.schema.json#/$defs/PackageVisibility" },
+        "publisher_verification": { "$ref": "common.defs.schema.json#/$defs/PublisherVerification" },
+        "license": {
+          "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/SpdxLicense",
+          "description": "SPDX license of the pack CONTENT. Independent of NexusOS/Ironbat trademark rights."
+        },
+        "commercial_terms_ref": {
+          "type": "string",
+          "description": "Reference to external commercial terms when the pack is not purely OSS. Optional; never embeds the terms themselves."
+        },
+        "required_entitlements": {
+          "type": "array",
+          "description": "Capabilities the installing instance must hold to install/run the pack. MUST be non-empty for verified-premium/private-organization; MUST be empty/absent for public/community.",
+          "items": { "$ref": "common.defs.schema.json#/$defs/CapabilityId" },
+          "uniqueItems": true
+        },
+        "required_scopes": {
+          "type": "array",
+          "description": "Registry scopes the entitlement must include (e.g. 'verified-premium:legal-vertical').",
+          "items": { "$ref": "common.defs.schema.json#/$defs/PackageScope" },
+          "uniqueItems": true
+        },
+        "mirrorable": {
+          "type": "boolean",
+          "description": "Whether third parties may mirror the artifact. MUST be true for public/community (OSS distribution)."
+        },
+        "requires_hub_account": {
+          "type": "boolean",
+          "description": "Whether a Hub account is needed to obtain the artifact. MUST be false for public/community."
+        },
+        "distribution": {
+          "type": "string",
+          "enum": ["direct_download", "short_lived_grant"],
+          "description": "How the artifact is fetched. Restricted lanes use short_lived_grant; free lanes use direct_download."
+        }
+      },
+      "allOf": [
+        {
+          "$comment": "OSS lanes: the mirrorability guarantee must be asserted, not merely permitted. mirrorable/requires_hub_account/distribution are REQUIRED here so a public policy cannot silently omit them and let a consumer default the OSS guarantee away.",
+          "if": { "properties": { "visibility": { "enum": ["public", "community"] } }, "required": ["visibility"] },
+          "then": {
+            "properties": {
+              "mirrorable": { "const": true },
+              "requires_hub_account": { "const": false },
+              "distribution": { "const": "direct_download" },
+              "required_entitlements": { "maxItems": 0 }
+            },
+            "required": ["mirrorable", "requires_hub_account", "distribution"]
+          }
+        },
+        {
+          "$comment": "Restricted lanes: pin mirrorable false and requires_hub_account true so a grant-gated pack cannot advertise itself as freely mirrorable without an account. All three plus required_entitlements are REQUIRED.",
+          "if": { "properties": { "visibility": { "enum": ["verified-premium", "private-organization"] } }, "required": ["visibility"] },
+          "then": {
+            "properties": {
+              "mirrorable": { "const": false },
+              "requires_hub_account": { "const": true },
+              "distribution": { "const": "short_lived_grant" },
+              "required_entitlements": { "minItems": 1 }
+            },
+            "required": ["required_entitlements", "mirrorable", "requires_hub_account", "distribution"]
+          }
+        }
+      ]
+    }
+  }
+}

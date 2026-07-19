@@ -1,0 +1,24 @@
+{
+  "apiVersion": "nexus.io/v1alpha2",
+  "kind": "OrganizationPolicy",
+  "metadata": {
+    "organization_id": "org_4b91e0",
+    "instance_id": "inst_costahomes01",
+    "revision": 3
+  },
+  "spec": {
+    "memberships": [
+      { "user_ref": "usr_owner01", "role": "owner" },
+      { "user_ref": "usr_admin02", "role": "admin" },
+      { "user_ref": "usr_agent03", "role": "member", "areas": ["sales"] },
+      { "user_ref": "usr_view04", "role": "readonly", "areas": ["sales", "operations"] }
+    ],
+    "team_policy": {
+      "default_role": "member",
+      "require_owner_approval_for_invites": true,
+      "shared_spaces": true,
+      "audit_retention_days": 365
+    },
+    "requires_capabilities": ["team_collaboration"]
+  }
+}

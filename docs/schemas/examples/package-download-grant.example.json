@@ -1,0 +1,27 @@
+{
+  "apiVersion": "nexus.io/v1alpha2",
+  "kind": "PackageDownloadGrant",
+  "metadata": {
+    "grant_id": "grant_7c3e9a12b4d6",
+    "package": "legal-vertical",
+    "version": "2.1.0",
+    "instance_id": "inst_costahomes01",
+    "organization_id": "org_4b91e0",
+    "issued_at": "2026-07-19T12:00:00Z",
+    "expires_at": "2026-07-19T12:05:00Z"
+  },
+  "spec": {
+    "scope": "verified-premium:legal-vertical",
+    "artifact_ref": "registry/verified-premium/legal-vertical/2.1.0.tar.zst",
+    "download_url": "https://cdn.nexusos.dev/grant/grant_7c3e9a12b4d6",
+    "max_uses": 1
+  },
+  "signature": {
+    "algorithm": "ed25519",
+    "key_id": "hub-grant-key-2026-1",
+    "value": "ZG93bmxvYWQtZ3JhbnQtc2lnbmF0dXJlLXJlZGFjdGVk",
+    "canonicalization": "jcs",
+    "trust_domain": "hub.nexusos.dev",
+    "key_custody": "kms"
+  }
+}

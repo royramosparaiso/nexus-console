@@ -1,0 +1,20 @@
+{
+  "apiVersion": "nexus.io/v1alpha2",
+  "kind": "SubscriptionState",
+  "metadata": {
+    "instance_id": "inst_costahomes01",
+    "state": "expired",
+    "evaluated_at": "2026-07-10T09:00:00Z"
+  },
+  "spec": {
+    "owner_access": "revoked",
+    "export_available": false,
+    "effects": {
+      "additional_users": "read_only",
+      "premium_agents": "paused",
+      "scheduled_tasks": "paused",
+      "new_invitations": "blocked",
+      "updates": "manual"
+    }
+  }
+}

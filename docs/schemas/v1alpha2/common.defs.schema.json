@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha2/common.defs.schema.json",
+  "title": "Nexus common definitions (v1alpha2)",
+  "description": "Reusable definitions added by the Personal + Hub product layer. TARGET-STATE: none of these contracts is implemented yet; they define the agreed shape before code. This library ADDS to v1alpha1 (edition/capability/subscription/organization/package-access), it does not break it: crypto/time/identifier primitives are reused from v1alpha1 by absolute $id.",
+  "x-nexus-contract-version": "v1alpha2",
+  "$defs": {
+    "Edition": {
+      "type": "string",
+      "description": "Product edition of an instance. Orthogonal to deployment modality (see v1alpha2/deployment-modality.schema.json). `personal` is the free single-owner OSS edition; `team` and `organization` require a valid Hub entitlement.",
+      "enum": ["personal", "team", "organization"]
+    },
+    "CapabilityId": {
+      "type": "string",
+      "description": "Stable, edition-independent capability identifier the Runtime understands (e.g. 'team_collaboration', 'fleet_management', 'premium_pack_access'). NEVER a plan or price name: the Runtime knows capabilities, not commercial plans, so the plan catalogue can change without touching the Runtime.",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "minLength": 2,
+      "maxLength": 64
+    },
+    "PackageVisibility": {
+      "type": "string",
+      "description": "Registry distribution lane. `public`/`community` are OSS and installable without a Hub account and MUST be mirrorable. `verified-premium`/`private-organization` require a valid entitlement and a short-lived download grant (never DRM).",
+      "enum": ["public", "community", "verified-premium", "private-organization"]
+    },
+    "PublisherVerification": {
+      "type": "string",
+      "description": "Publisher curation state shown in the catalogue.",
+      "enum": ["unverified", "community", "verified", "official"]
+    },
+    "SubscriptionState": {
+      "type": "string",
+      "description": "Lifecycle state of a subscription/entitlement. Degradation is graceful: owner access and export are preserved in EVERY state; nothing is deleted or encrypted on expiry.",
+      "enum": ["active", "past_due", "grace", "suspended", "cancelled", "expired"]
+    },
+    "OrgRole": {
+      "type": "string",
+      "description": "Role of a member inside an organization/team. `owner` is the single instance owner (the Personal-edition actor); additional roles require a Team/Organization entitlement. `readonly` and `guest` never gain write access.",
+      "enum": ["owner", "admin", "member", "readonly", "guest"]
+    },
+    "PackageScope": {
+      "type": "string",
+      "description": "Access scope granted over Registry lanes. Free lanes ('public', 'community') need no scope; restricted lanes are named as 'verified-premium:<catalog>' or 'private-organization:<org_id>'.",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^(public|community|(verified-premium|private-organization):[a-z0-9][a-z0-9_-]*)$"
+    },
+    "GracePeriodDays": {
+      "type": "integer",
+      "description": "Bounded offline grace window (days) the cached entitlement remains honoured after expiry before graceful degradation. A Hub outage must never take a customer instance down; it degrades per the subscription lifecycle table.",
+      "minimum": 0,
+      "maximum": 90
+    },
+    "OrganizationId": {
+      "type": "string",
+      "description": "Stable, opaque organization identifier. Absent for Personal edition (single owner, no organization). Lowercase-canonical (`org_` + lowercase alphanumerics) so it round-trips unchanged inside a PackageScope 'private-organization:<org_id>' segment; mixed-case ids are rejected to avoid an id that cannot be expressed as a scope.",
+      "pattern": "^org_[a-z0-9]{4,40}$"
+    },
+    "UserRef": {
+      "type": "string",
+      "description": "Opaque, non-identifying reference to a Runtime-local user profile. NEVER an email or other PII; the Hub does not receive user content or identity beyond an opaque handle. Lowercase-canonical for consistency with OrganizationId.",
+      "pattern": "^usr_[a-z0-9]{4,40}$"
+    },
+    "OfflineVerification": {
+      "type": "object",
+      "description": "Metadata that lets the embedded Entitlement Verifier check a signature locally, with NO network call. The verifier pins the Hub key by key_id under a trust_domain and applies the canonicalization before verifying.",
+      "additionalProperties": false,
+      "required": ["trust_domain", "verifier_key_id", "canonicalization"],
+      "properties": {
+        "trust_domain": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Trust root the verifier resolves the entitlement key against (e.g. 'hub.nexusos.dev')."
+        },
+        "verifier_key_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Pinned public key id the Runtime uses to verify offline. Matches signature.key_id."
+        },
+        "canonicalization": {
+          "type": "string",
+          "enum": ["jcs", "json-c14n", "cbor"],
+          "description": "Canonicalization applied to the payload before signing/verifying."
+        },
+        "network_check_required": {
+          "type": "boolean",
+          "const": false,
+          "description": "Personal and cached Team verification NEVER require an online check. Pinned false by construction."
+        }
+      }
+    }
+  }
+}

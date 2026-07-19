@@ -1,0 +1,31 @@
+{
+  "apiVersion": "nexus.io/v1alpha2",
+  "kind": "Entitlement",
+  "metadata": {
+    "instance_id": "inst_personal8f3a2c",
+    "edition": "personal",
+    "issued_at": "2026-07-01T00:00:00Z",
+    "expires_at": "2027-07-01T00:00:00Z",
+    "grace_period_days": 0,
+    "revision": 1,
+    "nonce": "9a1c2d4e5f607b83"
+  },
+  "spec": {
+    "capabilities": [],
+    "package_scopes": ["public", "community"],
+    "offline_verification": {
+      "trust_domain": "hub.nexusos.dev",
+      "verifier_key_id": "hub-entitlement-key-2026-1",
+      "canonicalization": "jcs",
+      "network_check_required": false
+    }
+  },
+  "signature": {
+    "algorithm": "ed25519",
+    "key_id": "hub-entitlement-key-2026-1",
+    "value": "cGVyc29uYWwtZW50aXRsZW1lbnQtc2lnbmF0dXJlLXJlZGFjdGVk",
+    "canonicalization": "jcs",
+    "trust_domain": "hub.nexusos.dev",
+    "key_custody": "kms"
+  }
+}

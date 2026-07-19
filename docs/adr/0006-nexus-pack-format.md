@@ -3,7 +3,8 @@
 - **Estado:** Aceptada (contrato `v1alpha1`)
 - **Fecha:** 2026-07-19
 - **Versión de arquitectura:** `v1alpha1`
-- **Relacionadas:** [ADR-0002](0002-signing-and-verification.md), [ADR-0007](0007-update-channels-and-rollout.md); esquema [`nexus.pack`](../schemas/v1alpha1/nexus.pack.schema.json); `console/agent_templates/_schema.md`
+- **Relacionadas:** [ADR-0002](0002-signing-and-verification.md), [ADR-0007](0007-update-channels-and-rollout.md), [ADR-0009](0009-editions-entitlements-and-subscription-degradation.md); esquema [`nexus.pack`](../schemas/v1alpha1/nexus.pack.schema.json); `console/agent_templates/_schema.md`
+- **Revisión `v1alpha2` (2026-07-19):** ver §Extensión aditiva `v1alpha2` al final.
 
 ## Contexto
 
@@ -43,3 +44,19 @@ componer esas primitivas, no reinventarlas.
 
 - **Pack como runtime autónomo:** rechazada; rompe "toda instancia corre el mismo núcleo".
 - **Editar el pack in situ para personalizar:** rechazada; los overlays lo sustituyen.
+
+## Extensión aditiva `v1alpha2` (visibilidad y entitlements)
+
+La capa de producto Personal + Hub extiende `nexus.pack.schema.json` de forma **aditiva y backward
+compatible** (todos los campos nuevos son opcionales; los packs y ejemplos `v1alpha1` existentes siguen
+validando):
+
+- `publisher.verification` amplía su enum con `official` (además de `verified`/`community`).
+- `metadata.visibility` (`public | community | verified-premium | private-organization`) y
+  `metadata.commercial_terms_ref` opcionales.
+- `spec.required_entitlements` opcional; se vuelve **obligatorio (min 1)** por conditional cuando
+  `metadata.visibility` es `verified-premium` o `private-organization`.
+- El acceso y la distribución por carril se especifican en `package-access-policy.schema.json`
+  (`v1alpha2`) y en [Spec E](../specs/e-registry-catalog-distribution.md)/[Spec F](../specs/f-package-artifact-model.md).
+  Los carriles abiertos son replicables sin cuenta; los cerrados usan grants de vida corta, **no DRM**
+  (ver [ADR-0009](0009-editions-entitlements-and-subscription-degradation.md)).

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha2/package-download-grant.schema.json",
+  "title": "Premium package short-lived download grant (v1alpha2)",
+  "description": "Short-lived, signed authorization to fetch a restricted (verified-premium / private-organization) package artifact. TARGET-STATE contract. This is NOT DRM: it authorizes a download for a bounded window against an active entitlement. The artifact itself carries no lock; the moat is licensing, updates and support, not technical copy prevention. Once downloaded, the artifact is verified with its own cosign/minisign signature (v1alpha1/nexus.pack). Carries NO secret values (references and a detached signature only).",
+  "x-nexus-contract-version": "v1alpha2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec", "signature"],
+  "properties": {
+    "apiVersion": { "const": "nexus.io/v1alpha2" },
+    "kind": { "const": "PackageDownloadGrant" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["grant_id", "package", "version", "issued_at", "expires_at"],
+      "properties": {
+        "grant_id": {
+          "type": "string",
+          "description": "Opaque, single-use grant identifier. Not a standing credential.",
+          "minLength": 8
+        },
+        "package": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/Slug" },
+        "version": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/SemVer" },
+        "instance_id": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/InstanceId" },
+        "organization_id": { "$ref": "common.defs.schema.json#/$defs/OrganizationId" },
+        "issued_at": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/Timestamp" },
+        "expires_at": {
+          "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/Timestamp",
+          "description": "Short window (minutes). The gateway rejects the grant after this instant."
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scope", "artifact_ref", "max_uses"],
+      "properties": {
+        "scope": {
+          "description": "The restricted entitlement scope this grant was issued against (e.g. 'verified-premium:legal-vertical'). Free lanes (public/community) are direct_download and never use a grant, so only restricted scopes are accepted here.",
+          "allOf": [
+            { "$ref": "common.defs.schema.json#/$defs/PackageScope" },
+            { "pattern": "^(verified-premium|private-organization):" }
+          ]
+        },
+        "artifact_ref": {
+          "type": "string",
+          "description": "Reference/handle the client resolves against the CDN/access gateway. Not the bytes."
+        },
+        "download_url": {
+          "type": "string",
+          "description": "Optional pre-authorized, expiring URL. A reference, not a secret."
+        },
+        "max_uses": {
+          "type": "integer",
+          "const": 1,
+          "description": "A grant is single-use by construction: the grant_id is redeemable exactly once. REQUIRED and pinned to 1 (no implicit default) so the single-use property is auditable on the wire; standing multi-use grants are not issued."
+        }
+      }
+    },
+    "signature": {
+      "description": "Ed25519 detached signature over the canonicalised grant, verifiable against the pinned Hub key.",
+      "allOf": [
+        { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/Signature" },
+        {
+          "properties": { "algorithm": { "const": "ed25519" } },
+          "required": ["trust_domain"]
+        }
+      ]
+    }
+  }
+}
