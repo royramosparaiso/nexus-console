@@ -48,7 +48,7 @@
         },
         "subscription_state": {
           "$ref": "common.defs.schema.json#/$defs/SubscriptionState",
-          "description": "Current lifecycle state driving graceful degradation. Absent/`active` for Personal."
+          "description": "Current lifecycle state driving graceful degradation. Absent for a pure Personal instance (no Hub subscription can lapse); if present under personal_base it is pinned to `active` by the conditional below, never a degraded state."
         }
       }
     }
@@ -62,7 +62,10 @@
       "then": {
         "properties": {
           "metadata": { "properties": { "edition": { "const": "personal" } } },
-          "spec": { "not": { "required": ["entitlement_ref"] } }
+          "spec": {
+            "not": { "required": ["entitlement_ref"] },
+            "properties": { "subscription_state": { "const": "active" } }
+          }
         }
       }
     },

@@ -11,6 +11,7 @@
     { "example": "package-access-policy.premium-mirrorable.json", "schema": "package-access-policy.schema.json", "version": "v1alpha2", "reason": "restricted lane pins mirrorable false; a grant-gated pack cannot be freely mirrorable (item 4)" },
     { "example": "edition.personal-base-team.json", "schema": "edition.declaration.schema.json", "version": "v1alpha2", "reason": "source personal_base MUST declare edition personal (item 1)" },
     { "example": "edition.entitlement-missing-ref.json", "schema": "edition.declaration.schema.json", "version": "v1alpha2", "reason": "source verified_entitlement MUST carry entitlement_ref (item 1 reciprocal)" },
+    { "example": "edition.personal-base-degraded.json", "schema": "edition.declaration.schema.json", "version": "v1alpha2", "reason": "personal_base pins subscription_state to active when present; a degraded state (suspended) is rejected (N1)" },
     { "example": "organization-policy.no-owner.json", "schema": "organization-policy.schema.json", "version": "v1alpha2", "reason": "memberships must contain exactly one owner; zero owners is rejected (item 2)" },
     { "example": "organization-policy.two-owners.json", "schema": "organization-policy.schema.json", "version": "v1alpha2", "reason": "memberships must contain exactly one owner; two owners is rejected (item 2)" },
     { "example": "organization-policy.mixed-case-org-id.json", "schema": "organization-policy.schema.json", "version": "v1alpha2", "reason": "OrganizationId is lowercase-canonical so it round-trips inside a PackageScope (item 5)" },

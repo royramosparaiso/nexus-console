@@ -35,6 +35,9 @@ los packs existentes.
   programada.
 - Conditional del esquema: si `visibility` es verified-premium/private-organization, entonces
   `spec.required_entitlements` es obligatorio con min 1 elemento.
+- Un scope `private-organization:<org_id>` embebe el `OrganizationId` **lowercase-canónico**
+  (`^org_[a-z0-9]{4,40}$`) tal como lo emite el Hub; el pack no lo reescribe. Un id con mayúsculas se
+  rechaza por contrato ([common.defs](../schemas/v1alpha2/common.defs.schema.json)).
 
 ## 6. Requisitos funcionales
 

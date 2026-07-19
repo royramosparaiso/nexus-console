@@ -52,6 +52,7 @@ marca y término técnico formal, se indican ambos.
 | **Deployment modality (Modalidad de despliegue)** | `self_hosted / byoc / managed`. **Ortogonal a la edición**; única combinación prohibida: managed + personal. | `deployment-modality.schema.json` |
 | **Organization policy (Política de organización)** | Membresías (rol `owner/admin/member/readonly/guest`), `team_policy` y capacidades requeridas de una organización. | `organization-policy.schema.json` |
 | **Offline verification** | Parámetros para verificar entitlements sin red: `trust_domain`, `verifier_key_id`, canonicalización; `network_check_required` fijado a `false`. | `common.defs#/$defs/OfflineVerification` |
+| **OrganizationId / UserRef** | Identificadores opacos, sin PII. **Lowercase-canónicos** (`^org_[a-z0-9]{4,40}$` / `^usr_[a-z0-9]{4,40}$`): el Hub que los emite y el Runtime/Registry que los consumen deben normalizarlos a minúsculas para que un `org_id` viaje sin cambios dentro de un `PackageScope` `private-organization:<org_id>`. Un id con mayúsculas se rechaza por contrato. | `common.defs#/$defs/OrganizationId`, `#/$defs/UserRef` |
 
 **Notas de coherencia con el repo actual:** `artifact_type` de una plantilla de agente
 (`agent | sidecar | skill`) se define en `console/agent_templates/_schema.md`; un **skill** es una

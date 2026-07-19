@@ -34,7 +34,7 @@
     "spec": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["scope", "artifact_ref"],
+      "required": ["scope", "artifact_ref", "max_uses"],
       "properties": {
         "scope": {
           "description": "The restricted entitlement scope this grant was issued against (e.g. 'verified-premium:legal-vertical'). Free lanes (public/community) are direct_download and never use a grant, so only restricted scopes are accepted here.",
@@ -54,7 +54,7 @@
         "max_uses": {
           "type": "integer",
           "const": 1,
-          "description": "A grant is single-use by construction: the grant_id is redeemable exactly once. Pinned to 1; standing multi-use grants are not issued."
+          "description": "A grant is single-use by construction: the grant_id is redeemable exactly once. REQUIRED and pinned to 1 (no implicit default) so the single-use property is auditable on the wire; standing multi-use grants are not issued."
         }
       }
     },

@@ -34,6 +34,9 @@ firmados y grants de vida corta, **sin DRM**.
 - Conditionals del esquema: public/community => `mirrorable: true`, `requires_hub_account: false`,
   `direct_download`, `required_entitlements` vacío; verified-premium/private-organization =>
   `short_lived_grant` + `required_entitlements` (min 1).
+- **Consumo de `OrganizationId` canónico.** El Registry consume el `org_id` (lowercase-canónico,
+  emitido por el Hub) tal cual dentro del segmento `private-organization:<org_id>` de un `PackageScope`;
+  no lo reescribe ni cambia su caso. Un id con mayúsculas no valida ([common.defs](../schemas/v1alpha2/common.defs.schema.json)).
 
 ## 6. Requisitos funcionales
 

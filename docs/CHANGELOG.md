@@ -23,7 +23,7 @@ versionan por separado (`x-nexus-contract-version`). Formato inspirado en Keep a
 - **Esquemas `v1alpha2`** ([`docs/schemas/v1alpha2/`](schemas/v1alpha2/)): `common.defs`,
   `edition.declaration`, `entitlement`, `subscription-state`, `organization-policy`,
   `package-access-policy`, `package-download-grant`, `deployment-modality`.
-- **Fixtures:** 17 ejemplos válidos `v1alpha2` y 14 negativos en [`examples/invalid/`](schemas/examples/invalid/)
+- **Fixtures:** 17 ejemplos válidos `v1alpha2` y 15 negativos en [`examples/invalid/`](schemas/examples/invalid/)
   con su índice; `examples/index.json` gana `contract_versions` y el campo `version` por caso. Cada
   negativo falla por **una sola** invariante (fixtures mínimos).
 - **Tests:** `console/tests/test_managed_platform_schemas.py` valida ambas versiones, resuelve `$ref`
@@ -55,6 +55,18 @@ versionan por separado (`x-nexus-contract-version`). Formato inspirado en Keep a
 - **Docs:** cabeceras de versión de `migration-and-compatibility` y ADR-0008 actualizadas; Spec H asigna
   las invariantes de campo cruzado (enlace de clave, orden temporal, anti-replay) al Entitlement Verifier
   en runtime y resuelve la rotación de claves con un keyring por `trust_domain` con solapamiento.
+- **`edition.declaration`:** `personal_base` fija `subscription_state` a `active` cuando está presente
+  (una instancia Personal no tiene suscripción que pueda degradarse); ausente sigue siendo válido. Nuevo
+  fixture negativo `edition.personal-base-degraded.json`.
+- **`subscription-state`:** `new_invitations` se fija a `blocked` **solo** en suspended/cancelled/expired;
+  en active/past_due/grace es política (no fijado), con cobertura de regresión que documenta el porqué.
+- **`package-download-grant`:** `max_uses` pasa a ser **obligatorio** (además de `const 1`) para que el
+  carácter de un solo uso sea auditable en el propio documento, sin depender de un default implícito.
+- **Fixtures negativos mínimos:** `entitlement.missing-nonce` (añade `organization_id` válido) y
+  `entitlement.wrong-algorithm` (`key_custody: kms`) vuelven a fallar por **una sola** razón.
+- **Normalización de identificadores documentada** en Hub (Spec B), Registry (Spec E), modelo de paquete
+  (Spec F), migración y glosario: `OrganizationId`/`UserRef` se normalizan en el borde de **emisión**
+  (Hub), nunca en el de consumo.
 
 ### Cambiado
 

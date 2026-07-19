@@ -20,6 +20,6 @@
     "value": "aW52YWxpZC1hbGdvcml0aG0",
     "canonicalization": "jcs",
     "trust_domain": "hub.nexusos.dev",
-    "key_custody": "keyless_oidc"
+    "key_custody": "kms"
   }
 }

@@ -63,7 +63,7 @@
             "new_invitations": {
               "type": "string",
               "enum": ["allowed", "blocked"],
-              "description": "Ability to invite new users. Blocked in suspended/cancelled/expired (see the state conditionals below and Spec G); allowed in active/past_due/grace."
+              "description": "Ability to invite new users. FORCED to blocked in suspended/cancelled/expired (see the state conditionals below and Spec G). In active/past_due/grace it is permitted but NOT forced: an active instance normally allows invitations, while a lapsing state (e.g. grace) may still choose to block adding seats. The schema pins only the blocked-forcing states; the allowed states are left to policy."
             },
             "updates": {
               "type": "string",

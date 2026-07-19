@@ -36,6 +36,11 @@ control hospedado que emita entitlements firmados, gestione cuentas y sirva el c
   `trust_domain`.
 - **SubscriptionState**: estado + efectos de degradación (invariantes en Spec G).
 - **PackageDownloadGrant**: grant de vida corta por artefacto (no es un secreto persistente).
+- **Identificadores canónicos.** El Hub es el **emisor** de `OrganizationId`/`UserRef` y debe emitirlos
+  **lowercase-canónicos** (`^org_[a-z0-9]{4,40}$` / `^usr_[a-z0-9]{4,40}$`), normalizándolos a minúsculas
+  antes de firmar entitlements/grants. Así un `org_id` viaja sin cambios dentro de un `PackageScope`
+  `private-organization:<org_id>` que el Registry y el Runtime consumen; un id con mayúsculas se rechaza
+  por contrato ([common.defs](../schemas/v1alpha2/common.defs.schema.json), [glosario](../architecture/glossary.md#v1alpha2)).
 
 ## 6. Requisitos funcionales
 

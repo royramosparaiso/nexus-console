@@ -74,6 +74,11 @@ compatible** sobre `v1alpha1`:
   (`source: personal_base`); no requiere entitlement ni Hub.
 - **Modalidad por defecto.** Las instancias existentes se declaran `self_hosted` (Operator `absent`);
   adoptar BYOC/managed es opt-in.
+- **Identificadores lowercase-canónicos.** `OrganizationId`/`UserRef` son `^org_[a-z0-9]{4,40}$` /
+  `^usr_[a-z0-9]{4,40}$`: el Hub que los emite debe normalizarlos a minúsculas y el Registry/Runtime que
+  los consumen los usan sin cambios, de modo que un `org_id` viaje intacto dentro de un `PackageScope`
+  `private-organization:<org_id>`. Un id con mayúsculas se rechaza por contrato. Un implementador que
+  genere ids debe normalizar en el borde de emisión, nunca en el de consumo.
 
 ### Política de degradación (downgrade) al expirar
 

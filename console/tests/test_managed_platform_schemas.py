@@ -294,6 +294,53 @@ def test_subscription_expired_pauses_not_deletes():
     assert list(validator.iter_errors(doc))
 
 
+def test_new_invitations_forced_blocked_only_in_degraded_states():
+    """new_invitations is pinned to blocked ONLY in suspended/cancelled/expired.
+
+    In active/past_due/grace it is policy, NOT pinned: an active instance may
+    allow invitations while a lapsing one (e.g. grace) may still block seats.
+    Both must validate. This documents the intentional non-pinning (L-c)."""
+    validator = _validator_v2("subscription-state.schema.json")
+    # active with invitations allowed (the shipped example) validates.
+    active = _example("subscription-state.active.example.json")
+    assert not list(validator.iter_errors(active))
+    # active that chooses to block invitations ALSO validates: not pinned.
+    active_blocked = json.loads(json.dumps(active))
+    active_blocked["spec"]["effects"]["new_invitations"] = "blocked"
+    assert not list(validator.iter_errors(active_blocked)), (
+        "allowed states must NOT pin new_invitations (grace legitimately blocks)"
+    )
+    # grace blocking invitations (the shipped example) validates too.
+    assert not list(validator.iter_errors(_example("subscription-state.grace.example.json")))
+    # But a degraded state that tries to ALLOW invitations is rejected: pinned blocked.
+    expired_allowing = _example("subscription-state.expired-downgrade.example.json")
+    expired_allowing["spec"]["effects"]["new_invitations"] = "allowed"
+    assert list(validator.iter_errors(expired_allowing)), (
+        "expired/suspended/cancelled must force new_invitations blocked"
+    )
+
+
+def test_personal_base_pins_subscription_state_active_when_present():
+    """personal_base has no Hub subscription to lapse (N1).
+
+    subscription_state may be ABSENT (the shipped Personal example) or, if
+    present, must be `active`; a degraded state under personal_base is rejected."""
+    validator = _validator_v2("edition.declaration.schema.json")
+    # Absent subscription_state (the shipped example) validates.
+    assert not list(validator.iter_errors(_example("edition.personal.example.json")))
+    # Explicit active is fine.
+    ok = _example("edition.personal.example.json")
+    ok["spec"]["subscription_state"] = "active"
+    assert not list(validator.iter_errors(ok)), "personal_base may declare active explicitly"
+    # A degraded state under personal_base is rejected.
+    for degraded in ("past_due", "grace", "suspended", "cancelled", "expired"):
+        bad = _example("edition.personal.example.json")
+        bad["spec"]["subscription_state"] = degraded
+        assert list(validator.iter_errors(bad)), (
+            f"personal_base must reject subscription_state {degraded!r}"
+        )
+
+
 def test_public_packages_are_mirrorable_without_hub_account():
     validator = _validator_v2("package-access-policy.schema.json")
     doc = json.loads(
