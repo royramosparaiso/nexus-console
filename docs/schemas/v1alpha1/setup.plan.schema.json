@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha1/setup.plan.schema.json",
+  "title": "setup.plan.yaml (v1alpha1)",
+  "description": "Ordered, dependency-aware list of setup tasks derived from a blueprint. TARGET-STATE contract. Consumed by the Operator or a cowork assistant. Contains NO secret values.",
+  "x-nexus-contract-version": "v1alpha1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "nexus.io/v1alpha1" },
+    "kind": { "const": "SetupPlan" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "blueprint_version", "generated_at"],
+      "properties": {
+        "name": { "$ref": "common.defs.schema.json#/$defs/Slug" },
+        "instance_id": { "$ref": "common.defs.schema.json#/$defs/InstanceId" },
+        "blueprint_version": { "type": "integer", "minimum": 1 },
+        "plan_version": { "type": "integer", "minimum": 1 },
+        "generated_at": { "$ref": "common.defs.schema.json#/$defs/Timestamp" }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tasks"],
+      "properties": {
+        "modality": { "$ref": "common.defs.schema.json#/$defs/Modality" },
+        "tasks": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "setup.task.schema.json" }
+        },
+        "human_checklist_ref": {
+          "type": "string",
+          "description": "Path/URL to the human-readable SETUP.md derived from this plan."
+        }
+      }
+    }
+  }
+}

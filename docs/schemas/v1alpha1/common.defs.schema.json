@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json",
+  "title": "Nexus common definitions (v1alpha1)",
+  "description": "Reusable definitions shared across the managed-platform contract schemas. TARGET-STATE: none of these contracts is implemented yet; they define the agreed shape before code.",
+  "x-nexus-contract-version": "v1alpha1",
+  "$defs": {
+    "SemVer": {
+      "type": "string",
+      "description": "Semantic version MAJOR.MINOR.PATCH, optionally with prerelease/build metadata.",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "SemVerRange": {
+      "type": "string",
+      "description": "Semantic version constraint expression, e.g. '>=1.0.0 <2.0.0' or '^1.2'.",
+      "minLength": 1
+    },
+    "Slug": {
+      "type": "string",
+      "description": "Lowercase snake_case or kebab identifier.",
+      "pattern": "^[a-z][a-z0-9_-]*$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "InstanceId": {
+      "type": "string",
+      "description": "Stable, opaque identifier of a Runtime instance.",
+      "pattern": "^inst_[A-Za-z0-9]{6,40}$"
+    },
+    "Timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 / ISO-8601 UTC timestamp."
+    },
+    "Modality": {
+      "type": "string",
+      "description": "Deployment modality chosen for the instance.",
+      "enum": ["managed", "byoc", "self_hosted"]
+    },
+    "UpdateChannel": {
+      "type": "string",
+      "description": "Release channel for core or content.",
+      "enum": ["stable", "beta", "pinned"]
+    },
+    "Autonomy": {
+      "type": "string",
+      "description": "Default autonomy level for agents.",
+      "enum": ["human_led", "human_assisted", "act_autonomously"]
+    },
+    "Signature": {
+      "type": "object",
+      "description": "Detached cryptographic signature over a canonicalised payload. See ADR-0002.",
+      "additionalProperties": false,
+      "required": ["algorithm", "key_id", "value", "canonicalization"],
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "enum": ["ed25519", "ecdsa-p256", "sigstore-cosign"],
+          "description": "Signature algorithm / scheme."
+        },
+        "key_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Identifier of the public key that verifies this signature."
+        },
+        "value": {
+          "type": "string",
+          "description": "Base64url-encoded signature bytes (or cosign bundle reference).",
+          "minLength": 1
+        },
+        "canonicalization": {
+          "type": "string",
+          "enum": ["jcs", "json-c14n", "cbor"],
+          "description": "Canonicalization applied to the payload before signing."
+        },
+        "certificate_chain": {
+          "type": "array",
+          "description": "Optional PEM certificate chain (keyless/sigstore).",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "ReplayGuard": {
+      "type": "object",
+      "description": "Nonce + timestamp pair protecting a signed message against replay. See ADR-0002 / ADR-0004.",
+      "additionalProperties": false,
+      "required": ["nonce", "issued_at", "expires_at"],
+      "properties": {
+        "nonce": {
+          "type": "string",
+          "minLength": 8,
+          "description": "Single-use random value; the verifier rejects repeats within the validity window."
+        },
+        "issued_at": { "$ref": "#/$defs/Timestamp" },
+        "expires_at": { "$ref": "#/$defs/Timestamp" }
+      }
+    }
+  }
+}

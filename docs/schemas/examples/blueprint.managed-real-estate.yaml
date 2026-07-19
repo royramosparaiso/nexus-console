@@ -1,0 +1,58 @@
+# EXAMPLE FIXTURE — validates against v1alpha1/nexus.blueprint.schema.json
+# Managed modality: small real-estate agency operating Madrid + Marbella.
+# Contains NO secrets and NO business data.
+apiVersion: nexus.io/v1alpha1
+kind: Blueprint
+metadata:
+  name: costa-homes-madrid
+  instance_id: inst_costahomes01
+  blueprint_version: 1
+  generated_at: "2026-07-19T10:00:00Z"
+  questionnaire_hash: "sha256:2f0a...redacted-hash"
+spec:
+  modality: managed
+  data_region: eu-madrid
+  instance_kind: organization
+  expected_users: 6
+  areas:
+    - { slug: sales, label: "Sales & pipeline", source_pack: real-estate-agency }
+    - { slug: operations, label: "Operations", source_pack: real-estate-agency }
+    - { slug: comms, label: "Communications" }
+    - { slug: legal, label: "Legal & compliance" }
+    - { slug: meetings, label: "Meetings & action items" }
+  agents:
+    - { id: buyer_matching, area: sales, cognition_profile: real_estate_advisor, autonomy: human_assisted }
+    - { id: listing_generator, area: sales, cognition_profile: real_estate_advisor, autonomy: human_assisted }
+    - { id: mortgage_prequal, area: sales, cognition_profile: real_estate_advisor, autonomy: human_led }
+    - { id: property_dossier, area: operations, cognition_profile: real_estate_advisor, autonomy: human_assisted }
+    - { id: closing_coordination, area: operations, cognition_profile: real_estate_advisor, autonomy: human_led }
+  llms:
+    enabled_providers: [anthropic, openai]
+    roles:
+      planner: "anthropic:claude-opus-4"
+      coordinator: "anthropic:claude-sonnet-4"
+      worker: "openai:gpt-4o-mini"
+      embeddings: "openai:text-embedding-3-large"
+    allow_fallback: true
+    provider_constraints: ["eu-data-processing-preferred"]
+  memory:
+    driver: pgvector
+    graph: true
+    retention_days: 730
+    encryption_at_rest: true
+  requested_permissions:
+    - { provider: anthropic, scopes: ["inference"], reason: "Primary reasoning for agents" }
+    - { provider: google-calendar, scopes: ["calendar.events"], reason: "Open-house scheduling in the meetings area" }
+  cost_estimate:
+    currency: EUR
+    monthly_low: 40
+    monthly_high: 180
+    drivers: ["LLM token volume", "number of active listings"]
+  risk_signals:
+    - code: residency_ok
+      severity: info
+      message: "eu-madrid region satisfies the declared EU residency requirement."
+  rationale: >
+    Agencia inmobiliaria con operación en Madrid y Marbella. Se priorizan las áreas de
+    ventas y operaciones con el pack vertical real-estate-agency, memoria con grafo para
+    relacionar compradores, propiedades y expedientes, y región de datos en la UE.

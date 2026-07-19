@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha1/desired-state.schema.json",
+  "title": "Desired-state envelope (v1alpha1)",
+  "description": "Signed, replay-protected desired-state document the Hub publishes and the Operator reconciles. TARGET-STATE contract. There is NO arbitrary shell: only scoped capability intents. Carries NO secret values.",
+  "x-nexus-contract-version": "v1alpha1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "signature", "replay_guard", "spec"],
+  "properties": {
+    "apiVersion": { "const": "nexus.io/v1alpha1" },
+    "kind": { "const": "DesiredState" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instance_id", "revision", "issued_at"],
+      "properties": {
+        "instance_id": { "$ref": "common.defs.schema.json#/$defs/InstanceId" },
+        "revision": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Monotonic revision; the Operator ignores a revision lower than its last applied."
+        },
+        "issued_at": { "$ref": "common.defs.schema.json#/$defs/Timestamp" }
+      }
+    },
+    "signature": { "$ref": "common.defs.schema.json#/$defs/Signature" },
+    "replay_guard": { "$ref": "common.defs.schema.json#/$defs/ReplayGuard" },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["intents"],
+      "properties": {
+        "runtime_channel": { "$ref": "common.defs.schema.json#/$defs/UpdateChannel" },
+        "intents": {
+          "type": "array",
+          "description": "Declarative, scoped capability intents. The Operator reconciles the delta; it never runs free-form commands.",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["capability"],
+            "properties": {
+              "capability": {
+                "type": "string",
+                "description": "Bounded capability. Enumerated, never a shell.",
+                "enum": [
+                  "install_package",
+                  "uninstall_package",
+                  "rollback_package",
+                  "set_channel",
+                  "restart_service",
+                  "rotate_secret",
+                  "apply_migration",
+                  "set_area_state"
+                ]
+              },
+              "target": {
+                "type": "string",
+                "description": "Scoped target the capability applies to (package id, service name, secret reference, area slug)."
+              },
+              "version": { "$ref": "common.defs.schema.json#/$defs/SemVer" },
+              "params": {
+                "type": "object",
+                "description": "Capability-specific parameters. Never contains secret values, only references.",
+                "additionalProperties": true
+              },
+              "requires_superadmin_approval": {
+                "type": "boolean",
+                "default": false,
+                "description": "High-impact intents (data migration, critical secret rotation, major upgrade) require explicit approval before apply. See ADR-0007."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

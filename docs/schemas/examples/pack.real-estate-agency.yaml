@@ -1,0 +1,66 @@
+# EXAMPLE FIXTURE — validates against v1alpha1/nexus.pack.schema.json
+# Vertical pack composing existing Runtime primitives: areas, agents, flows,
+# sidecars and a Skull (Agent Cognition Profile). NO business data, NO secrets.
+apiVersion: nexus.io/v1alpha1
+kind: Pack
+metadata:
+  name: real-estate-agency
+  display_name: "Real-Estate Agency (Madrid / Marbella)"
+  version: 1.2.0
+  publisher:
+    id: ironbat
+    display_name: "Ironbat Digital LLC"
+    verification: verified
+  license: Apache-2.0
+  signature:
+    algorithm: sigstore-cosign
+    key_id: "ironbat-registry-2026"
+    value: "MEUCIQ...redacted-signature"
+    canonicalization: jcs
+spec:
+  kind_hint: vertical
+  compatibility:
+    runtime: ">=1.0.0 <2.0.0"
+    operator: ">=1.0.0"
+  dependencies:
+    - { name: comms-core, version: ">=1.0.0" }
+  permissions:
+    - { scope: "oauth:google-calendar", reason: "Open-house scheduling" }
+    - { scope: "storage:documents", reason: "Property dossiers and offer letters" }
+  resources:
+    cpu_hint: "0.5 vCPU"
+    memory_hint: "512Mi"
+    cost_hint: "low"
+  areas:
+    - { slug: sales, label: "Sales & pipeline", coordinator: sales_coordinator }
+    - { slug: operations, label: "Operations", coordinator: ops_coordinator }
+  agents:
+    - { id: buyer_matching, artifact_type: agent, area: sales, cognition_profile: real_estate_advisor }
+    - { id: listing_generator, artifact_type: agent, area: sales, cognition_profile: real_estate_advisor }
+    - { id: mortgage_prequal, artifact_type: agent, area: sales, cognition_profile: real_estate_advisor }
+    - { id: property_dossier, artifact_type: agent, area: operations, cognition_profile: real_estate_advisor }
+    - { id: closing_coordination, artifact_type: agent, area: operations, cognition_profile: real_estate_advisor }
+    - { id: crm_sync, artifact_type: sidecar, area: sales }
+  flows:
+    - open_house_coordination
+    - offer_letter_drafting
+  sidecars:
+    - crm_sync
+  skulls:
+    - id: real_estate_advisor
+      model_policy: "anthropic:claude-sonnet-4 default; fallback openai:gpt-4o"
+      eval_suite: real_estate_advisor_evals
+  default_mappings:
+    autonomy: human_assisted
+    sales.coordinator_role: sales_coordinator
+  migrations:
+    - { id: "0001_seed_property_schema", description: "Create property/listing domain tables", reversible: true }
+  tests:
+    - { id: "areas_install", description: "Sales + operations areas register with coordinators" }
+    - { id: "advisor_eval", description: "real_estate_advisor Skull passes its eval suite" }
+  uninstall:
+    strategy: reverse_migrations
+    notes: "Removes agents, areas and property schema; user data is exported first."
+  sbom:
+    format: cyclonedx
+    ref: "sbom/real-estate-agency-1.2.0.cdx.json"

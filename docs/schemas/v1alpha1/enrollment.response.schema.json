@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha1/enrollment.response.schema.json",
+  "title": "Operator enrollment response (v1alpha1)",
+  "description": "Hub response to a successful enrollment. TARGET-STATE contract. Returns identity + short-lived credential material; NO master credential is ever issued.",
+  "x-nexus-contract-version": "v1alpha1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "instance_id", "credential", "hub_public_key"],
+  "properties": {
+    "apiVersion": { "const": "nexus.io/v1alpha1" },
+    "kind": { "const": "EnrollmentResponse" },
+    "instance_id": { "$ref": "common.defs.schema.json#/$defs/InstanceId" },
+    "credential": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "expires_at", "rotation_policy"],
+      "description": "Short-lived credential the Operator uses to authenticate. Renewed before expiry; never a long-lived master key.",
+      "properties": {
+        "type": { "type": "string", "enum": ["mtls_cert", "bearer_jwt"] },
+        "credential_ref": {
+          "type": "string",
+          "description": "Reference/handle to fetch or materialize the credential; not the secret value itself."
+        },
+        "expires_at": { "$ref": "common.defs.schema.json#/$defs/Timestamp" },
+        "rotation_policy": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rotate_before_expiry_seconds"],
+          "properties": {
+            "rotate_before_expiry_seconds": { "type": "integer", "minimum": 1 }
+          }
+        }
+      }
+    },
+    "hub_public_key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key_id", "algorithm", "public_key"],
+      "description": "Hub signing key the Operator uses to verify desired-state signatures.",
+      "properties": {
+        "key_id": { "type": "string" },
+        "algorithm": { "type": "string", "enum": ["ed25519", "ecdsa-p256", "sigstore-cosign"] },
+        "public_key": { "type": "string" }
+      }
+    },
+    "poll_interval_seconds": { "type": "integer", "minimum": 5, "default": 30 }
+  }
+}

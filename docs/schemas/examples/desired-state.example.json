@@ -1,0 +1,41 @@
+{
+  "apiVersion": "nexus.io/v1alpha1",
+  "kind": "DesiredState",
+  "metadata": {
+    "instance_id": "inst_costahomes01",
+    "revision": 7,
+    "issued_at": "2026-07-19T12:00:00Z"
+  },
+  "signature": {
+    "algorithm": "ed25519",
+    "key_id": "hub-signing-2026",
+    "value": "c2lnbmF0dXJlLWJ5dGVzLXJlZGFjdGVk",
+    "canonicalization": "jcs"
+  },
+  "replay_guard": {
+    "nonce": "b3f9a1c2d4e5f607",
+    "issued_at": "2026-07-19T12:00:00Z",
+    "expires_at": "2026-07-19T12:05:00Z"
+  },
+  "spec": {
+    "runtime_channel": "stable",
+    "intents": [
+      {
+        "capability": "install_package",
+        "target": "real-estate-agency",
+        "version": "1.2.0",
+        "params": { "channel": "stable" }
+      },
+      {
+        "capability": "set_area_state",
+        "target": "legal",
+        "params": { "state": "enabled" }
+      },
+      {
+        "capability": "apply_migration",
+        "target": "real-estate-agency:0001_seed_property_schema",
+        "requires_superadmin_approval": true
+      }
+    ]
+  }
+}

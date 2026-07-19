@@ -1,0 +1,16 @@
+{
+  "description": "Maps each example fixture to the v1alpha1 schema it must validate against. Consumed by console/tests/test_managed_platform_schemas.py.",
+  "contract_version": "v1alpha1",
+  "cases": [
+    { "example": "blueprint.managed-real-estate.yaml", "schema": "nexus.blueprint.schema.json" },
+    { "example": "blueprint.byoc.yaml", "schema": "nexus.blueprint.schema.json" },
+    { "example": "blueprint.self-hosted-offline.yaml", "schema": "nexus.blueprint.schema.json" },
+    { "example": "pack.real-estate-agency.yaml", "schema": "nexus.pack.schema.json" },
+    { "example": "setup.plan.managed-real-estate.yaml", "schema": "setup.plan.schema.json" },
+    { "example": "desired-state.example.json", "schema": "desired-state.schema.json" },
+    { "example": "enrollment.request.example.json", "schema": "enrollment.request.schema.json" },
+    { "example": "enrollment.response.example.json", "schema": "enrollment.response.schema.json" },
+    { "example": "status-report.example.json", "schema": "status-report.schema.json" },
+    { "example": "secrets-bundle-manifest.example.json", "schema": "secrets-bundle-manifest.schema.json" }
+  ]
+}

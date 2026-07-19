@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha1/status-report.schema.json",
+  "title": "Instance status / health report (v1alpha1)",
+  "description": "Report the Operator pushes to the Hub. TARGET-STATE contract. Fleet metadata and health ONLY: never business data, memory, or conversation content.",
+  "x-nexus-contract-version": "v1alpha1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "instance_id", "reported_at", "health"],
+  "properties": {
+    "apiVersion": { "const": "nexus.io/v1alpha1" },
+    "kind": { "const": "StatusReport" },
+    "instance_id": { "$ref": "common.defs.schema.json#/$defs/InstanceId" },
+    "reported_at": { "$ref": "common.defs.schema.json#/$defs/Timestamp" },
+    "applied_revision": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Last desired-state revision the Operator successfully reconciled."
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": { "$ref": "common.defs.schema.json#/$defs/SemVer" },
+        "channel": { "$ref": "common.defs.schema.json#/$defs/UpdateChannel" }
+      }
+    },
+    "operator": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": { "$ref": "common.defs.schema.json#/$defs/SemVer" },
+        "connection": { "type": "string", "enum": ["mtls_ws", "polling"] }
+      }
+    },
+    "health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "string", "enum": ["healthy", "degraded", "unreachable"] },
+        "uptime_seconds": { "type": "integer", "minimum": 0 },
+        "cpu_pct": { "type": "number", "minimum": 0, "maximum": 100 },
+        "memory_pct": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "installed_packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "version"],
+        "properties": {
+          "name": { "$ref": "common.defs.schema.json#/$defs/Slug" },
+          "version": { "$ref": "common.defs.schema.json#/$defs/SemVer" },
+          "channel": { "$ref": "common.defs.schema.json#/$defs/UpdateChannel" }
+        }
+      }
+    },
+    "setup_progress": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "completed": { "type": "integer", "minimum": 0 },
+        "failed": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string", "description": "Infrastructure error text only; must not embed business content." }
+        }
+      }
+    }
+  }
+}

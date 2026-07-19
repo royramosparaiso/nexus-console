@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha1/nexus.pack.schema.json",
+  "title": "nexus.pack.yaml (v1alpha1)",
+  "description": "Manifest for a distributable Registry package (areas, agents, packs, flows, sidecars, skulls). TARGET-STATE contract. A pack COMPOSES existing Runtime primitives; it never ships a new runtime engine. Contains NO secret values and NO business data.",
+  "x-nexus-contract-version": "v1alpha1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "nexus.io/v1alpha1" },
+    "kind": { "const": "Pack" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "publisher"],
+      "properties": {
+        "name": { "$ref": "common.defs.schema.json#/$defs/Slug" },
+        "display_name": { "type": "string" },
+        "version": {
+          "$ref": "common.defs.schema.json#/$defs/SemVer",
+          "description": "Immutable once published; a new build requires a new version."
+        },
+        "publisher": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "verification"],
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "display_name": { "type": "string" },
+            "verification": {
+              "type": "string",
+              "enum": ["verified", "community"],
+              "description": "Curation status shown in the catalogue (single Registry, two states — see decision #7)."
+            }
+          }
+        },
+        "license": { "type": "string", "description": "SPDX identifier of the pack content." },
+        "signature": { "$ref": "common.defs.schema.json#/$defs/Signature" }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["compatibility", "uninstall"],
+      "properties": {
+        "kind_hint": {
+          "type": "string",
+          "enum": ["area", "agent", "flow", "sidecar", "skull", "vertical"],
+          "description": "Primary artifact the pack centres on; a vertical pack composes several."
+        },
+        "compatibility": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["runtime"],
+          "properties": {
+            "runtime": { "$ref": "common.defs.schema.json#/$defs/SemVerRange" },
+            "operator": { "$ref": "common.defs.schema.json#/$defs/SemVerRange" }
+          }
+        },
+        "dependencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "version"],
+            "properties": {
+              "name": { "$ref": "common.defs.schema.json#/$defs/Slug" },
+              "version": { "$ref": "common.defs.schema.json#/$defs/SemVerRange" }
+            }
+          }
+        },
+        "permissions": {
+          "type": "array",
+          "description": "Accesses, tools or data scopes the pack requests at install time.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["scope", "reason"],
+            "properties": {
+              "scope": { "type": "string" },
+              "reason": { "type": "string" }
+            }
+          }
+        },
+        "resources": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cpu_hint": { "type": "string" },
+            "memory_hint": { "type": "string" },
+            "cost_hint": { "type": "string" }
+          }
+        },
+        "areas": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["slug", "label"],
+            "properties": {
+              "slug": { "$ref": "common.defs.schema.json#/$defs/Slug" },
+              "label": { "type": "string" },
+              "coordinator": { "$ref": "common.defs.schema.json#/$defs/Slug" }
+            }
+          }
+        },
+        "agents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id"],
+            "properties": {
+              "id": { "$ref": "common.defs.schema.json#/$defs/Slug" },
+              "artifact_type": { "type": "string", "enum": ["agent", "sidecar", "skill"] },
+              "area": { "$ref": "common.defs.schema.json#/$defs/Slug" },
+              "cognition_profile": { "$ref": "common.defs.schema.json#/$defs/Slug" }
+            }
+          }
+        },
+        "flows": {
+          "type": "array",
+          "items": { "$ref": "common.defs.schema.json#/$defs/Slug" }
+        },
+        "sidecars": {
+          "type": "array",
+          "items": { "$ref": "common.defs.schema.json#/$defs/Slug" }
+        },
+        "skulls": {
+          "type": "array",
+          "description": "Agent Cognition Profiles shipped by the pack. Never contain business data or secrets.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id"],
+            "properties": {
+              "id": { "$ref": "common.defs.schema.json#/$defs/Slug" },
+              "model_policy": { "type": "string" },
+              "eval_suite": { "type": "string" }
+            }
+          }
+        },
+        "default_mappings": {
+          "type": "object",
+          "description": "Suggested install-time configuration (default roles, initial autonomy).",
+          "additionalProperties": true
+        },
+        "migrations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id"],
+            "properties": {
+              "id": { "type": "string" },
+              "description": { "type": "string" },
+              "reversible": { "type": "boolean", "default": true }
+            }
+          }
+        },
+        "tests": {
+          "type": "array",
+          "description": "Validation suite the pack must pass against the real instance before activation.",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id"],
+            "properties": {
+              "id": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        },
+        "uninstall": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["strategy"],
+          "description": "Inverse procedure. NOT optional.",
+          "properties": {
+            "strategy": { "type": "string", "enum": ["reverse_migrations", "remove_only", "custom"] },
+            "notes": { "type": "string" }
+          }
+        },
+        "sbom": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "format": { "type": "string", "enum": ["cyclonedx", "spdx"] },
+            "ref": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

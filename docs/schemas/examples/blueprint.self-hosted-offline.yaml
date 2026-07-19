@@ -1,0 +1,46 @@
+# EXAMPLE FIXTURE — validates against v1alpha1/nexus.blueprint.schema.json
+# Self-hosted / offline modality: no Operator, no Hub connection. Local-only stack.
+apiVersion: nexus.io/v1alpha1
+kind: Blueprint
+metadata:
+  name: homelab-jarvis
+  blueprint_version: 1
+  generated_at: "2026-07-19T09:15:00Z"
+spec:
+  modality: self_hosted
+  data_region: on-prem
+  instance_kind: personal
+  expected_users: 1
+  areas:
+    - { slug: personal_organization, label: "Personal organization" }
+    - { slug: meetings, label: "Meetings & action items" }
+    - { slug: finance_personal, label: "Personal finance" }
+    - { slug: comms, label: "Communications" }
+  agents:
+    - { id: inbox_triage, area: comms, autonomy: human_led }
+  llms:
+    enabled_providers: [ollama]
+    roles:
+      planner: "ollama:qwen3"
+      coordinator: "ollama:qwen3"
+      worker: "ollama:llama4"
+      embeddings: "ollama:nomic-embed-text"
+    allow_fallback: false
+    provider_constraints: ["fully-local", "no-egress"]
+  memory:
+    driver: sqlite
+    graph: false
+    retention_days: 0
+    encryption_at_rest: true
+  cost_estimate:
+    currency: EUR
+    monthly_low: 0
+    monthly_high: 0
+    drivers: ["self-hosted, local models only"]
+  risk_signals:
+    - code: offline_ok
+      severity: info
+      message: "Instancia 100% local: opera indefinidamente sin Operator ni Hub."
+  rationale: >
+    Modalidad comunitaria/autohospedada. El Hub, si se usa, solo entrega SETUP.md y
+    setup.plan.yaml; el usuario ejecuta manualmente. Sin conexión saliente ni telemetría.

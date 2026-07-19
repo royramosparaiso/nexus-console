@@ -1,0 +1,14 @@
+{
+  "apiVersion": "nexus.io/v1alpha1",
+  "kind": "EnrollmentRequest",
+  "enrollment_token": "eot_9f3b2c1d7e6a5049",
+  "instance_public_key": {
+    "algorithm": "ed25519",
+    "public_key": "cHVibGljLWtleS1ieXRlcy1yZWRhY3RlZA"
+  },
+  "operator": {
+    "version": "1.0.0",
+    "modality": "byoc",
+    "hostname_hint": "acme-fra-1"
+  }
+}
