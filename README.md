@@ -39,6 +39,16 @@ Nexus Console es el meta-orquestador que despliega y gestiona instancias de Nexu
 
 Ver docs de Nexus OS para el modelo completo: [Vision](https://github.com/royramosparaiso/ironbat-jarvis/blob/main/docs/vision.md) · [Specifications](https://github.com/royramosparaiso/ironbat-jarvis/blob/main/docs/specifications.md) · [RFC-001](https://github.com/royramosparaiso/ironbat-jarvis/blob/main/docs/rfc/001-nexus-framework.md).
 
+### Portal gestionado (diseño aprobado, no implementado)
+
+La evolución hacia un **portal web gestionado** de cuatro partes — **Nexus Hub** (plano de control
+hospedado), **Nexus Operator** (agente saliente OSS, sin shell), **NexusOS Runtime/Platform** (plano
+de datos soberano) y **Nexus Registry** (packs firmados) — está documentada como arquitectura
+`v1alpha1` en [`docs/`](docs/README.md). Es **diseño aprobado, todavía no implementado**: ver la
+[extensión de la Visión](docs/vision/nexus-os-vision-managed-portal.md), la
+[especificación de arquitectura](docs/architecture/managed-platform-architecture.md), las
+[ADR](docs/adr/) y los [esquemas + ejemplos](docs/schemas/README.md).
+
 ## Modo local single-tenant
 
 Con un `docker compose up` levantas Console + Postgres + Redis en tu máquina, sin necesidad de tokens cloud. Console detecta que está sola, despliega una Platform local con arquitectura por defecto y crea el `superadmin`.
