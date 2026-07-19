@@ -19,16 +19,16 @@ implementado; estos esquemas fijan la forma acordada **antes** de escribir códi
 
 | Esquema | Contrato | Notas |
 |---|---|---|
-| [`common.defs.schema.json`](v1alpha1/common.defs.schema.json) | Definiciones compartidas | `SemVer`, `Slug`, `InstanceId`, `Signature`, `ReplayGuard`, enums |
+| [`common.defs.schema.json`](v1alpha1/common.defs.schema.json) | Definiciones compartidas | `SemVer`, `Slug`, `InstanceId`, `Signature` (ed25519/ecdsa/sigstore-cosign/minisign; **age no firma**), `TransparencyLogEntry`, `AgeRecipient`, `SpdxLicense`, `ReplayGuard` |
 | [`nexus.blueprint.schema.json`](v1alpha1/nexus.blueprint.schema.json) | `nexus.blueprint.yaml` | Arquitectura recomendada, versionada; sin secretos |
 | [`setup.plan.schema.json`](v1alpha1/setup.plan.schema.json) | `setup.plan.yaml` | Plan ordenado de tareas |
 | [`setup.task.schema.json`](v1alpha1/setup.task.schema.json) | `SetupTask` | Máquina de estados; `failure_reason` obligatorio si `failed` |
-| [`nexus.pack.schema.json`](v1alpha1/nexus.pack.schema.json) | `nexus.pack.yaml` | Pack firmado; `tests` y `uninstall` obligatorios |
-| [`desired-state.schema.json`](v1alpha1/desired-state.schema.json) | Estado deseado | Envoltorio firmado + replay guard; intents acotados, sin shell |
+| [`nexus.pack.schema.json`](v1alpha1/nexus.pack.schema.json) | `nexus.pack.yaml` | Firma Sigstore/Cosign + `offline_signature` minisign/Ed25519 + `provenance`; **`license` SPDX obligatoria** y `trademark` separado; `tests` y `uninstall` obligatorios |
+| [`desired-state.schema.json`](v1alpha1/desired-state.schema.json) | Estado deseado | Firma **Ed25519** (con `trust_domain` obligatorio; rechaza sigstore/age) + replay guard; intents acotados, sin shell |
 | [`enrollment.request.schema.json`](v1alpha1/enrollment.request.schema.json) | Enrolamiento (petición) | Token de un solo uso + clave pública de instancia |
-| [`enrollment.response.schema.json`](v1alpha1/enrollment.response.schema.json) | Enrolamiento (respuesta) | Credencial de vida corta + clave pública del Hub |
+| [`enrollment.response.schema.json`](v1alpha1/enrollment.response.schema.json) | Enrolamiento (respuesta) | Credencial mTLS de vida corta + clave Ed25519 del Hub (no keyless) |
 | [`status-report.schema.json`](v1alpha1/status-report.schema.json) | Status/health | Metadatos de flota y salud; nunca contenido |
-| [`secrets-bundle-manifest.schema.json`](v1alpha1/secrets-bundle-manifest.schema.json) | Manifiesto público del bundle | **Solo metadatos**; prohíbe valores de secreto por construcción |
+| [`secrets-bundle-manifest.schema.json`](v1alpha1/secrets-bundle-manifest.schema.json) | Manifiesto público del bundle | **Solo metadatos**; cifrado **age/X25519** (recipiente público); prohíbe valores de secreto por construcción |
 
 ## Ejemplos (fixtures)
 

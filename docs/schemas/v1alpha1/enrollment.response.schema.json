@@ -15,12 +15,16 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["type", "expires_at", "rotation_policy"],
-      "description": "Short-lived credential the Operator uses to authenticate. Renewed before expiry; never a long-lived master key.",
+      "description": "Short-lived credential the Operator uses to authenticate. Approved transport identity (ADR-0002/ADR-0004) is per-instance mTLS with short-lived certificates and rotation; bearer_jwt is a fallback. Never a long-lived master key.",
       "properties": {
         "type": { "type": "string", "enum": ["mtls_cert", "bearer_jwt"] },
         "credential_ref": {
           "type": "string",
           "description": "Reference/handle to fetch or materialize the credential; not the secret value itself."
+        },
+        "mtls_identity": {
+          "type": "string",
+          "description": "Per-instance mTLS identity bound to this Operator (e.g. 'spiffe://hub.nexusos.dev/instance/inst_...'). Non-secret identity string."
         },
         "expires_at": { "$ref": "common.defs.schema.json#/$defs/Timestamp" },
         "rotation_policy": {
@@ -37,11 +41,12 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["key_id", "algorithm", "public_key"],
-      "description": "Hub signing key the Operator uses to verify desired-state signatures.",
+      "description": "Hub desired-state signing key the Operator pins to verify signatures offline. Ed25519 (KMS/HSM-held); NOT Sigstore/keyless — the control plane does not depend on a public transparency log.",
       "properties": {
         "key_id": { "type": "string" },
-        "algorithm": { "type": "string", "enum": ["ed25519", "ecdsa-p256", "sigstore-cosign"] },
-        "public_key": { "type": "string" }
+        "algorithm": { "type": "string", "enum": ["ed25519", "ecdsa-p256"] },
+        "public_key": { "type": "string" },
+        "trust_domain": { "type": "string", "description": "Trust root this Hub key belongs to; matches the desired-state signature trust_domain." }
       }
     },
     "poll_interval_seconds": { "type": "integer", "minimum": 5, "default": 30 }

@@ -42,6 +42,16 @@ aplicación directa del principio de soberanía del dato a la propia infraestruc
   evita romper packs instalados ([ADR-0007](../adr/0007-update-channels-and-rollout.md)).
 - Backward compatibility del protocolo: una versión minor, igual que RFC-002.
 
+## Licencia durante la migración
+
+El modelo de **licencia por componente** está aprobado ([ADR-0008](../adr/0008-oss-commercial-boundary-and-license.md)):
+Apache-2.0 para Runtime/Operator/CLI/SDK/contratos públicos, propietario para Hub y servicios
+gestionados, SPDX obligatorio por pack. **La relicencia del código actual no se ha ejecutado:** el
+`LICENSE` raíz sigue siendo **MIT** y **todos** los archivos de `console/` conservan MIT hasta completar
+la auditoría de titularidad/contribución, el consentimiento de titulares y la decisión CLA/DCO. La
+adopción del portal gestionado **no** depende de esa relicencia ni altera la licencia de las instancias
+existentes.
+
 ## Reversibilidad
 
 - Blueprints versionados (nunca sobrescriben): se puede volver a una versión anterior.

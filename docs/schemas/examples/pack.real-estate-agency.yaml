@@ -12,11 +12,34 @@ metadata:
     display_name: "Ironbat Digital LLC"
     verification: verified
   license: Apache-2.0
+  trademark:
+    notice: "NexusOS and Ironbat are trademarks of Ironbat Digital LLC; the Apache-2.0 content license grants no trademark rights."
+    policy_url: "https://nexusos.dev/trademark"
   signature:
     algorithm: sigstore-cosign
-    key_id: "ironbat-registry-2026"
-    value: "MEUCIQ...redacted-signature"
+    key_id: "https://github.com/royramosparaiso/nexus-registry/.github/workflows/publish.yml@refs/tags/v1.2.0"
+    value: "MEUCIQ...redacted-cosign-bundle-ref"
     canonicalization: jcs
+    trust_domain: sigstore-public-good
+    key_custody: keyless_oidc
+    transparency:
+      log: rekor.sigstore.dev
+      log_index: 148372640
+      inclusion_proof: true
+      oidc_issuer: "https://token.actions.githubusercontent.com"
+      certificate_identity: "https://github.com/royramosparaiso/nexus-registry/.github/workflows/publish.yml@refs/tags/v1.2.0"
+  offline_signature:
+    algorithm: minisign
+    key_id: "RWSf...redacted-minisign-pubkey-id"
+    value: "RUR...redacted-minisign-signature"
+    canonicalization: jcs
+    key_custody: local_file
+  provenance:
+    sigstore_bundle_ref: "sigstore/real-estate-agency-1.2.0.sigstore.json"
+    transparency:
+      log: rekor.sigstore.dev
+      log_index: 148372640
+    sbom_attestation_ref: "attestations/real-estate-agency-1.2.0.sbom.intoto.jsonl"
 spec:
   kind_hint: vertical
   compatibility:

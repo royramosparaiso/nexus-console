@@ -13,7 +13,7 @@
     "metadata": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "version", "publisher"],
+      "required": ["name", "version", "publisher", "license"],
       "properties": {
         "name": { "$ref": "common.defs.schema.json#/$defs/Slug" },
         "display_name": { "type": "string" },
@@ -35,8 +35,40 @@
             }
           }
         },
-        "license": { "type": "string", "description": "SPDX identifier of the pack content." },
-        "signature": { "$ref": "common.defs.schema.json#/$defs/Signature" }
+        "license": {
+          "$ref": "common.defs.schema.json#/$defs/SpdxLicense",
+          "description": "REQUIRED SPDX license expression of the pack CONTENT. A pack may be Apache/community, commercial/proprietary (LicenseRef-...), or another declared compatible license. This grants no rights over NexusOS/Ironbat trademarks (see 'trademark')."
+        },
+        "trademark": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Clarifies that the content license does NOT convey NexusOS/Ironbat brand rights. Trademark policy is governed separately from the code/content license (ADR-0008).",
+          "properties": {
+            "notice": { "type": "string", "description": "e.g. 'NexusOS and Ironbat are trademarks of Ironbat Digital LLC; this license grants no trademark rights.'" },
+            "policy_url": { "type": "string", "description": "Link to the separate trademark policy." }
+          }
+        },
+        "signature": {
+          "description": "Primary publication signature. Registry-published packs use sigstore-cosign (keyless OIDC + transparency log); the field also accepts ed25519 for privately distributed packs.",
+          "$ref": "common.defs.schema.json#/$defs/Signature"
+        },
+        "offline_signature": {
+          "description": "Optional secondary signature for air-gapped/self-hosted verification without Sigstore infrastructure. Constrained to minisign or ed25519.",
+          "allOf": [
+            { "$ref": "common.defs.schema.json#/$defs/Signature" },
+            { "properties": { "algorithm": { "enum": ["minisign", "ed25519"] } } }
+          ]
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Public supply-chain provenance for the published artifact (Sigstore bundle + SBOM attestation). Public metadata only.",
+          "properties": {
+            "sigstore_bundle_ref": { "type": "string", "description": "Reference to the .sigstore bundle (cert + signature + inclusion proof)." },
+            "transparency": { "$ref": "common.defs.schema.json#/$defs/TransparencyLogEntry" },
+            "sbom_attestation_ref": { "type": "string", "description": "Reference to the signed SBOM attestation." }
+          }
+        }
       }
     },
     "spec": {

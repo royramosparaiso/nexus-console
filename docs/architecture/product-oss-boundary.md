@@ -1,6 +1,6 @@
 # Frontera producto / open-source y forma de pricing
 
-- **Estado:** Frontera aprobada · **licencia y pricing numérico PENDIENTES**
+- **Estado:** Frontera y **modelo de licencia por componente APROBADOS** · relicencia del código existente bloqueada hasta auditoría legal · pricing numérico pendiente
 - **Versión de arquitectura:** `v1alpha1`
 - **Fecha:** 2026-07-19
 - **Relacionadas:** [ADR-0008](../adr/0008-oss-commercial-boundary-and-license.md)
@@ -26,16 +26,24 @@ sistema sin depender de ningún componente de pago. Lo que se cobra es **comodid
 | Wizard/generador local básico | Catálogo curado y verificado |
 | **Seguridad, exportación y portabilidad** | Soporte y SLA; facturación y gestión de cuenta |
 
-## Licencia — PENDIENTE de decisión legal formal
+## Licencia — modelo por componente APROBADO (relicencia efectiva bloqueada)
 
-**No es consejo legal.** Ver el trade-off completo en
+**No es consejo legal.** Decisión aprobada; detalle y procedimiento en
 [ADR-0008](../adr/0008-oss-commercial-boundary-and-license.md):
 
-- **Apache-2.0** (permisiva, todo el proyecto): máxima adopción; riesgo de SaaS competidor sin retorno.
-- **AGPL + licencia comercial dual**: protege contra SaaS competidor; posible fricción empresarial.
+- **Apache-2.0** para Runtime, Operator, CLI, SDK, esquemas/contratos públicos, verificador/instalador
+  de packs, cliente de Registry comunitario y capacidades básicas locales.
+- **Propietario** para Hub hospedado, facturación, provisioning/orquestación gestionada, operaciones de
+  flota y catálogo curado gestionado.
+- **Packs:** licencia por paquete (Apache/comunidad, comercial/propietaria u otra compatible), con
+  **metadatos SPDX obligatorios**. La marca NexusOS/Ironbat es **independiente** de la licencia de
+  código.
 
-Debe resolverse con asesoría legal **antes de publicar** el repositorio de Runtime/Operator. No bloquea
-el MVP (que no requiere publicar el código todavía). Console es hoy MIT (`LICENSE`).
+**Seguridad, exportación, portabilidad y self-hosted permanecen en OSS.** La relicencia del código
+actual **no se aplica todavía**: el `LICENSE` raíz sigue siendo **MIT** y todos los archivos de
+`console/` conservan MIT hasta completar una **auditoría de titularidad/contribución** bloqueante, el
+consentimiento de los titulares y la decisión **CLA/DCO**, validadas por asesoría legal antes de
+publicar Runtime/Operator (procedimiento y matriz ruta→licencia en ADR-0008). No bloquea el MVP.
 
 ## Forma de pricing (sin cifras)
 

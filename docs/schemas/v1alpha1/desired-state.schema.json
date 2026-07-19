@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.nexusos.dev/v1alpha1/desired-state.schema.json",
   "title": "Desired-state envelope (v1alpha1)",
-  "description": "Signed, replay-protected desired-state document the Hub publishes and the Operator reconciles. TARGET-STATE contract. There is NO arbitrary shell: only scoped capability intents. Carries NO secret values.",
+  "description": "Signed, replay-protected desired-state document the Hub publishes and the Operator reconciles. TARGET-STATE contract. There is NO arbitrary shell: only scoped capability intents. Carries NO secret values. Approved crypto (ADR-0002): Hub control-plane messages are signed with ed25519 (keys in KMS/HSM); Sigstore is NOT required and public transparency logs are NOT relied on for normal Hub->Operator operation; age is never accepted here.",
   "x-nexus-contract-version": "v1alpha1",
   "type": "object",
   "additionalProperties": false,
@@ -24,7 +24,19 @@
         "issued_at": { "$ref": "common.defs.schema.json#/$defs/Timestamp" }
       }
     },
-    "signature": { "$ref": "common.defs.schema.json#/$defs/Signature" },
+    "signature": {
+      "description": "Ed25519 detached signature over the canonicalised document. Sigstore/cosign and age are rejected for the control plane; the algorithm is constrained to ed25519 and a trust_domain is required so the Operator resolves the Hub key offline.",
+      "allOf": [
+        { "$ref": "common.defs.schema.json#/$defs/Signature" },
+        {
+          "properties": {
+            "algorithm": { "const": "ed25519" },
+            "key_custody": { "enum": ["kms", "hsm", "local_file"] }
+          },
+          "required": ["trust_domain"]
+        }
+      ]
+    },
     "replay_guard": { "$ref": "common.defs.schema.json#/$defs/ReplayGuard" },
     "spec": {
       "type": "object",

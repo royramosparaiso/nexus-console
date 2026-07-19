@@ -23,6 +23,20 @@ marca y término técnico formal, se indican ambos.
 | **Desired State** (Estado deseado) | Documento firmado y protegido contra replay que el Hub publica; el Operator reconcilia el delta contra el estado real. Contiene intents de capacidad acotada, nunca shell. | No | No |
 | **Installation** | Registro de qué pack/versión está instalado en qué instancia. | No | No |
 
+## Términos criptográficos y de licencia (`v1alpha1`, aprobados)
+
+| Término | Definición | Uso normativo |
+|---|---|---|
+| **Sigstore / Cosign** | Firma keyless (OIDC) con log de transparencia (Rekor) y verificación offline del bundle. | **Solo** artefactos públicos: releases, imágenes, packs del Registry público, SBOM, provenance. |
+| **Ed25519** | Firma de curva elíptica ligera y determinista. | **Estado deseado** e intents del plano de control Hub→Operator; claves en KMS/HSM; verificación offline con clave pineada. |
+| **mTLS por instancia** | TLS mutuo con certificado por instancia, de vida corta y rotado. | **Transporte y enrolamiento** del Operator; identidad distinta de la clave de firma. |
+| **Minisign** | Firma Ed25519 simple basada en fichero, sin infraestructura. | Verificación **offline/air-gapped** de packs (`offline_signature`). |
+| **age / X25519** | Cifrado de sobre a destinatarios de clave pública X25519. **Solo cifrado, nunca firma.** | `nexus.secrets.bundle`; recipiente público en el manifiesto, ciphertext fuera de banda. |
+| **Trust domain** | Raíz de confianza contra la que el verificador resuelve una clave (`hub.nexusos.dev`, `sigstore-public-good`, CA mTLS, claves minisign). | Campo `trust_domain` en `Signature`/`hub_public_key`. |
+| **Provenance / SBOM attestation** | Bundle Sigstore + attestation de SBOM firmado que prueba el origen del artefacto. | Bloque `provenance` de `nexus.pack.yaml`. |
+| **SPDX license** | Expresión SPDX que identifica la licencia del **contenido**. **Obligatoria por pack.** | `metadata.license`; no concede derechos de **marca** (bloque `trademark`). |
+| **Break-glass** | Aplicación excepcional de estado deseado con clave Ed25519 de emergencia pineada si el KMS del Hub no está disponible; auditada y con rotación forzada posterior. | Ver [ADR-0002](../adr/0002-signing-and-verification.md). |
+
 **Notas de coherencia con el repo actual:** `artifact_type` de una plantilla de agente
 (`agent | sidecar | skill`) se define en `console/agent_templates/_schema.md`; un **skill** es una
 capacidad reutilizable que agentes y sidecars invocan (no runnable independiente). Las áreas

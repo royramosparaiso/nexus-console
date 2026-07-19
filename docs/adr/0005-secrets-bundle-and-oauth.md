@@ -20,7 +20,9 @@ Separar el problema en artefactos con distinto nivel de exposición:
 2. **`setup.plan.yaml`** (máquina): plan parseable, **sin secretos embebidos**.
 3. **`nexus.secrets.bundle`** (paquete cifrado de un solo uso):
    - El usuario pega sus claves en un formulario del Hub que las **cifra en el navegador** contra la
-     **clave pública de la instancia** (`age`/`hpke`/`jwe`). El Hub **nunca** almacena la clave en claro.
+     **clave pública de la instancia**, mediante **cifrado de sobre age con destinatarios X25519**
+     (esquema aprobado, [ADR-0002](0002-signing-and-verification.md)). `age` es **solo cifrado**, nunca
+     firma. El Hub **nunca** almacena la clave en claro.
    - Se transfiere al Operator o se descarga **una sola vez**.
    - El Runtime lo importa a su **vault local** (secreto en reposo, cifrado, dentro de la instancia).
    - Tras importación exitosa, el bundle se **invalida y elimina**; no queda copia reutilizable.

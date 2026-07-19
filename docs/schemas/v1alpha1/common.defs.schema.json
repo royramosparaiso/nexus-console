@@ -49,19 +49,19 @@
     },
     "Signature": {
       "type": "object",
-      "description": "Detached cryptographic signature over a canonicalised payload. See ADR-0002.",
+      "description": "Detached cryptographic signature over a canonicalised payload. Approved hybrid model (ADR-0002): ed25519 for Hub control-plane/desired-state (keys in KMS/HSM where managed); sigstore-cosign for public releases/packages/SBOM/provenance (keyless OIDC); minisign for offline/self-hosted package verification. `age` is encryption ONLY and is NOT a valid signing algorithm here.",
       "additionalProperties": false,
       "required": ["algorithm", "key_id", "value", "canonicalization"],
       "properties": {
         "algorithm": {
           "type": "string",
-          "enum": ["ed25519", "ecdsa-p256", "sigstore-cosign"],
-          "description": "Signature algorithm / scheme."
+          "enum": ["ed25519", "ecdsa-p256", "sigstore-cosign", "minisign"],
+          "description": "Signature scheme. `age` is intentionally excluded: age is envelope encryption, never signing."
         },
         "key_id": {
           "type": "string",
           "minLength": 1,
-          "description": "Identifier of the public key that verifies this signature."
+          "description": "Identifier of the public key (or keyless identity) that verifies this signature."
         },
         "value": {
           "type": "string",
@@ -73,12 +73,57 @@
           "enum": ["jcs", "json-c14n", "cbor"],
           "description": "Canonicalization applied to the payload before signing."
         },
+        "trust_domain": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Trust root the verifier must resolve the key against (e.g. 'hub.nexusos.dev', 'sigstore-public-good', 'operator-mtls-ca'). Disambiguates which root of trust applies."
+        },
+        "key_custody": {
+          "type": "string",
+          "enum": ["kms", "hsm", "keyless_oidc", "local_file"],
+          "description": "Where the signing private key lives. Managed Hub signing keys use kms/hsm; public releases use keyless_oidc (Sigstore); offline/self-hosted may use local_file (minisign)."
+        },
         "certificate_chain": {
           "type": "array",
           "description": "Optional PEM certificate chain (keyless/sigstore).",
           "items": { "type": "string" }
-        }
+        },
+        "transparency": { "$ref": "#/$defs/TransparencyLogEntry" }
       }
+    },
+    "TransparencyLogEntry": {
+      "type": "object",
+      "description": "Public transparency-log (Rekor) inclusion metadata for Sigstore/Cosign signatures. Present for public releases/packages; absent for private Hub desired-state (which must verify without any public log). Contains public metadata only.",
+      "additionalProperties": false,
+      "required": ["log", "log_index"],
+      "properties": {
+        "log": { "type": "string", "description": "Transparency log identity, e.g. 'rekor.sigstore.dev'." },
+        "log_index": { "type": "integer", "minimum": 0, "description": "Inclusion index in the log." },
+        "inclusion_proof": { "type": "boolean", "default": true, "description": "Whether an offline-verifiable inclusion proof is bundled." },
+        "oidc_issuer": { "type": "string", "description": "OIDC issuer that vouched for the keyless identity (e.g. 'https://token.actions.githubusercontent.com')." },
+        "certificate_identity": { "type": "string", "description": "SAN/identity the release certificate was bound to (e.g. a CI workflow identity)." }
+      }
+    },
+    "AgeRecipient": {
+      "type": "object",
+      "description": "Public X25519 recipient metadata for age envelope encryption (ADR-0005). Encryption only — never signing. Carries NO secret material.",
+      "additionalProperties": false,
+      "required": ["type", "recipient"],
+      "properties": {
+        "type": { "const": "x25519", "description": "age recipient type. Only X25519 recipients are used." },
+        "recipient": {
+          "type": "string",
+          "description": "Public age recipient string (bech32 'age1...'). Public key material, safe to publish.",
+          "pattern": "^age1[0-9a-z]+$"
+        },
+        "label": { "type": "string", "description": "Non-secret label for UX (e.g. 'instance-costahomes01-enc')." }
+      }
+    },
+    "SpdxLicense": {
+      "type": "string",
+      "description": "SPDX license expression identifying the license of the content (e.g. 'Apache-2.0', 'AGPL-3.0-only', 'LicenseRef-Ironbat-Commercial-1.0'). This is the CONTENT license only; NexusOS/Ironbat trademark rights are governed separately and are never granted by this field.",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9.+-]+( (AND|OR|WITH) [A-Za-z0-9.+-]+)*$"
     },
     "ReplayGuard": {
       "type": "object",

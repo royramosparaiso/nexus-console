@@ -197,11 +197,11 @@ despliegues Fly siguen funcionando sin Operator.
 | Amenaza | Control |
 |---|---|
 | Shell remoto / ejecución arbitraria | **No existe canal de shell**; solo capacidades acotadas enumeradas en `desired-state` |
-| Estado deseado manipulado | Firma + canonicalización + verificación offline ([ADR-0002](../adr/0002-signing-and-verification.md)) |
+| Estado deseado manipulado | Firma **Ed25519** (clave del Hub en KMS/HSM, pineada en el Operator) + canonicalización + verificación **100% offline**, sin dependencia de Sigstore ni de transparency log ([ADR-0002](../adr/0002-signing-and-verification.md)) |
 | Replay de mensajes | `nonce` + `issued_at`/`expires_at` + `revision` monotónica |
-| Robo de credencial del Operator | Credenciales de vida corta con rotación; sin credencial maestra ([ADR-0004](../adr/0004-operator-enrollment-and-identity.md)) |
-| Fuga de secretos | Bundle cifrado en navegador, un solo uso; OAuth/device flow preferente; prohibición en prompts cowork ([ADR-0005](../adr/0005-secrets-bundle-and-oauth.md)) |
-| Cadena de suministro (pack malicioso) | Firma obligatoria, SBOM, verificación antes de instalar, catálogo curado |
+| Robo de credencial del Operator | Identidad **mTLS por instancia**, credenciales de vida corta con rotación; sin credencial maestra ([ADR-0004](../adr/0004-operator-enrollment-and-identity.md)) |
+| Fuga de secretos | Cifrado de sobre **age/X25519** a la clave pública de la instancia, en navegador y de un solo uso; OAuth/device flow preferente; prohibición en prompts cowork ([ADR-0005](../adr/0005-secrets-bundle-and-oauth.md)) |
+| Cadena de suministro (pack malicioso) | Firma **Sigstore/Cosign** (keyless OIDC + Rekor) con verificación offline del bundle, alternativa **minisign/Ed25519** para air-gapped, SBOM/attestation, verificación antes de instalar, catálogo curado ([ADR-0002](../adr/0002-signing-and-verification.md)) |
 | Brecha multi-tenant en el Hub | Aislamiento estricto por instancia; sin BD compartida de contenido; revisiones periódicas |
 | Hub recibe datos de negocio | Frontera solo-Runtime; backups gestionados solo con consentimiento explícito y cifrado |
 | Cambio crítico impuesto | Aprobación obligatoria del `superadmin` incluso en `stable` ([ADR-0007](../adr/0007-update-channels-and-rollout.md)) |
@@ -268,6 +268,11 @@ modalidades; tickets de soporte por instancia en el primer setup.
 ### Decisiones abiertas (resumen)
 
 Nombre "Skull" (alias marca / "Agent Cognition Profile" formal — resuelto en el
-[glosario](glossary.md)); **licencia OSS** ([ADR-0008](../adr/0008-oss-commercial-boundary-and-license.md));
-**proveedor de firma** ([ADR-0002](../adr/0002-signing-and-verification.md)); región de datos por
-defecto (preguntada explícitamente, sin default silencioso).
+[glosario](glossary.md)). **Resueltas 2026-07-19:** la **arquitectura criptográfica** es híbrida y está
+aprobada —Sigstore/Cosign para artefactos públicos, Ed25519 (KMS/HSM) para estado deseado, mTLS por
+instancia para transporte, minisign/Ed25519 para verificación offline y age/X25519 para cifrado de
+secretos ([ADR-0002](../adr/0002-signing-and-verification.md))— y el **modelo de licencia por
+componente** está aprobado (Apache-2.0 para OSS; propietario para Hub/servicios gestionados; SPDX
+obligatorio por pack), con la relicencia del código existente **bloqueada** hasta la auditoría legal
+([ADR-0008](../adr/0008-oss-commercial-boundary-and-license.md)). **Aún abiertas:** pricing numérico;
+decisión **CLA/DCO**; región de datos por defecto (preguntada explícitamente, sin default silencioso).

@@ -14,8 +14,11 @@ componer esas primitivas, no reinventarlas.
 
 ## Decisión
 
-- **`nexus.pack.yaml`** (`kind: Pack`) con `version` **inmutable** (SemVer), `publisher` + `signature`,
-  `verification` (`verified`/`community`), `license`.
+- **`nexus.pack.yaml`** (`kind: Pack`) con `version` **inmutable** (SemVer), `publisher` + `signature`
+  (Sigstore/Cosign para el Registry público; `offline_signature` minisign/Ed25519 para air-gapped) +
+  `provenance` (bundle Sigstore + attestation de SBOM), `verification` (`verified`/`community`), y
+  **`license` SPDX obligatoria**. La licencia del contenido del pack es **independiente** de los
+  derechos de marca NexusOS/Ironbat (bloque `trademark`; ver [ADR-0008](0008-oss-commercial-boundary-and-license.md) y [ADR-0002](0002-signing-and-verification.md)).
 - **Compatibilidad núcleo-paquete:** `spec.compatibility.runtime` (rango SemVer) y `operator` opcional.
   Se mantiene una **matriz de compatibilidad** pública (ver [ADR-0007](0007-update-channels-and-rollout.md)).
 - **`dependencies`, `permissions` (con `reason`), `resources`.**
@@ -24,7 +27,7 @@ componer esas primitivas, no reinventarlas.
 - **`tests`** obligatorios (mínimo 1): suite que el pack debe pasar contra la instancia real antes de
   activarse.
 - **`uninstall`/rollback** obligatorio (`strategy`): no opcional.
-- **`sbom`** (CycloneDX/SPDX) y `license` para trazabilidad legal.
+- **`sbom`** (CycloneDX/SPDX) y `license` (expresión SPDX **obligatoria**) para trazabilidad legal.
 - **Regla de diseño:** un pack **compone primitivas existentes del Runtime**; si necesita su propio
   motor de ejecución distinto, es señal de diseño equivocado y se rechaza en verificación.
 - **Overlays:** las personalizaciones locales se aplican como **overlays** (capa encima del pack, sin

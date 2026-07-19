@@ -118,13 +118,22 @@ Area, Agent, Skull/Agent Cognition Profile, Sidecar, Flow, Pack, Overlay, Desire
 se define en el [glosario](../architecture/glossary.md). Se mantiene **"Skull"** como alias de marca y
 **"Agent Cognition Profile"** como término técnico formal.
 
-## 8. Decisiones abiertas que dependen de negocio/legal
+## 8. Decisiones de negocio/legal — estado
 
-- **Licencia OSS del Runtime/Operator** (Apache-2.0 vs AGPL + dual): pendiente de decisión legal
-  formal. Ver [ADR-0008](../adr/0008-oss-commercial-boundary-and-license.md) y
+**Aprobadas (2026-07-19):**
+
+- **Licencia por componente:** Apache-2.0 para Runtime, Operator, CLI, SDK, contratos públicos,
+  verificador/instalador de packs y cliente de Registry comunitario; propietario para Hub hospedado y
+  servicios gestionados; licencia declarada por pack con **SPDX obligatorio**; marca NexusOS/Ironbat
+  independiente del código. La **relicencia del código existente** (hoy MIT) permanece **bloqueada**
+  hasta la auditoría de titularidad/contribución, el consentimiento de titulares y la decisión CLA/DCO.
+  Ver [ADR-0008](../adr/0008-oss-commercial-boundary-and-license.md) y
   [frontera OSS/comercial](../architecture/product-oss-boundary.md).
-- **Proveedor de firma** (sigstore/cosign vs age envelopes): a resolver en
-  [ADR-0002](../adr/0002-signing-and-verification.md).
+- **Arquitectura criptográfica híbrida:** Sigstore/Cosign para artefactos públicos, Ed25519 (KMS/HSM)
+  para estado deseado, mTLS por instancia para transporte, minisign/Ed25519 para verificación offline y
+  age/X25519 para cifrado de secretos. Ver [ADR-0002](../adr/0002-signing-and-verification.md).
+
+**Aún abiertas:** pricing numérico; decisión formal **CLA vs DCO**; región de datos por defecto.
 
 ## 9. Próximos pasos
 

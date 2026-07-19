@@ -10,7 +10,9 @@
     "algorithm": "ed25519",
     "key_id": "hub-signing-2026",
     "value": "c2lnbmF0dXJlLWJ5dGVzLXJlZGFjdGVk",
-    "canonicalization": "jcs"
+    "canonicalization": "jcs",
+    "trust_domain": "hub.nexusos.dev",
+    "key_custody": "kms"
   },
   "replay_guard": {
     "nonce": "b3f9a1c2d4e5f607",
