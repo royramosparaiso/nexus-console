@@ -1,0 +1,89 @@
+# EXAMPLE FIXTURE — validates against v1alpha1/nexus.pack.schema.json
+# Vertical pack composing existing Runtime primitives: areas, agents, flows,
+# sidecars and a Skull (Agent Cognition Profile). NO business data, NO secrets.
+apiVersion: nexus.io/v1alpha1
+kind: Pack
+metadata:
+  name: real-estate-agency
+  display_name: "Real-Estate Agency (Madrid / Marbella)"
+  version: 1.2.0
+  publisher:
+    id: ironbat
+    display_name: "Ironbat Digital LLC"
+    verification: verified
+  license: Apache-2.0
+  trademark:
+    notice: "NexusOS and Ironbat are trademarks of Ironbat Digital LLC; the Apache-2.0 content license grants no trademark rights."
+    policy_url: "https://nexusos.dev/trademark"
+  signature:
+    algorithm: sigstore-cosign
+    key_id: "https://github.com/royramosparaiso/nexus-registry/.github/workflows/publish.yml@refs/tags/v1.2.0"
+    value: "MEUCIQ...redacted-cosign-bundle-ref"
+    canonicalization: jcs
+    trust_domain: sigstore-public-good
+    key_custody: keyless_oidc
+    transparency:
+      log: rekor.sigstore.dev
+      log_index: 148372640
+      inclusion_proof: true
+      oidc_issuer: "https://token.actions.githubusercontent.com"
+      certificate_identity: "https://github.com/royramosparaiso/nexus-registry/.github/workflows/publish.yml@refs/tags/v1.2.0"
+  offline_signature:
+    algorithm: minisign
+    key_id: "RWSf...redacted-minisign-pubkey-id"
+    value: "RUR...redacted-minisign-signature"
+    canonicalization: jcs
+    key_custody: local_file
+  provenance:
+    sigstore_bundle_ref: "sigstore/real-estate-agency-1.2.0.sigstore.json"
+    transparency:
+      log: rekor.sigstore.dev
+      log_index: 148372640
+    sbom_attestation_ref: "attestations/real-estate-agency-1.2.0.sbom.intoto.jsonl"
+spec:
+  kind_hint: vertical
+  compatibility:
+    runtime: ">=1.0.0 <2.0.0"
+    operator: ">=1.0.0"
+  dependencies:
+    - { name: comms-core, version: ">=1.0.0" }
+  permissions:
+    - { scope: "oauth:google-calendar", reason: "Open-house scheduling" }
+    - { scope: "storage:documents", reason: "Property dossiers and offer letters" }
+  resources:
+    cpu_hint: "0.5 vCPU"
+    memory_hint: "512Mi"
+    cost_hint: "low"
+  areas:
+    - { slug: sales, label: "Sales & pipeline", coordinator: sales_coordinator }
+    - { slug: operations, label: "Operations", coordinator: ops_coordinator }
+  agents:
+    - { id: buyer_matching, artifact_type: agent, area: sales, cognition_profile: real_estate_advisor }
+    - { id: listing_generator, artifact_type: agent, area: sales, cognition_profile: real_estate_advisor }
+    - { id: mortgage_prequal, artifact_type: agent, area: sales, cognition_profile: real_estate_advisor }
+    - { id: property_dossier, artifact_type: agent, area: operations, cognition_profile: real_estate_advisor }
+    - { id: closing_coordination, artifact_type: agent, area: operations, cognition_profile: real_estate_advisor }
+    - { id: crm_sync, artifact_type: sidecar, area: sales }
+  flows:
+    - open_house_coordination
+    - offer_letter_drafting
+  sidecars:
+    - crm_sync
+  skulls:
+    - id: real_estate_advisor
+      model_policy: "anthropic:claude-sonnet-4 default; fallback openai:gpt-4o"
+      eval_suite: real_estate_advisor_evals
+  default_mappings:
+    autonomy: human_assisted
+    sales.coordinator_role: sales_coordinator
+  migrations:
+    - { id: "0001_seed_property_schema", description: "Create property/listing domain tables", reversible: true }
+  tests:
+    - { id: "areas_install", description: "Sales + operations areas register with coordinators" }
+    - { id: "advisor_eval", description: "real_estate_advisor Skull passes its eval suite" }
+  uninstall:
+    strategy: reverse_migrations
+    notes: "Removes agents, areas and property schema; user data is exported first."
+  sbom:
+    format: cyclonedx
+    ref: "sbom/real-estate-agency-1.2.0.cdx.json"

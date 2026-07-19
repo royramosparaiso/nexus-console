@@ -1,0 +1,21 @@
+{
+  "apiVersion": "nexus.io/v1alpha1",
+  "kind": "StatusReport",
+  "instance_id": "inst_costahomes01",
+  "reported_at": "2026-07-19T12:10:00Z",
+  "applied_revision": 7,
+  "runtime": { "version": "1.0.3", "channel": "stable" },
+  "operator": { "version": "1.0.0", "connection": "mtls_ws" },
+  "health": {
+    "status": "healthy",
+    "uptime_seconds": 864000,
+    "cpu_pct": 12.5,
+    "memory_pct": 41.0
+  },
+  "installed_packages": [
+    { "name": "real-estate-agency", "version": "1.2.0", "channel": "stable" },
+    { "name": "comms-core", "version": "1.0.4", "channel": "stable" }
+  ],
+  "setup_progress": { "total": 6, "completed": 5, "failed": 0 },
+  "errors": []
+}

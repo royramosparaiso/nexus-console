@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha1/setup.task.schema.json",
+  "title": "SetupTask (v1alpha1)",
+  "description": "A single setup task modelled as a state machine. TARGET-STATE contract. Carries NO secret values; only references.",
+  "x-nexus-contract-version": "v1alpha1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "title", "state", "owner"],
+  "properties": {
+    "id": { "$ref": "common.defs.schema.json#/$defs/Slug" },
+    "title": { "type": "string", "minLength": 1 },
+    "description": { "type": "string" },
+    "state": {
+      "type": "string",
+      "description": "Current state. Nominal flow: not_started -> waiting_user -> waiting_oauth -> ready -> running -> completed. Branches: blocked, failed, skipped.",
+      "enum": [
+        "not_started",
+        "waiting_user",
+        "waiting_oauth",
+        "ready",
+        "running",
+        "blocked",
+        "completed",
+        "failed",
+        "skipped"
+      ]
+    },
+    "owner": {
+      "type": "string",
+      "description": "Who executes this task.",
+      "enum": ["hub_automated", "operator", "user", "cowork_assistant"]
+    },
+    "prerequisites": {
+      "type": "array",
+      "description": "Ids of tasks that must reach `completed` before this one becomes `ready`.",
+      "items": { "$ref": "common.defs.schema.json#/$defs/Slug" }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Concrete proof the task completed. Never contains secret values.",
+      "properties": {
+        "kind": { "type": "string", "enum": ["api_response", "file_hash", "healthcheck", "manual_attestation"] },
+        "reference": { "type": "string", "description": "Pointer/hash/URL to the evidence, not the secret itself." },
+        "recorded_at": { "$ref": "common.defs.schema.json#/$defs/Timestamp" }
+      }
+    },
+    "retry": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_attempts": { "type": "integer", "minimum": 0 },
+        "attempts": { "type": "integer", "minimum": 0 },
+        "backoff": { "type": "string", "enum": ["none", "linear", "exponential"] }
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Inverse action if the task must be reverted.",
+      "properties": {
+        "capability": { "type": "string", "description": "Scoped capability command that reverses this task." },
+        "notes": { "type": "string" }
+      }
+    },
+    "escalation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "after_failures": { "type": "integer", "minimum": 1 },
+        "after_blocked_minutes": { "type": "integer", "minimum": 1 },
+        "support_offer": { "type": "boolean", "default": false }
+      }
+    },
+    "failure_reason": {
+      "type": ["string", "null"],
+      "description": "Recorded when state == failed."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "state": { "const": "failed" } }, "required": ["state"] },
+      "then": { "required": ["failure_reason"] }
+    }
+  ]
+}

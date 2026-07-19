@@ -1,0 +1,51 @@
+# EXAMPLE FIXTURE — validates against v1alpha1/setup.plan.schema.json
+# Setup plan derived from blueprint.managed-real-estate. NO secret values.
+apiVersion: nexus.io/v1alpha1
+kind: SetupPlan
+metadata:
+  name: costa-homes-madrid
+  instance_id: inst_costahomes01
+  blueprint_version: 1
+  plan_version: 1
+  generated_at: "2026-07-19T10:05:00Z"
+spec:
+  modality: managed
+  human_checklist_ref: "SETUP.md"
+  tasks:
+    - id: name_instance
+      title: "Confirmar nombre de la instancia"
+      state: completed
+      owner: user
+      evidence:
+        kind: manual_attestation
+        reference: "instance-name-confirmed"
+        recorded_at: "2026-07-19T10:06:00Z"
+    - id: connect_anthropic
+      title: "Conectar proveedor Anthropic vía OAuth"
+      description: "Autorización OAuth; ninguna API key en texto plano."
+      state: waiting_oauth
+      owner: user
+      prerequisites: [name_instance]
+      retry: { max_attempts: 3, attempts: 0, backoff: exponential }
+      escalation: { after_failures: 3, support_offer: true }
+    - id: provision_memory
+      title: "Aprovisionar backend de memoria pgvector"
+      state: ready
+      owner: operator
+      prerequisites: [name_instance]
+      rollback: { capability: uninstall_package, notes: "Elimina el backend pgvector" }
+    - id: install_real_estate_pack
+      title: "Instalar pack vertical real-estate-agency"
+      state: not_started
+      owner: operator
+      prerequisites: [connect_anthropic, provision_memory]
+    - id: schedule_open_house_oauth
+      title: "Conectar Google Calendar para open houses"
+      state: waiting_oauth
+      owner: user
+      prerequisites: [install_real_estate_pack]
+    - id: first_jarvis_login
+      title: "Primer acceso a Jarvis"
+      state: not_started
+      owner: user
+      prerequisites: [install_real_estate_pack]

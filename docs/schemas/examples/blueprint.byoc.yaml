@@ -1,0 +1,45 @@
+# EXAMPLE FIXTURE — validates against v1alpha1/nexus.blueprint.schema.json
+# BYOC modality: customer brings their own Fly.io account; Hub only orchestrates.
+apiVersion: nexus.io/v1alpha1
+kind: Blueprint
+metadata:
+  name: acme-consulting
+  instance_id: inst_acmeconsult1
+  blueprint_version: 2
+  generated_at: "2026-07-19T11:30:00Z"
+spec:
+  modality: byoc
+  data_region: eu-frankfurt
+  instance_kind: organization
+  expected_users: 25
+  areas:
+    - { slug: sales, label: "Sales & pipeline" }
+    - { slug: operations, label: "Operations" }
+    - { slug: brand, label: "Brand & marketing" }
+    - { slug: comms, label: "Communications" }
+  agents:
+    - { id: lead_qualification, area: sales, autonomy: human_assisted }
+    - { id: pipeline_reporting, area: sales, autonomy: human_assisted }
+  llms:
+    enabled_providers: [anthropic, ollama]
+    roles:
+      planner: "anthropic:claude-opus-4"
+      coordinator: "anthropic:claude-sonnet-4"
+      worker: "ollama:llama4"
+      embeddings: "ollama:nomic-embed-text"
+    allow_fallback: true
+  memory:
+    driver: postgres
+    graph: false
+    retention_days: 365
+    encryption_at_rest: true
+  requested_permissions:
+    - { provider: fly.io, scopes: ["deploy", "secrets"], reason: "Operator provisions the Runtime in the customer Fly org" }
+  cost_estimate:
+    currency: EUR
+    monthly_low: 0
+    monthly_high: 120
+    drivers: ["customer-owned infrastructure", "LLM token volume"]
+  rationale: >
+    Cliente que aporta su propia cuenta Fly.io (BYOC). El Hub genera el plan de setup y
+    el Operator se instala en la infraestructura del cliente para ejecutarlo.

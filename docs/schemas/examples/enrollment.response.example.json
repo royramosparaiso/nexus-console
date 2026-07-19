@@ -1,0 +1,19 @@
+{
+  "apiVersion": "nexus.io/v1alpha1",
+  "kind": "EnrollmentResponse",
+  "instance_id": "inst_acmeconsult1",
+  "credential": {
+    "type": "mtls_cert",
+    "credential_ref": "vault://operator-creds/inst_acmeconsult1/current",
+    "mtls_identity": "spiffe://hub.nexusos.dev/instance/inst_acmeconsult1",
+    "expires_at": "2026-07-20T11:30:00Z",
+    "rotation_policy": { "rotate_before_expiry_seconds": 3600 }
+  },
+  "hub_public_key": {
+    "key_id": "hub-signing-2026",
+    "algorithm": "ed25519",
+    "public_key": "aHViLXB1YmxpYy1rZXktcmVkYWN0ZWQ",
+    "trust_domain": "hub.nexusos.dev"
+  },
+  "poll_interval_seconds": 30
+}

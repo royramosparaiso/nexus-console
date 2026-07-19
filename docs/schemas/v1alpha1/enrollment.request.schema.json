@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha1/enrollment.request.schema.json",
+  "title": "Operator enrollment request (v1alpha1)",
+  "description": "Body the Operator sends to POST /v1/enroll to exchange a one-time enrollment token for its own instance key pair. TARGET-STATE contract. Contains NO long-lived secret; the token is single-use and short-lived.",
+  "x-nexus-contract-version": "v1alpha1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "enrollment_token", "instance_public_key", "operator"],
+  "properties": {
+    "apiVersion": { "const": "nexus.io/v1alpha1" },
+    "kind": { "const": "EnrollmentRequest" },
+    "enrollment_token": {
+      "type": "string",
+      "description": "One-time, short-lived token issued by the Hub. Exchanged exactly once.",
+      "minLength": 16
+    },
+    "instance_public_key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "public_key"],
+      "description": "Public half of the key pair the Operator generated locally; the private key never leaves the instance.",
+      "properties": {
+        "algorithm": { "type": "string", "enum": ["ed25519", "ecdsa-p256"] },
+        "public_key": { "type": "string", "description": "Base64url-encoded public key." }
+      }
+    },
+    "operator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "modality"],
+      "properties": {
+        "version": { "$ref": "common.defs.schema.json#/$defs/SemVer" },
+        "modality": { "$ref": "common.defs.schema.json#/$defs/Modality" },
+        "hostname_hint": { "type": "string", "description": "Non-identifying label for operator UX only." }
+      }
+    }
+  }
+}

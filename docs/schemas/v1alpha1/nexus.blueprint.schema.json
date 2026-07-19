@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha1/nexus.blueprint.schema.json",
+  "title": "nexus.blueprint.yaml (v1alpha1)",
+  "description": "Recommended, versioned architecture emitted by the Blueprint engine from a questionnaire. TARGET-STATE contract — the Blueprint engine is not implemented. Contains NO secrets and NO business data.",
+  "x-nexus-contract-version": "v1alpha1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "nexus.io/v1alpha1" },
+    "kind": { "const": "Blueprint" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "blueprint_version", "generated_at"],
+      "properties": {
+        "name": { "$ref": "common.defs.schema.json#/$defs/Slug" },
+        "instance_id": { "$ref": "common.defs.schema.json#/$defs/InstanceId" },
+        "blueprint_version": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Monotonic version; a re-run of the questionnaire produces a new version, never overwrites."
+        },
+        "generated_at": { "$ref": "common.defs.schema.json#/$defs/Timestamp" },
+        "questionnaire_hash": {
+          "type": "string",
+          "description": "Hash of the questionnaire answers this blueprint was derived from (traceability, P13 reversibility)."
+        }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modality", "areas", "llms", "memory"],
+      "properties": {
+        "modality": { "$ref": "common.defs.schema.json#/$defs/Modality" },
+        "data_region": {
+          "type": "string",
+          "description": "Explicitly chosen data-residency region. No silent default (data-sovereignty principle).",
+          "minLength": 1
+        },
+        "instance_kind": {
+          "type": "string",
+          "enum": ["personal", "shared", "organization"],
+          "description": "Scope of the instance."
+        },
+        "expected_users": { "type": "integer", "minimum": 1 },
+        "areas": {
+          "type": "array",
+          "description": "Initial areas to install. Slugs align with the Runtime area catalogue.",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["slug"],
+            "properties": {
+              "slug": { "$ref": "common.defs.schema.json#/$defs/Slug" },
+              "label": { "type": "string" },
+              "source_pack": { "$ref": "common.defs.schema.json#/$defs/Slug" }
+            }
+          }
+        },
+        "agents": {
+          "type": "array",
+          "description": "Initial agents proposed for the instance.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "area"],
+            "properties": {
+              "id": { "$ref": "common.defs.schema.json#/$defs/Slug" },
+              "area": { "$ref": "common.defs.schema.json#/$defs/Slug" },
+              "cognition_profile": {
+                "$ref": "common.defs.schema.json#/$defs/Slug",
+                "description": "Skull / Agent Cognition Profile id applied to this agent."
+              },
+              "autonomy": { "$ref": "common.defs.schema.json#/$defs/Autonomy" }
+            }
+          }
+        },
+        "llms": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled_providers", "roles"],
+          "properties": {
+            "enabled_providers": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string" }
+            },
+            "roles": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["planner", "coordinator", "worker", "embeddings"],
+              "properties": {
+                "planner": { "type": "string" },
+                "coordinator": { "type": "string" },
+                "worker": { "type": "string" },
+                "embeddings": { "type": "string" }
+              }
+            },
+            "allow_fallback": { "type": "boolean", "default": true },
+            "provider_constraints": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Provider restrictions declared by the user (e.g. EU-only)."
+            }
+          }
+        },
+        "memory": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["driver"],
+          "properties": {
+            "driver": { "type": "string", "enum": ["sqlite", "postgres", "pgvector", "qdrant", "chroma"] },
+            "graph": { "type": "boolean", "default": false },
+            "retention_days": { "type": "integer", "minimum": 0 },
+            "encryption_at_rest": { "type": "boolean", "default": true }
+          }
+        },
+        "requested_permissions": {
+          "type": "array",
+          "description": "Explicit list of OAuth scopes / API accesses the setup will request, and why.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["provider", "reason"],
+            "properties": {
+              "provider": { "type": "string" },
+              "scopes": { "type": "array", "items": { "type": "string" } },
+              "reason": { "type": "string" }
+            }
+          }
+        },
+        "cost_estimate": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Ranges only — never a promised absolute figure.",
+          "properties": {
+            "currency": { "type": "string", "enum": ["USD", "EUR"] },
+            "monthly_low": { "type": "number", "minimum": 0 },
+            "monthly_high": { "type": "number", "minimum": 0 },
+            "drivers": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "risk_signals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "severity", "message"],
+            "properties": {
+              "code": { "type": "string" },
+              "severity": { "type": "string", "enum": ["info", "warning", "critical"] },
+              "message": { "type": "string" }
+            }
+          }
+        },
+        "rationale": {
+          "type": "string",
+          "description": "Natural-language explanation of the decisions taken."
+        }
+      }
+    }
+  }
+}
