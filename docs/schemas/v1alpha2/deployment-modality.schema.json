@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha2/deployment-modality.schema.json",
+  "title": "Deployment modality declaration (v1alpha2)",
+  "description": "Declares HOW an instance is deployed, explicitly DECOUPLED from WHICH edition it runs. TARGET-STATE contract. Modality (self_hosted / byoc / managed) and edition (personal / team / organization) are orthogonal axes: a Personal instance can be self-hosted OR byoc; a Team instance can be self-hosted, byoc OR managed. Mixing the two axes onto one dimension is a documented anti-pattern (see ADR-0010). This document carries NO secrets.",
+  "x-nexus-contract-version": "v1alpha2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "nexus.io/v1alpha2" },
+    "kind": { "const": "DeploymentModality" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instance_id", "declared_at"],
+      "properties": {
+        "instance_id": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/InstanceId" },
+        "declared_at": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/Timestamp" }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["modality", "edition", "operator"],
+      "properties": {
+        "modality": {
+          "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/Modality",
+          "description": "How the infrastructure is run: self_hosted (owner runs everything), byoc (owner's cloud, Hub orchestrates), managed (Ironbat operates the infrastructure)."
+        },
+        "edition": {
+          "$ref": "common.defs.schema.json#/$defs/Edition",
+          "description": "Independent product edition. Any (modality, edition) pair is valid EXCEPT managed+personal (managed is a paid operational service that presupposes a Team/Organization subscription)."
+        },
+        "operator": {
+          "type": "string",
+          "enum": ["required", "optional", "absent"],
+          "description": "Operator presence follows modality, not edition: managed -> required, byoc -> optional, self_hosted -> absent by design."
+        },
+        "managed_by": {
+          "type": "string",
+          "enum": ["owner", "ironbat"],
+          "description": "Who operates the infrastructure. `ironbat` only for managed."
+        },
+        "data_region": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Explicitly chosen data-residency region (no silent default)."
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "modality": { "const": "managed" } } },
+          "then": {
+            "properties": {
+              "operator": { "const": "required" },
+              "managed_by": { "const": "ironbat" },
+              "edition": { "enum": ["team", "organization"] }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "modality": { "const": "self_hosted" } } },
+          "then": { "properties": { "operator": { "const": "absent" }, "managed_by": { "const": "owner" } } }
+        },
+        {
+          "if": { "properties": { "modality": { "const": "byoc" } } },
+          "then": { "properties": { "managed_by": { "const": "owner" } } }
+        }
+      ]
+    }
+  }
+}

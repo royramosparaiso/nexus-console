@@ -1,0 +1,16 @@
+{
+  "apiVersion": "nexus.io/v1alpha2",
+  "kind": "PackageAccessPolicy",
+  "metadata": {
+    "package": "comms-core",
+    "version": "1.0.4"
+  },
+  "spec": {
+    "visibility": "public",
+    "publisher_verification": "official",
+    "license": "Apache-2.0",
+    "mirrorable": false,
+    "requires_hub_account": true,
+    "distribution": "short_lived_grant"
+  }
+}

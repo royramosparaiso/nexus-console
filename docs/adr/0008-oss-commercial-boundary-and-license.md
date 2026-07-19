@@ -3,7 +3,8 @@
 - **Estado:** **Aceptada** (modelo de licencia por componente aprobado 2026-07-19). **La relicencia efectiva del código existente permanece BLOQUEADA hasta completar la auditoría de titularidad/contribución descrita abajo.**
 - **Fecha:** 2026-07-19
 - **Versión de arquitectura:** `v1alpha1`
-- **Relacionadas:** [frontera OSS/comercial](../architecture/product-oss-boundary.md); `LICENSE` (hoy MIT en Console); [ADR-0002](0002-signing-and-verification.md), [ADR-0006](0006-nexus-pack-format.md)
+- **Relacionadas:** [frontera OSS/comercial](../architecture/product-oss-boundary.md); `LICENSE` (hoy MIT en Console); [ADR-0002](0002-signing-and-verification.md), [ADR-0006](0006-nexus-pack-format.md), [ADR-0009](0009-editions-entitlements-and-subscription-degradation.md)
+- **Revisión `v1alpha2` (2026-07-19):** ver §Extensión `v1alpha2` al final (Team Capability Pack y Entitlement Verifier).
 
 ## Contexto
 
@@ -86,3 +87,23 @@ ya está relicenciado. El `LICENSE` raíz **sigue siendo MIT** y **todos** los a
 2. Consentimiento de relicencia de todos los titulares para las partes Apache-2.0.
 3. Decisión formal **CLA o DCO**.
 4. Revisión de asesoría legal de la matriz ruta→licencia y de la política de marca separada.
+
+## Extensión `v1alpha2` (Team Capability Pack y Entitlement Verifier)
+
+La capa de producto Personal + Hub introduce dos componentes que se sitúan explícitamente en la frontera:
+
+- **Team Capability Pack (propietario):** el conjunto de capacidades oficiales de Team/Organization
+  (colaboración multiusuario, gestión de flota, políticas de organización) se distribuye como componente
+  **propietario** (`LicenseRef-Ironbat-Commercial`), habilitado por entitlement firmado. **No** retiene
+  seguridad, exportación ni portabilidad, que permanecen OSS en todas las ediciones.
+- **Entitlement Verifier (Apache-2.0, OSS):** la lógica de **verificación offline** de entitlements
+  (Ed25519, `trust_domain`, expiry/gracia/nonce/revision) es **OSS**, igual que el verificador de packs.
+  Un usuario puede auditar cómo se validan sus entitlements sin depender de componentes de pago.
+- **Edición Personal:** libre y gratuita, Apache-2.0 (objetivo), sin entitlement ni Hub. La relicencia
+  efectiva sigue **bloqueada** hasta la auditoría (el repo actual permanece MIT).
+
+Actualización de la matriz ruta→licencia (target-state): `docs/schemas/v1alpha2/**` (contratos de
+producto) => Apache-2.0 objetivo (MIT hoy); Team Capability Pack, Hub billing/provisioning =>
+propietario; Entitlement Verifier, cliente de mirrors => Apache-2.0. Ver
+[ADR-0009](0009-editions-entitlements-and-subscription-degradation.md) y
+[frontera OSS/comercial](../architecture/product-oss-boundary.md).

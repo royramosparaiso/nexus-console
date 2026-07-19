@@ -1,14 +1,20 @@
-"""Validation for the managed-platform (v1alpha1) contract schemas and docs.
+"""Validation for the managed-platform contract schemas (v1alpha1 + v1alpha2) and docs.
 
 These contracts are TARGET-STATE design artifacts (no Hub/Operator/Registry
-code exists yet). This test guards three things so the docs cannot silently
-rot:
+code exists yet). v1alpha2 ADDS the Personal + Hub product layer (editions,
+entitlements, subscriptions, organizations, package access) on top of the
+v1alpha1 managed-platform infrastructure contracts; it reuses v1alpha1 crypto/
+identifier primitives by absolute $id and does not break them. This test guards
+so the docs cannot silently rot:
 
-1. Every schema in docs/schemas/v1alpha1 is itself a valid JSON Schema 2020-12.
+1. Every schema in docs/schemas/{v1alpha1,v1alpha2} is a valid JSON Schema 2020-12.
 2. Every example fixture validates against the schema declared in
    docs/schemas/examples/index.json.
-3. No example fixture leaks a plaintext secret value.
-4. Every relative Markdown link under docs/ resolves to a file that exists.
+3. Every NEGATIVE fixture in examples/invalid/ is rejected by its schema.
+4. No example fixture leaks a plaintext secret value.
+5. Signature-envelope shape and critical product invariants hold (edition/
+   entitlement/subscription/package-access/deployment-modality).
+6. Every relative Markdown link under docs/ resolves to a file that exists.
 """
 
 from __future__ import annotations
@@ -23,8 +29,12 @@ from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SCHEMA_DIR = REPO_ROOT / "docs" / "schemas" / "v1alpha1"
-EXAMPLE_DIR = REPO_ROOT / "docs" / "schemas" / "examples"
+SCHEMAS_ROOT = REPO_ROOT / "docs" / "schemas"
+SCHEMA_DIR = SCHEMAS_ROOT / "v1alpha1"
+SCHEMA_DIR_V2 = SCHEMAS_ROOT / "v1alpha2"
+SCHEMA_DIRS = {"v1alpha1": SCHEMA_DIR, "v1alpha2": SCHEMA_DIR_V2}
+EXAMPLE_DIR = SCHEMAS_ROOT / "examples"
+INVALID_DIR = EXAMPLE_DIR / "invalid"
 DOCS_DIR = REPO_ROOT / "docs"
 
 
@@ -36,8 +46,10 @@ def _load_doc(path: Path):
 
 
 def _registry() -> Registry:
+    """Register every schema (all versions) by its $id so cross-version
+    absolute $refs (v1alpha2 -> v1alpha1) resolve."""
     registry = Registry()
-    for schema_path in SCHEMA_DIR.glob("*.json"):
+    for schema_path in list(SCHEMA_DIR.glob("*.json")) + list(SCHEMA_DIR_V2.glob("*.json")):
         schema = json.loads(schema_path.read_text(encoding="utf-8"))
         registry = registry.with_resource(
             schema["$id"], Resource.from_contents(schema)
@@ -45,8 +57,15 @@ def _registry() -> Registry:
     return registry
 
 
+def _schema_dir_for(case: dict) -> Path:
+    return SCHEMA_DIRS[case.get("version", "v1alpha1")]
+
+
 SCHEMA_FILES = sorted(SCHEMA_DIR.glob("*.json"))
+SCHEMA_FILES_V2 = sorted(SCHEMA_DIR_V2.glob("*.json"))
+ALL_SCHEMA_FILES = SCHEMA_FILES + SCHEMA_FILES_V2
 CASES = _load_doc(EXAMPLE_DIR / "index.json")["cases"]
+INVALID_CASES = _load_doc(INVALID_DIR / "index.json")["cases"]
 
 # Keys that must never appear carrying a plaintext secret value in a fixture.
 _FORBIDDEN_SECRET_KEYS = {"value", "secret", "plaintext", "ciphertext", "api_key", "password", "token"}
@@ -55,7 +74,9 @@ _FORBIDDEN_SECRET_KEYS = {"value", "secret", "plaintext", "ciphertext", "api_key
 _ALLOWED_VALUE_CONTEXT = {"enrollment_token"}  # single-use, short-lived, not a standing secret
 
 
-@pytest.mark.parametrize("schema_path", SCHEMA_FILES, ids=lambda p: p.name)
+@pytest.mark.parametrize(
+    "schema_path", ALL_SCHEMA_FILES, ids=lambda p: f"{p.parent.name}/{p.name}"
+)
 def test_schema_is_valid_2020_12(schema_path: Path):
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     assert schema.get("$schema") == "https://json-schema.org/draft/2020-12/schema"
@@ -63,14 +84,29 @@ def test_schema_is_valid_2020_12(schema_path: Path):
     Draft202012Validator.check_schema(schema)
 
 
-@pytest.mark.parametrize("case", CASES, ids=lambda c: c["example"])
+@pytest.mark.parametrize(
+    "case", CASES, ids=lambda c: f"{c.get('version', 'v1alpha1')}/{c['example']}"
+)
 def test_example_validates_against_schema(case: dict):
-    schema = json.loads((SCHEMA_DIR / case["schema"]).read_text(encoding="utf-8"))
+    schema = json.loads((_schema_dir_for(case) / case["schema"]).read_text(encoding="utf-8"))
     validator = Draft202012Validator(schema, registry=_registry())
     document = _load_doc(EXAMPLE_DIR / case["example"])
-    errors = sorted(validator.iter_errors(document), key=lambda e: e.path)
+    errors = sorted(validator.iter_errors(document), key=lambda e: str(e.path))
     assert not errors, "\n".join(
         f"{list(e.path)}: {e.message}" for e in errors
+    )
+
+
+@pytest.mark.parametrize(
+    "case", INVALID_CASES, ids=lambda c: c["example"]
+)
+def test_invalid_examples_are_rejected(case: dict):
+    """Negative fixtures MUST fail validation — they guard the schema invariants."""
+    schema = json.loads((_schema_dir_for(case) / case["schema"]).read_text(encoding="utf-8"))
+    validator = Draft202012Validator(schema, registry=_registry())
+    document = _load_doc(INVALID_DIR / case["example"])
+    assert list(validator.iter_errors(document)), (
+        f"{case['example']} should be REJECTED: {case.get('reason', '')}"
     )
 
 
@@ -79,7 +115,7 @@ def test_every_schema_has_an_example():
     # common.defs is a shared $defs library; setup.task is exercised transitively
     # through setup.plan (its items $ref setup.task). Neither is instantiated alone.
     indirect = {"common.defs.schema.json", "setup.task.schema.json"}
-    expected = {p.name for p in SCHEMA_FILES if p.name not in indirect}
+    expected = {p.name for p in ALL_SCHEMA_FILES if p.name not in indirect}
     assert expected <= referenced, f"schemas without an example: {expected - referenced}"
 
 
@@ -188,6 +224,130 @@ def test_secrets_manifest_forbids_ciphertext_and_requires_age_x25519():
     non_age = json.loads(json.dumps(manifest))
     non_age["encryption"]["scheme"] = "jwe"
     assert list(validator.iter_errors(non_age)), "secrets bundle must pin age scheme"
+
+
+def _validator_v2(schema_name: str) -> Draft202012Validator:
+    schema = json.loads((SCHEMA_DIR_V2 / schema_name).read_text(encoding="utf-8"))
+    return Draft202012Validator(schema, registry=_registry())
+
+
+def _base_entitlement() -> dict:
+    return json.loads(
+        (EXAMPLE_DIR / "entitlement.team.example.json").read_text(encoding="utf-8")
+    )
+
+
+def test_entitlement_pins_ed25519_and_rejects_sigstore_and_age():
+    """Entitlements verify offline with a pinned Hub key: only ed25519 signs."""
+    validator = _validator_v2("entitlement.schema.json")
+    assert not list(validator.iter_errors(_base_entitlement()))
+    for bad_alg in ("sigstore-cosign", "age", "minisign", "ecdsa-p256"):
+        doc = _base_entitlement()
+        doc["signature"]["algorithm"] = bad_alg
+        assert list(validator.iter_errors(doc)), (
+            f"entitlement must reject signature algorithm {bad_alg!r}"
+        )
+
+
+def test_entitlement_requires_replay_and_expiry_fields():
+    """Signed-envelope shape: nonce, revision and expiry are mandatory."""
+    validator = _validator_v2("entitlement.schema.json")
+    for field in ("nonce", "revision", "expires_at"):
+        doc = _base_entitlement()
+        doc["metadata"].pop(field, None)
+        assert list(validator.iter_errors(doc)), f"entitlement must require metadata.{field}"
+    # And the trust_domain the verifier resolves the key against.
+    doc = _base_entitlement()
+    doc["signature"].pop("trust_domain", None)
+    assert list(validator.iter_errors(doc)), "entitlement signature must require trust_domain"
+
+
+def test_subscription_never_holds_data_hostage():
+    """Owner access and export are preserved in EVERY state; pinned by construction."""
+    validator = _validator_v2("subscription-state.schema.json")
+    good = json.loads(
+        (EXAMPLE_DIR / "subscription-state.expired-downgrade.example.json").read_text(encoding="utf-8")
+    )
+    assert not list(validator.iter_errors(good))
+    revoked = json.loads(json.dumps(good))
+    revoked["spec"]["owner_access"] = "revoked"
+    assert list(validator.iter_errors(revoked)), "owner_access must be preserved"
+    no_export = json.loads(json.dumps(good))
+    no_export["spec"]["export_available"] = False
+    assert list(validator.iter_errors(no_export)), "export must always be available"
+
+
+def test_subscription_expired_pauses_not_deletes():
+    """Expired/suspended pause premium agents and tasks, never delete them."""
+    validator = _validator_v2("subscription-state.schema.json")
+    doc = json.loads(
+        (EXAMPLE_DIR / "subscription-state.expired-downgrade.example.json").read_text(encoding="utf-8")
+    )
+    # 'paused' is the only non-running enum value; there is intentionally no
+    # 'deleted'/'removed' state for premium_agents or scheduled_tasks.
+    schema = json.loads((SCHEMA_DIR_V2 / "subscription-state.schema.json").read_text(encoding="utf-8"))
+    effects = schema["properties"]["spec"]["properties"]["effects"]["properties"]
+    assert set(effects["premium_agents"]["enum"]) == {"running", "paused"}
+    assert set(effects["scheduled_tasks"]["enum"]) == {"running", "paused"}
+    # An expired doc that keeps premium agents running is rejected.
+    doc["spec"]["effects"]["premium_agents"] = "running"
+    assert list(validator.iter_errors(doc))
+
+
+def test_public_packages_are_mirrorable_without_hub_account():
+    validator = _validator_v2("package-access-policy.schema.json")
+    doc = json.loads(
+        (EXAMPLE_DIR / "package-access-policy.public.example.json").read_text(encoding="utf-8")
+    )
+    assert not list(validator.iter_errors(doc))
+    doc["spec"]["mirrorable"] = False
+    assert list(validator.iter_errors(doc)), "public packages must be mirrorable"
+    doc = json.loads(
+        (EXAMPLE_DIR / "package-access-policy.public.example.json").read_text(encoding="utf-8")
+    )
+    doc["spec"]["requires_hub_account"] = True
+    assert list(validator.iter_errors(doc)), "public packages must not require a Hub account"
+
+
+def test_premium_packages_require_entitlements():
+    validator = _validator_v2("package-access-policy.schema.json")
+    doc = json.loads(
+        (EXAMPLE_DIR / "package-access-policy.premium.example.json").read_text(encoding="utf-8")
+    )
+    assert not list(validator.iter_errors(doc))
+    doc["spec"].pop("required_entitlements", None)
+    assert list(validator.iter_errors(doc)), "verified-premium must require entitlements"
+
+
+def test_deployment_modality_is_orthogonal_but_forbids_managed_personal():
+    """Edition and modality are independent axes; the only rejected pair is managed+personal."""
+    validator = _validator_v2("deployment-modality.schema.json")
+    for example in (
+        "deployment-modality.personal-self-hosted.example.json",
+        "deployment-modality.team-byoc.example.json",
+        "deployment-modality.team-managed.example.json",
+    ):
+        doc = json.loads((EXAMPLE_DIR / example).read_text(encoding="utf-8"))
+        assert not list(validator.iter_errors(doc)), f"{example} should validate"
+    bad = json.loads(
+        (INVALID_DIR / "deployment-modality.managed-personal.json").read_text(encoding="utf-8")
+    )
+    assert list(validator.iter_errors(bad)), "managed modality must reject personal edition"
+
+
+def test_pack_premium_visibility_requires_entitlements():
+    """The additive v1alpha1 pack extension ties restricted lanes to entitlements."""
+    validator = _validator("nexus.pack.schema.json")
+    pack = yaml.safe_load(
+        (EXAMPLE_DIR / "pack.real-estate-agency.yaml").read_text(encoding="utf-8")
+    )
+    # Baseline (no visibility => public) still validates: backward compatible.
+    assert not list(validator.iter_errors(pack))
+    # Marking it premium without required_entitlements must fail.
+    pack["metadata"]["visibility"] = "verified-premium"
+    assert list(validator.iter_errors(pack)), "premium pack must declare required_entitlements"
+    pack["spec"]["required_entitlements"] = ["premium_pack_access"]
+    assert not list(validator.iter_errors(pack))
 
 
 def test_docs_relative_links_resolve():

@@ -3,7 +3,8 @@
 - **Estado:** Aceptada (política `v1alpha1`)
 - **Fecha:** 2026-07-19
 - **Versión de arquitectura:** `v1alpha1`
-- **Relacionadas:** [ADR-0006](0006-nexus-pack-format.md); esquemas [`desired-state`](../schemas/v1alpha1/desired-state.schema.json), [`nexus.pack`](../schemas/v1alpha1/nexus.pack.schema.json)
+- **Relacionadas:** [ADR-0006](0006-nexus-pack-format.md), [ADR-0009](0009-editions-entitlements-and-subscription-degradation.md); esquemas [`desired-state`](../schemas/v1alpha1/desired-state.schema.json), [`nexus.pack`](../schemas/v1alpha1/nexus.pack.schema.json)
+- **Revisión `v1alpha2` (2026-07-19):** ver §Extensión `v1alpha2` al final.
 
 ## Contexto
 
@@ -40,3 +41,15 @@ imponga cambios críticos sin consentimiento (soberanía aplicada a la infraestr
 
 - **Auto-actualización de todo en `stable`:** rechazada para cambios críticos; viola soberanía.
 - **Un solo canal para núcleo y contenido:** rechazada; acopla ciclos de release distintos.
+
+## Extensión `v1alpha2` (políticas de organización y estado de suscripción)
+
+- La cadencia de actualización pasa a ser un **efecto gobernado por el estado de suscripción**
+  (`subscription-state.schema.json#/spec/effects/updates`: `automatic | security_only | manual`). Al
+  degradar (suspended/cancelled/expired) las actualizaciones no automáticas siguen disponibles de forma
+  manual; **nunca** se fuerza una actualización crítica sin aprobación de superadmin.
+- Las organizaciones pueden fijar `team_policy` y `requires_capabilities` en
+  `organization-policy.schema.json` (`v1alpha2`), incluyendo canal por rol y por pack. Los roles
+  (`owner/admin/member/readonly/guest`) determinan quién aprueba rollouts. Ver
+  [Spec C](../specs/c-team-organization.md) y [Spec G](../specs/g-entitlements-subscriptions-degradation.md).
+- El staged rollout y la aprobación de cambios críticos se mantienen intactos y aplican por edición.

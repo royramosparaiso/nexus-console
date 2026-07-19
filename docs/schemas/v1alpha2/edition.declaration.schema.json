@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.nexusos.dev/v1alpha2/edition.declaration.schema.json",
+  "title": "Edition / capability declaration (v1alpha2)",
+  "description": "Runtime-local declaration of the active edition and the capabilities currently enabled on an instance. TARGET-STATE contract. This is the Runtime's view (derived from a verified entitlement, or from the always-on Personal base); it is NOT the source of truth for billing. It never contains plan names or prices. Deployment modality is a SEPARATE, orthogonal field (see deployment-modality.schema.json).",
+  "x-nexus-contract-version": "v1alpha2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "nexus.io/v1alpha2" },
+    "kind": { "const": "EditionDeclaration" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instance_id", "edition", "generated_at"],
+      "properties": {
+        "instance_id": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/InstanceId" },
+        "edition": { "$ref": "common.defs.schema.json#/$defs/Edition" },
+        "generated_at": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/Timestamp" }
+      }
+    },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["capabilities", "source"],
+      "properties": {
+        "capabilities": {
+          "type": "array",
+          "description": "Currently enabled capabilities. For Personal this is the always-on base set (may be empty of gated capabilities); for team/organization it is the intersection of the entitlement and the non-degraded subscription state.",
+          "items": { "$ref": "common.defs.schema.json#/$defs/CapabilityId" },
+          "uniqueItems": true
+        },
+        "source": {
+          "type": "string",
+          "enum": ["personal_base", "verified_entitlement", "cached_entitlement"],
+          "description": "Where the active capability set came from. `personal_base`: no entitlement needed. `verified_entitlement`: a fresh Hub entitlement was verified. `cached_entitlement`: operating on the last cached entitlement inside the offline grace window."
+        },
+        "entitlement_ref": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Reference to the entitlement backing team/organization editions. Absent for personal_base.",
+          "required": ["revision", "expires_at"],
+          "properties": {
+            "revision": { "type": "integer", "minimum": 1 },
+            "expires_at": { "$ref": "https://schemas.nexusos.dev/v1alpha1/common.defs.schema.json#/$defs/Timestamp" }
+          }
+        },
+        "subscription_state": {
+          "$ref": "common.defs.schema.json#/$defs/SubscriptionState",
+          "description": "Current lifecycle state driving graceful degradation. Absent/`active` for Personal."
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "source": { "const": "personal_base" } } },
+          "then": { "properties": { "edition": { "const": "personal" } } }
+        }
+      ]
+    }
+  }
+}

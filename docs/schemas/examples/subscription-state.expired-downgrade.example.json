@@ -1,0 +1,22 @@
+{
+  "apiVersion": "nexus.io/v1alpha2",
+  "kind": "SubscriptionState",
+  "metadata": {
+    "instance_id": "inst_costahomes01",
+    "organization_id": "org_4b91e0",
+    "state": "expired",
+    "evaluated_at": "2026-07-10T09:00:00Z"
+  },
+  "spec": {
+    "owner_access": "preserved",
+    "export_available": true,
+    "effects": {
+      "additional_users": "read_only",
+      "premium_agents": "paused",
+      "scheduled_tasks": "paused",
+      "new_invitations": "blocked",
+      "updates": "manual"
+    },
+    "notice": "Suscripcion expirada. El propietario conserva acceso total y exportacion. Los usuarios adicionales quedan en solo lectura; los agentes premium y las tareas programadas estan pausados (no eliminados) y se reactivan al renovar. Las capacidades Personal continuan."
+  }
+}

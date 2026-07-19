@@ -1,6 +1,6 @@
 {
-  "description": "Maps each example fixture to the v1alpha1 schema it must validate against. Consumed by console/tests/test_managed_platform_schemas.py.",
-  "contract_version": "v1alpha1",
+  "description": "Maps each example fixture to the schema it must validate against. Consumed by console/tests/test_managed_platform_schemas.py. `version` selects the schema directory (defaults to v1alpha1).",
+  "contract_versions": ["v1alpha1", "v1alpha2"],
   "cases": [
     { "example": "blueprint.managed-real-estate.yaml", "schema": "nexus.blueprint.schema.json" },
     { "example": "blueprint.byoc.yaml", "schema": "nexus.blueprint.schema.json" },
@@ -11,6 +11,24 @@
     { "example": "enrollment.request.example.json", "schema": "enrollment.request.schema.json" },
     { "example": "enrollment.response.example.json", "schema": "enrollment.response.schema.json" },
     { "example": "status-report.example.json", "schema": "status-report.schema.json" },
-    { "example": "secrets-bundle-manifest.example.json", "schema": "secrets-bundle-manifest.schema.json" }
+    { "example": "secrets-bundle-manifest.example.json", "schema": "secrets-bundle-manifest.schema.json" },
+
+    { "example": "entitlement.personal.example.json", "schema": "entitlement.schema.json", "version": "v1alpha2" },
+    { "example": "entitlement.team.example.json", "schema": "entitlement.schema.json", "version": "v1alpha2" },
+    { "example": "entitlement.grace.example.json", "schema": "entitlement.schema.json", "version": "v1alpha2" },
+    { "example": "edition.personal.example.json", "schema": "edition.declaration.schema.json", "version": "v1alpha2" },
+    { "example": "edition.team.example.json", "schema": "edition.declaration.schema.json", "version": "v1alpha2" },
+    { "example": "subscription-state.active.example.json", "schema": "subscription-state.schema.json", "version": "v1alpha2" },
+    { "example": "subscription-state.grace.example.json", "schema": "subscription-state.schema.json", "version": "v1alpha2" },
+    { "example": "subscription-state.expired-downgrade.example.json", "schema": "subscription-state.schema.json", "version": "v1alpha2" },
+    { "example": "organization-policy.example.json", "schema": "organization-policy.schema.json", "version": "v1alpha2" },
+    { "example": "package-access-policy.public.example.json", "schema": "package-access-policy.schema.json", "version": "v1alpha2" },
+    { "example": "package-access-policy.community.example.json", "schema": "package-access-policy.schema.json", "version": "v1alpha2" },
+    { "example": "package-access-policy.premium.example.json", "schema": "package-access-policy.schema.json", "version": "v1alpha2" },
+    { "example": "package-access-policy.private-organization.example.json", "schema": "package-access-policy.schema.json", "version": "v1alpha2" },
+    { "example": "package-download-grant.example.json", "schema": "package-download-grant.schema.json", "version": "v1alpha2" },
+    { "example": "deployment-modality.personal-self-hosted.example.json", "schema": "deployment-modality.schema.json", "version": "v1alpha2" },
+    { "example": "deployment-modality.team-byoc.example.json", "schema": "deployment-modality.schema.json", "version": "v1alpha2" },
+    { "example": "deployment-modality.team-managed.example.json", "schema": "deployment-modality.schema.json", "version": "v1alpha2" }
   ]
 }

@@ -1,0 +1,12 @@
+{
+  "description": "Negative fixtures: each MUST FAIL validation against its schema. Consumed by console/tests/test_managed_platform_schemas.py::test_invalid_examples_are_rejected. `version` selects the schema directory (defaults to v1alpha1).",
+  "cases": [
+    { "example": "entitlement.wrong-algorithm.json", "schema": "entitlement.schema.json", "version": "v1alpha2", "reason": "entitlement signature must be ed25519, not sigstore-cosign" },
+    { "example": "entitlement.missing-nonce.json", "schema": "entitlement.schema.json", "version": "v1alpha2", "reason": "metadata.nonce is required (replay protection)" },
+    { "example": "subscription-state.revokes-owner.json", "schema": "subscription-state.schema.json", "version": "v1alpha2", "reason": "owner_access must be preserved and export_available true in every state" },
+    { "example": "subscription-state.expired-still-running.json", "schema": "subscription-state.schema.json", "version": "v1alpha2", "reason": "expired must pause premium agents/tasks and read-only additional users" },
+    { "example": "package-access-policy.public-not-mirrorable.json", "schema": "package-access-policy.schema.json", "version": "v1alpha2", "reason": "public packages must be mirrorable, no Hub account, direct download" },
+    { "example": "package-access-policy.premium-no-entitlements.json", "schema": "package-access-policy.schema.json", "version": "v1alpha2", "reason": "verified-premium requires a non-empty required_entitlements" },
+    { "example": "deployment-modality.managed-personal.json", "schema": "deployment-modality.schema.json", "version": "v1alpha2", "reason": "managed modality presupposes team/organization edition, not personal" }
+  ]
+}

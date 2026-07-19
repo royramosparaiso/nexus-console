@@ -1,0 +1,36 @@
+{
+  "apiVersion": "nexus.io/v1alpha2",
+  "kind": "Entitlement",
+  "metadata": {
+    "instance_id": "inst_costahomes01",
+    "edition": "team",
+    "organization_id": "org_4b91e0",
+    "issued_at": "2026-07-01T00:00:00Z",
+    "expires_at": "2026-08-01T00:00:00Z",
+    "grace_period_days": 7,
+    "revision": 14,
+    "nonce": "b6e2f9a1c0d3e4f5"
+  },
+  "spec": {
+    "capabilities": ["team_collaboration", "fleet_management", "premium_pack_access"],
+    "package_scopes": ["public", "community", "verified-premium:legal-vertical"],
+    "seats": {
+      "max_additional_users": 10,
+      "max_instances": 1
+    },
+    "offline_verification": {
+      "trust_domain": "hub.nexusos.dev",
+      "verifier_key_id": "hub-entitlement-key-2026-1",
+      "canonicalization": "jcs",
+      "network_check_required": false
+    }
+  },
+  "signature": {
+    "algorithm": "ed25519",
+    "key_id": "hub-entitlement-key-2026-1",
+    "value": "dGVhbS1lbnRpdGxlbWVudC1zaWduYXR1cmUtcmVkYWN0ZWQ",
+    "canonicalization": "jcs",
+    "trust_domain": "hub.nexusos.dev",
+    "key_custody": "kms"
+  }
+}

@@ -58,6 +58,33 @@ existentes.
 - Packs con `uninstall`/rollback obligatorio y overlays no destructivos.
 - Export/portabilidad de la instancia completa disponible en OSS (no se retiene fuera del OSS).
 
+<a id="v1alpha2"></a>
+## Transición de contrato `v1alpha1` → `v1alpha2` (capa de producto)
+
+La capa de producto Personal + Hub se versiona como **`v1alpha2`** y es **aditiva y backward
+compatible** sobre `v1alpha1`:
+
+- **Sin ruptura de contratos existentes.** `v1alpha2` reutiliza las primitivas crypto/identificador de
+  `v1alpha1` (`Signature`, `InstanceId`, `Timestamp`, ...) por `$id` absoluto; no las redefine ni las
+  rompe. Los esquemas y ejemplos `v1alpha1` siguen validando sin cambios.
+- **Extensión aditiva del pack.** `nexus.pack.schema.json` (`v1alpha1`) gana campos **opcionales**
+  (`metadata.visibility`, `metadata.commercial_terms_ref`, `spec.required_entitlements`,
+  `publisher.verification: official`). Un pack sin `visibility` se trata como **público** (compatible).
+- **Edición por defecto.** Una instancia v0.13.8 o `v1alpha1` se declara **Personal** por defecto
+  (`source: personal_base`); no requiere entitlement ni Hub.
+- **Modalidad por defecto.** Las instancias existentes se declaran `self_hosted` (Operator `absent`);
+  adoptar BYOC/managed es opt-in.
+
+### Política de degradación (downgrade) al expirar
+
+La degradación es **reversible y no destructiva** (invariante de [ADR-0009](../adr/0009-editions-entitlements-and-subscription-degradation.md)):
+
+- El **propietario conserva acceso y exportación en todos los estados**.
+- Al expirar/suspender/cancelar: usuarios adicionales a **solo lectura**; agentes premium y tareas
+  programadas **pausados (no borrados)**; nuevas invitaciones **bloqueadas**; capacidades Personal
+  **continúan**.
+- Al **renovar**, todo se **reactiva** al estado previo; no hay pérdida de datos ni de configuración.
+
 <a id="versionado"></a>
 ## Nota de versionado
 

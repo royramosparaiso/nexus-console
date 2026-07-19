@@ -1,0 +1,18 @@
+{
+  "apiVersion": "nexus.io/v1alpha2",
+  "kind": "PackageAccessPolicy",
+  "metadata": {
+    "package": "acme-internal-playbooks",
+    "version": "0.9.0"
+  },
+  "spec": {
+    "visibility": "private-organization",
+    "publisher_verification": "unverified",
+    "license": "LicenseRef-Acme-Internal-1.0",
+    "required_entitlements": ["team_collaboration"],
+    "required_scopes": ["private-organization:org_4b91e0"],
+    "mirrorable": false,
+    "requires_hub_account": true,
+    "distribution": "short_lived_grant"
+  }
+}
