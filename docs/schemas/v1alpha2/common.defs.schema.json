@@ -52,13 +52,13 @@
     },
     "OrganizationId": {
       "type": "string",
-      "description": "Stable, opaque organization identifier. Absent for Personal edition (single owner, no organization).",
-      "pattern": "^org_[A-Za-z0-9]{4,40}$"
+      "description": "Stable, opaque organization identifier. Absent for Personal edition (single owner, no organization). Lowercase-canonical (`org_` + lowercase alphanumerics) so it round-trips unchanged inside a PackageScope 'private-organization:<org_id>' segment; mixed-case ids are rejected to avoid an id that cannot be expressed as a scope.",
+      "pattern": "^org_[a-z0-9]{4,40}$"
     },
     "UserRef": {
       "type": "string",
-      "description": "Opaque, non-identifying reference to a Runtime-local user profile. NEVER an email or other PII; the Hub does not receive user content or identity beyond an opaque handle.",
-      "pattern": "^usr_[A-Za-z0-9]{4,40}$"
+      "description": "Opaque, non-identifying reference to a Runtime-local user profile. NEVER an email or other PII; the Hub does not receive user content or identity beyond an opaque handle. Lowercase-canonical for consistency with OrganizationId.",
+      "pattern": "^usr_[a-z0-9]{4,40}$"
     },
     "OfflineVerification": {
       "type": "object",

@@ -50,13 +50,33 @@
           "$ref": "common.defs.schema.json#/$defs/SubscriptionState",
           "description": "Current lifecycle state driving graceful degradation. Absent/`active` for Personal."
         }
-      },
-      "allOf": [
-        {
-          "if": { "properties": { "source": { "const": "personal_base" } } },
-          "then": { "properties": { "edition": { "const": "personal" } } }
-        }
-      ]
+      }
     }
-  }
+  },
+  "allOf": [
+    {
+      "$comment": "personal_base is the always-on free edition: it MUST declare edition personal and MUST NOT reference an entitlement. metadata.edition lives at the top level, so the conditional keys off it there (not spec.edition, which does not exist).",
+      "if": {
+        "properties": { "spec": { "properties": { "source": { "const": "personal_base" } }, "required": ["source"] } }
+      },
+      "then": {
+        "properties": {
+          "metadata": { "properties": { "edition": { "const": "personal" } } },
+          "spec": { "not": { "required": ["entitlement_ref"] } }
+        }
+      }
+    },
+    {
+      "$comment": "verified_entitlement/cached_entitlement are backed by a signed Hub entitlement: they MUST carry entitlement_ref and MUST declare a paid edition (team/organization). This is the reciprocal of the personal_base rule.",
+      "if": {
+        "properties": { "spec": { "properties": { "source": { "enum": ["verified_entitlement", "cached_entitlement"] } }, "required": ["source"] } }
+      },
+      "then": {
+        "properties": {
+          "metadata": { "properties": { "edition": { "enum": ["team", "organization"] } } },
+          "spec": { "required": ["entitlement_ref"] }
+        }
+      }
+    }
+  ]
 }

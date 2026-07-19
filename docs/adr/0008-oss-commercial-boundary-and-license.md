@@ -2,7 +2,7 @@
 
 - **Estado:** **Aceptada** (modelo de licencia por componente aprobado 2026-07-19). **La relicencia efectiva del código existente permanece BLOQUEADA hasta completar la auditoría de titularidad/contribución descrita abajo.**
 - **Fecha:** 2026-07-19
-- **Versión de arquitectura:** `v1alpha1`
+- **Versión de arquitectura:** `v1alpha1` con revisión `v1alpha2` (ver §Extensión `v1alpha2` al final)
 - **Relacionadas:** [frontera OSS/comercial](../architecture/product-oss-boundary.md); `LICENSE` (hoy MIT en Console); [ADR-0002](0002-signing-and-verification.md), [ADR-0006](0006-nexus-pack-format.md), [ADR-0009](0009-editions-entitlements-and-subscription-degradation.md)
 - **Revisión `v1alpha2` (2026-07-19):** ver §Extensión `v1alpha2` al final (Team Capability Pack y Entitlement Verifier).
 

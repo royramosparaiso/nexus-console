@@ -41,6 +41,21 @@ cifrado de secretos, cada uno con la primitiva adecuada, sin mezclar responsabil
 - **P1:** entitlements Ed25519 con `trust_domain`; secrets bundle age/X25519.
 - **P2:** break-glass Ed25519 auditado ([ADR-0002](../adr/0002-signing-and-verification.md)).
 
+### 6.1 Invariantes de campo cruzado (responsabilidad del Entitlement Verifier, no del esquema)
+
+JSON Schema no expresa con limpieza la igualdad ni el orden entre campos; estas comprobaciones son
+**obligación del verificador en runtime** y deben cubrirse con tests unitarios del verificador (no de los
+fixtures de esquema):
+
+- **Enlace de clave:** `signature.trust_domain` DEBE ser igual a `spec.offline_verification.trust_domain`,
+  y `spec.offline_verification.verifier_key_id` DEBE ser igual a `signature.key_id`. Un desajuste se
+  rechaza antes de comprobar la firma.
+- **Orden temporal:** `metadata.issued_at < metadata.expires_at`; en `subscription-state`,
+  `grace_expires_at >= evaluated_at` cuando el estado es `past_due`/`grace`. Un documento con
+  `expires_at <= issued_at` se rechaza aunque el esquema lo acepte.
+- **Anti-replay:** `nonce`/`revision` se validan contra el último documento aceptado (rollback
+  protection); esto requiere estado local del verificador, imposible en el esquema.
+
 ## 7. Flujos y transiciones de estado
 
 1. Publicación: firmar artefacto (Cosign/minisign) y adjuntar provenance/SBOM.
@@ -85,6 +100,25 @@ cifrado de secretos, cada uno con la primitiva adecuada, sin mezclar responsabil
 
 - `v1alpha2` reutiliza los `$defs` crypto de `v1alpha1` por `$id` absoluto; no rompe primitivas.
 
-## 16. Preguntas abiertas
+## 16. Rotación de claves (resuelto) y preguntas abiertas
 
-- Proveedor KMS/HSM; política de rotación de claves y `trust_domain`; gestión de Rekor privado si aplica.
+### Rotación de claves del Hub (resuelto para el diseño del Verifier)
+
+El `OfflineVerification` fija un único `verifier_key_id` y `network_check_required: false`, así que la
+rotación NO puede depender de una llamada online. El modelo aprobado es un **keyring por `trust_domain`
+con solapamiento**:
+
+- El verificador resuelve `verifier_key_id` contra un **conjunto de claves confiables** del
+  `trust_domain` (clave saliente + clave entrante), no contra una sola clave.
+- Durante la ventana de rotación, el Hub emite entitlements firmados con la clave entrante mientras la
+  saliente sigue siendo aceptada; una instancia offline que solo tiene la clave saliente sigue
+  verificando sus entitlements cacheados hasta el fin de su ventana de gracia.
+- El keyring se entrega con las actualizaciones del Runtime/pack de confianza (canal ya firmado), nunca
+  como comprobación online obligatoria. Personal no depende de esto (no verifica entitlements).
+- El contrato no cambia: `verifier_key_id` sigue identificando la clave concreta usada; el keyring es
+  estado local del verificador, no un campo del documento. Por eso `network_check_required` permanece
+  `const false`.
+
+### Preguntas abiertas
+
+- Proveedor KMS/HSM; cadencia exacta de solapamiento del keyring; gestión de Rekor privado si aplica.

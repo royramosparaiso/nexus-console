@@ -10,7 +10,6 @@
     "publisher_verification": "official",
     "license": "Apache-2.0",
     "required_entitlements": [],
-    "mirrorable": false,
     "requires_hub_account": false,
     "distribution": "direct_download"
   }

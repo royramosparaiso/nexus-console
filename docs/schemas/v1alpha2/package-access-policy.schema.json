@@ -62,24 +62,29 @@
       },
       "allOf": [
         {
-          "if": { "properties": { "visibility": { "enum": ["public", "community"] } } },
+          "$comment": "OSS lanes: the mirrorability guarantee must be asserted, not merely permitted. mirrorable/requires_hub_account/distribution are REQUIRED here so a public policy cannot silently omit them and let a consumer default the OSS guarantee away.",
+          "if": { "properties": { "visibility": { "enum": ["public", "community"] } }, "required": ["visibility"] },
           "then": {
             "properties": {
               "mirrorable": { "const": true },
               "requires_hub_account": { "const": false },
               "distribution": { "const": "direct_download" },
               "required_entitlements": { "maxItems": 0 }
-            }
+            },
+            "required": ["mirrorable", "requires_hub_account", "distribution"]
           }
         },
         {
-          "if": { "properties": { "visibility": { "enum": ["verified-premium", "private-organization"] } } },
+          "$comment": "Restricted lanes: pin mirrorable false and requires_hub_account true so a grant-gated pack cannot advertise itself as freely mirrorable without an account. All three plus required_entitlements are REQUIRED.",
+          "if": { "properties": { "visibility": { "enum": ["verified-premium", "private-organization"] } }, "required": ["visibility"] },
           "then": {
             "properties": {
+              "mirrorable": { "const": false },
+              "requires_hub_account": { "const": true },
               "distribution": { "const": "short_lived_grant" },
               "required_entitlements": { "minItems": 1 }
             },
-            "required": ["required_entitlements"]
+            "required": ["required_entitlements", "mirrorable", "requires_hub_account", "distribution"]
           }
         }
       ]

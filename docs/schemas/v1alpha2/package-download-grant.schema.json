@@ -37,8 +37,11 @@
       "required": ["scope", "artifact_ref"],
       "properties": {
         "scope": {
-          "$ref": "common.defs.schema.json#/$defs/PackageScope",
-          "description": "The entitlement scope this grant was issued against (e.g. 'verified-premium:legal-vertical')."
+          "description": "The restricted entitlement scope this grant was issued against (e.g. 'verified-premium:legal-vertical'). Free lanes (public/community) are direct_download and never use a grant, so only restricted scopes are accepted here.",
+          "allOf": [
+            { "$ref": "common.defs.schema.json#/$defs/PackageScope" },
+            { "pattern": "^(verified-premium|private-organization):" }
+          ]
         },
         "artifact_ref": {
           "type": "string",
@@ -48,7 +51,11 @@
           "type": "string",
           "description": "Optional pre-authorized, expiring URL. A reference, not a secret."
         },
-        "max_uses": { "type": "integer", "minimum": 1, "default": 1 }
+        "max_uses": {
+          "type": "integer",
+          "const": 1,
+          "description": "A grant is single-use by construction: the grant_id is redeemable exactly once. Pinned to 1; standing multi-use grants are not issued."
+        }
       }
     },
     "signature": {

@@ -7,6 +7,25 @@
   "type": "object",
   "additionalProperties": false,
   "required": ["apiVersion", "kind", "metadata", "spec", "signature"],
+  "allOf": [
+    {
+      "$comment": "organization_id binds a team/organization entitlement to its org; personal (single owner) never carries one. Enforces the description on metadata.organization_id.",
+      "if": {
+        "properties": { "metadata": { "properties": { "edition": { "enum": ["team", "organization"] } }, "required": ["edition"] } }
+      },
+      "then": {
+        "properties": { "metadata": { "required": ["organization_id"] } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "metadata": { "properties": { "edition": { "const": "personal" } }, "required": ["edition"] } }
+      },
+      "then": {
+        "properties": { "metadata": { "not": { "required": ["organization_id"] } } }
+      }
+    }
+  ],
   "properties": {
     "apiVersion": { "const": "nexus.io/v1alpha2" },
     "kind": { "const": "Entitlement" },

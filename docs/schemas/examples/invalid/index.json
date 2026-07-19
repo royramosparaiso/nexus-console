@@ -5,8 +5,15 @@
     { "example": "entitlement.missing-nonce.json", "schema": "entitlement.schema.json", "version": "v1alpha2", "reason": "metadata.nonce is required (replay protection)" },
     { "example": "subscription-state.revokes-owner.json", "schema": "subscription-state.schema.json", "version": "v1alpha2", "reason": "owner_access must be preserved and export_available true in every state" },
     { "example": "subscription-state.expired-still-running.json", "schema": "subscription-state.schema.json", "version": "v1alpha2", "reason": "expired must pause premium agents/tasks and read-only additional users" },
-    { "example": "package-access-policy.public-not-mirrorable.json", "schema": "package-access-policy.schema.json", "version": "v1alpha2", "reason": "public packages must be mirrorable, no Hub account, direct download" },
+    { "example": "package-access-policy.public-not-mirrorable.json", "schema": "package-access-policy.schema.json", "version": "v1alpha2", "reason": "public lane pins mirrorable true (only mirrorable is flipped: fails the mirrorable const alone)" },
+    { "example": "package-access-policy.public-missing-mirrorable.json", "schema": "package-access-policy.schema.json", "version": "v1alpha2", "reason": "public lane REQUIRES mirrorable/requires_hub_account/distribution; omitting mirrorable must fail (item 3)" },
     { "example": "package-access-policy.premium-no-entitlements.json", "schema": "package-access-policy.schema.json", "version": "v1alpha2", "reason": "verified-premium requires a non-empty required_entitlements" },
+    { "example": "package-access-policy.premium-mirrorable.json", "schema": "package-access-policy.schema.json", "version": "v1alpha2", "reason": "restricted lane pins mirrorable false; a grant-gated pack cannot be freely mirrorable (item 4)" },
+    { "example": "edition.personal-base-team.json", "schema": "edition.declaration.schema.json", "version": "v1alpha2", "reason": "source personal_base MUST declare edition personal (item 1)" },
+    { "example": "edition.entitlement-missing-ref.json", "schema": "edition.declaration.schema.json", "version": "v1alpha2", "reason": "source verified_entitlement MUST carry entitlement_ref (item 1 reciprocal)" },
+    { "example": "organization-policy.no-owner.json", "schema": "organization-policy.schema.json", "version": "v1alpha2", "reason": "memberships must contain exactly one owner; zero owners is rejected (item 2)" },
+    { "example": "organization-policy.two-owners.json", "schema": "organization-policy.schema.json", "version": "v1alpha2", "reason": "memberships must contain exactly one owner; two owners is rejected (item 2)" },
+    { "example": "organization-policy.mixed-case-org-id.json", "schema": "organization-policy.schema.json", "version": "v1alpha2", "reason": "OrganizationId is lowercase-canonical so it round-trips inside a PackageScope (item 5)" },
     { "example": "deployment-modality.managed-personal.json", "schema": "deployment-modality.schema.json", "version": "v1alpha2", "reason": "managed modality presupposes team/organization edition, not personal" }
   ]
 }

@@ -23,12 +23,38 @@ versionan por separado (`x-nexus-contract-version`). Formato inspirado en Keep a
 - **Esquemas `v1alpha2`** ([`docs/schemas/v1alpha2/`](schemas/v1alpha2/)): `common.defs`,
   `edition.declaration`, `entitlement`, `subscription-state`, `organization-policy`,
   `package-access-policy`, `package-download-grant`, `deployment-modality`.
-- **Fixtures:** 17 ejemplos válidos `v1alpha2` y 7 negativos en [`examples/invalid/`](schemas/examples/invalid/)
-  con su índice; `examples/index.json` gana `contract_versions` y el campo `version` por caso.
+- **Fixtures:** 17 ejemplos válidos `v1alpha2` y 14 negativos en [`examples/invalid/`](schemas/examples/invalid/)
+  con su índice; `examples/index.json` gana `contract_versions` y el campo `version` por caso. Cada
+  negativo falla por **una sola** invariante (fixtures mínimos).
 - **Tests:** `console/tests/test_managed_platform_schemas.py` valida ambas versiones, resuelve `$ref`
   cross-version por `$id`, rechaza los fixtures negativos y comprueba invariantes de producto (firma
   Ed25519, anti-replay, preservación del owner/exportación, pausa-no-borrado, mirrorabilidad pública,
-  entitlements premium, managed≠personal).
+  entitlements premium, managed≠personal, cardinalidad de owner, acoplamiento edición/source,
+  organization_id por edición, grant de un solo uso).
+
+### Corregido (endurecimiento de invariantes de contrato)
+
+- **`edition.declaration`:** el conditional estaba **inerte** (apuntaba a `spec.edition`, inexistente).
+  Movido a nivel raíz sobre `metadata.edition`: `personal_base` fuerza edición `personal` y prohíbe
+  `entitlement_ref`; `verified_entitlement`/`cached_entitlement` exigen `entitlement_ref` y edición
+  team/organization.
+- **`organization-policy`:** se exige **exactamente un owner** (`contains`/`minContains`/`maxContains`);
+  cero o dos owners se rechazan.
+- **`package-access-policy`:** las lanes public/community **requieren** `mirrorable`/`requires_hub_account`/
+  `distribution` (no basta con que estén ausentes); las restringidas fijan `mirrorable:false` y
+  `requires_hub_account:true` (un pack con grant no puede anunciarse como replicable sin cuenta).
+- **`common.defs.OrganizationId`/`UserRef`:** ahora lowercase-canónicos (`^org_[a-z0-9]{4,40}$`) para que
+  un `org_id` viaje sin cambios dentro de un `PackageScope` `private-organization:<org_id>`.
+- **`entitlement`:** `organization_id` es obligatorio para team/organization y prohibido para personal.
+- **`package-download-grant`:** `max_uses` fijado a `1` (un solo uso por construcción) y `scope`
+  restringido a lanes premium/privadas.
+- **`deployment-modality`:** el modo `managed` **requiere** `managed_by`.
+- **`nexus.pack` (`v1alpha1`):** las lanes OSS explícitas (public/community) prohíben
+  `required_entitlements`; `publisher.verification` reconcilia su vocabulario con v1alpha2 añadiendo
+  `unverified` (aditivo).
+- **Docs:** cabeceras de versión de `migration-and-compatibility` y ADR-0008 actualizadas; Spec H asigna
+  las invariantes de campo cruzado (enlace de clave, orden temporal, anti-replay) al Entitlement Verifier
+  en runtime y resuelve la rotación de claves con un keyring por `trust_domain` con solapamiento.
 
 ### Cambiado
 

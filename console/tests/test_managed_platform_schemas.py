@@ -350,6 +350,132 @@ def test_pack_premium_visibility_requires_entitlements():
     assert not list(validator.iter_errors(pack))
 
 
+def _example(name: str) -> dict:
+    return json.loads((EXAMPLE_DIR / name).read_text(encoding="utf-8"))
+
+
+def test_edition_declaration_couples_source_edition_and_ref():
+    """personal_base <=> edition personal + no entitlement_ref; verified/cached <=> paid edition + ref.
+
+    Guards H1: the conditional must key off metadata.edition (top level), not the
+    nonexistent spec.edition, so it actually fires."""
+    validator = _validator_v2("edition.declaration.schema.json")
+    assert not list(validator.iter_errors(_example("edition.personal.example.json")))
+    assert not list(validator.iter_errors(_example("edition.team.example.json")))
+    # personal_base claiming a paid edition must be rejected.
+    bad = _example("edition.personal.example.json")
+    bad["metadata"]["edition"] = "team"
+    assert list(validator.iter_errors(bad)), "personal_base must force edition personal"
+    # personal_base MUST NOT carry an entitlement_ref.
+    bad = _example("edition.personal.example.json")
+    bad["spec"]["entitlement_ref"] = {"revision": 1, "expires_at": "2027-01-01T00:00:00Z"}
+    assert list(validator.iter_errors(bad)), "personal_base must not reference an entitlement"
+    # verified_entitlement MUST carry an entitlement_ref.
+    bad = _example("edition.team.example.json")
+    bad["spec"].pop("entitlement_ref", None)
+    assert list(validator.iter_errors(bad)), "verified_entitlement must carry entitlement_ref"
+    # verified_entitlement MUST NOT declare edition personal.
+    bad = _example("edition.team.example.json")
+    bad["metadata"]["edition"] = "personal"
+    assert list(validator.iter_errors(bad)), "verified_entitlement must be a paid edition"
+
+
+def test_organization_policy_requires_exactly_one_owner():
+    validator = _validator_v2("organization-policy.schema.json")
+    good = _example("organization-policy.example.json")
+    assert not list(validator.iter_errors(good))
+    no_owner = json.loads(json.dumps(good))
+    no_owner["spec"]["memberships"] = [
+        {"user_ref": "usr_admin02", "role": "admin"},
+    ]
+    assert list(validator.iter_errors(no_owner)), "zero owners must be rejected"
+    two_owners = json.loads(json.dumps(good))
+    two_owners["spec"]["memberships"] = [
+        {"user_ref": "usr_owner01", "role": "owner"},
+        {"user_ref": "usr_owner02", "role": "owner"},
+    ]
+    assert list(validator.iter_errors(two_owners)), "two owners must be rejected"
+
+
+def test_organization_id_is_lowercase_canonical():
+    """A mixed-case org id cannot round-trip through a PackageScope, so it is rejected."""
+    validator = _validator_v2("organization-policy.schema.json")
+    bad = _example("organization-policy.example.json")
+    bad["metadata"]["organization_id"] = "org_AbC123"
+    assert list(validator.iter_errors(bad)), "OrganizationId must be lowercase-canonical"
+
+
+def test_public_lane_requires_oss_fields():
+    """Public/community MUST assert the OSS guarantee, not merely permit it (item 3)."""
+    validator = _validator_v2("package-access-policy.schema.json")
+    good = _example("package-access-policy.public.example.json")
+    assert not list(validator.iter_errors(good))
+    for field in ("mirrorable", "requires_hub_account", "distribution"):
+        bad = _example("package-access-policy.public.example.json")
+        bad["spec"].pop(field, None)
+        assert list(validator.iter_errors(bad)), f"public lane must require spec.{field}"
+
+
+def test_restricted_lane_pins_no_mirror_and_hub_account():
+    """A grant-gated pack cannot advertise itself as freely mirrorable (item 4)."""
+    validator = _validator_v2("package-access-policy.schema.json")
+    good = _example("package-access-policy.premium.example.json")
+    assert not list(validator.iter_errors(good))
+    bad = _example("package-access-policy.premium.example.json")
+    bad["spec"]["mirrorable"] = True
+    assert list(validator.iter_errors(bad)), "restricted lane must pin mirrorable false"
+    bad = _example("package-access-policy.premium.example.json")
+    bad["spec"]["requires_hub_account"] = False
+    assert list(validator.iter_errors(bad)), "restricted lane must pin requires_hub_account true"
+
+
+def test_entitlement_organization_id_conditioned_on_edition():
+    validator = _validator_v2("entitlement.schema.json")
+    # personal must NOT carry organization_id.
+    bad = _base_entitlement()
+    bad["metadata"]["edition"] = "personal"
+    bad["metadata"].pop("organization_id", None)
+    bad["metadata"]["organization_id"] = "org_4b91e0"
+    assert list(validator.iter_errors(bad)), "personal entitlement must not carry organization_id"
+    # team MUST carry organization_id.
+    bad = _base_entitlement()
+    bad["metadata"].pop("organization_id", None)
+    assert list(validator.iter_errors(bad)), "team entitlement must carry organization_id"
+
+
+def test_download_grant_is_single_use_and_restricted_scope():
+    validator = _validator_v2("package-download-grant.schema.json")
+    good = _example("package-download-grant.example.json")
+    assert not list(validator.iter_errors(good))
+    bad = _example("package-download-grant.example.json")
+    bad["spec"]["max_uses"] = 2
+    assert list(validator.iter_errors(bad)), "grant is single-use (max_uses pinned to 1)"
+    bad = _example("package-download-grant.example.json")
+    bad["spec"]["scope"] = "public"
+    assert list(validator.iter_errors(bad)), "grant scope must be a restricted lane, never public/community"
+
+
+def test_managed_modality_requires_managed_by():
+    validator = _validator_v2("deployment-modality.schema.json")
+    bad = json.loads(
+        (EXAMPLE_DIR / "deployment-modality.team-managed.example.json").read_text(encoding="utf-8")
+    )
+    bad["spec"].pop("managed_by", None)
+    assert list(validator.iter_errors(bad)), "managed modality must require managed_by"
+
+
+def test_pack_public_lane_forbids_entitlements():
+    """OSS pack lanes must not gate on entitlements; legacy packs (no visibility) are untouched."""
+    validator = _validator("nexus.pack.schema.json")
+    pack = yaml.safe_load(
+        (EXAMPLE_DIR / "pack.real-estate-agency.yaml").read_text(encoding="utf-8")
+    )
+    assert not list(validator.iter_errors(pack))  # no visibility => untouched
+    pack["metadata"]["visibility"] = "public"
+    pack["spec"]["required_entitlements"] = ["premium_pack_access"]
+    assert list(validator.iter_errors(pack)), "public pack lane must forbid required_entitlements"
+
+
 def test_docs_relative_links_resolve():
     link_re = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
     broken: list[str] = []

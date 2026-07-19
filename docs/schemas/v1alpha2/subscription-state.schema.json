@@ -63,7 +63,7 @@
             "new_invitations": {
               "type": "string",
               "enum": ["allowed", "blocked"],
-              "description": "Ability to invite new users. Blocked outside `active`."
+              "description": "Ability to invite new users. Blocked in suspended/cancelled/expired (see the state conditionals below and Spec G); allowed in active/past_due/grace."
             },
             "updates": {
               "type": "string",

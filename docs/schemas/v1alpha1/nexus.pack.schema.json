@@ -16,6 +16,15 @@
       "then": {
         "properties": { "spec": { "required": ["required_entitlements"], "properties": { "required_entitlements": { "minItems": 1 } } } }
       }
+    },
+    {
+      "$comment": "OSS lanes must NOT gate on entitlements, matching v1alpha2/package-access-policy. Only fires when visibility is EXPLICITLY public/community; absent visibility (legacy default=public) is untouched, preserving backward compatibility with existing packs.",
+      "if": {
+        "properties": { "metadata": { "properties": { "visibility": { "enum": ["public", "community"] } }, "required": ["visibility"] } }
+      },
+      "then": {
+        "properties": { "spec": { "properties": { "required_entitlements": { "maxItems": 0 } } } }
+      }
     }
   ],
   "properties": {
@@ -41,8 +50,8 @@
             "display_name": { "type": "string" },
             "verification": {
               "type": "string",
-              "enum": ["verified", "community", "official"],
-              "description": "Curation status shown in the catalogue. `official` marks Ironbat-published packs. Additive over the original two-state set (backward compatible). See v1alpha2 PublisherVerification and ADR-0006."
+              "enum": ["unverified", "community", "verified", "official"],
+              "description": "Curation status shown in the catalogue. `official` marks Ironbat-published packs. Vocabulary reconciled with v1alpha2 PublisherVerification (adds `unverified`): the two versions now share one set. Additive and backward compatible (no existing value removed). See v1alpha2/common.defs PublisherVerification and ADR-0006."
             }
           }
         },

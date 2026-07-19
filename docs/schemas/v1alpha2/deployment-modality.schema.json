@@ -50,13 +50,14 @@
       },
       "allOf": [
         {
-          "if": { "properties": { "modality": { "const": "managed" } } },
+          "if": { "properties": { "modality": { "const": "managed" } }, "required": ["modality"] },
           "then": {
             "properties": {
               "operator": { "const": "required" },
               "managed_by": { "const": "ironbat" },
               "edition": { "enum": ["team", "organization"] }
-            }
+            },
+            "required": ["managed_by"]
           }
         },
         {

@@ -1,0 +1,13 @@
+{
+  "apiVersion": "nexus.io/v1alpha2",
+  "kind": "EditionDeclaration",
+  "metadata": {
+    "instance_id": "inst_personal8f3a2c",
+    "edition": "team",
+    "generated_at": "2026-07-19T09:00:00Z"
+  },
+  "spec": {
+    "capabilities": [],
+    "source": "personal_base"
+  }
+}
